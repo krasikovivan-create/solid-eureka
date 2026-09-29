@@ -1,0 +1,16 @@
+{
+  "name": "ИИ Академия",
+  "short_name": "ИИ Академия",
+  "description": "Игра-учебник: как пользоваться нейросетями. Для детей, подростков, взрослых и старшего поколения",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14122b",
+  "theme_color": "#14122b",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

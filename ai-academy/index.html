@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ИИ Академия</title>
+<meta name="description" content="Игра-учебник: как пользоваться ChatGPT, Claude, Gemini, GigaChat, Алисой и другими нейросетями. Для детей, подростков, взрослых и старшего поколения.">
+<meta name="theme-color" content="#14122b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ИИ Академия">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+:root{
+  --bg:#12111f;--card:#1d1b31;--card2:#27244a;--line:#363262;--text:#f3f2fb;--muted:#a3a0c6;
+  --accent:#7c6cff;--accent-ink:#fff;--teal:#20c7a8;--good:#2fc47a;--bad:#ff5d6c;--gold:#ffcd4a;
+  --r:18px;--fs:16px;color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root{--bg:#f4f3fb;--card:#fff;--card2:#eeecfb;--line:#dddaf1;--text:#1c1a33;--muted:#67648c;color-scheme:light}
+}
+*{box-sizing:border-box}
+html{font-size:var(--fs)}
+html.big{--fs:19px}
+body{margin:0;background:var(--bg);color:var(--text);font:1rem/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+#app{max-width:640px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(100px + env(safe-area-inset-bottom))}
+h1{font-size:1.6rem;margin:.2em 0 .4em}h2{font-size:1.25rem;margin:.2em 0 .5em}h3{font-size:1.05rem;margin:1.2em 0 .5em}
+p{margin:.4em 0}
+.muted{color:var(--muted)}.small{font-size:.85rem}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4em;border:0;border-radius:14px;padding:.8em 1.2em;background:var(--accent);color:var(--accent-ink);font-weight:700;min-height:48px}
+.btn.block{width:100%}.btn.ghost{background:var(--card2);color:var(--text)}.btn.sm{min-height:36px;padding:.45em .8em;font-size:.9rem}
+.btn:disabled{opacity:.45;cursor:default}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:12px 0}
+.row{display:flex;align-items:center;gap:10px}.grow{flex:1;min-width:0}.wrap{flex-wrap:wrap}
+.chip{display:inline-block;border-radius:999px;padding:.2em .7em;font-size:.8rem;background:var(--card2);color:var(--muted)}
+.bar{height:10px;border-radius:99px;background:var(--card2);overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:99px;transition:width .4s}
+/* header */
+.hero{display:flex;align-items:center;gap:12px}
+.ava{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:30px;background:var(--card2);flex:none}
+.stat{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.stat span{background:var(--card2);border-radius:10px;padding:.2em .6em;font-size:.85rem;font-weight:600}
+/* path */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.node{position:relative;border:1px solid var(--line);background:var(--card);border-radius:var(--r);padding:14px 12px;text-align:left;min-height:118px;display:flex;flex-direction:column;gap:6px}
+.node .em{font-size:30px;width:52px;height:52px;border-radius:16px;display:grid;place-items:center}
+.node b{font-size:.98rem;line-height:1.2}
+.node .stars{font-size:.85rem;letter-spacing:1px}
+.node.locked{opacity:.5}
+.node .lock{position:absolute;top:10px;right:10px}
+.dot{position:absolute;top:10px;right:10px;width:10px;height:10px;border-radius:50%;background:var(--bad)}
+/* lesson */
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.x{border:0;background:var(--card2);width:40px;height:40px;border-radius:12px;font-size:1.1rem;flex:none}
+.lesson{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 18px;min-height:300px}
+.lesson .big{font-size:54px;line-height:1}
+.lesson ul{padding-left:1.1em;margin:.5em 0}.lesson li{margin:.35em 0}
+.prompt{background:var(--card2);border-left:4px solid var(--accent);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:.92rem;white-space:pre-wrap;word-break:break-word}
+.ans{display:block;width:100%;text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:14px;margin:10px 0;min-height:52px}
+.ans.ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--card))}
+.ans.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,var(--card))}
+.ans.pick{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--card))}
+.ans:disabled{cursor:default}
+.why{border-radius:14px;padding:12px 14px;margin:10px 0;background:var(--card2)}
+.slotrow{min-height:52px;border:2px dashed var(--line);border-radius:14px;padding:8px;margin:10px 0}
+.slotrow .ans{margin:6px 0}
+/* tabs */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:5}
+nav.tabs button{flex:1;max-width:120px;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;font-size:.72rem;padding:4px 0;position:relative;min-height:48px}
+nav.tabs button i{font-style:normal;font-size:1.4rem}
+nav.tabs button.on{color:var(--text);font-weight:700}
+nav.tabs .cnt{position:absolute;top:0;left:55%;background:var(--bad);color:#fff;border-radius:99px;font-size:.65rem;padding:0 5px;font-weight:700}
+/* misc */
+.tool{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:var(--r);padding:12px;margin:10px 0}
+.tool .em{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:26px;flex:none}
+.news{border:1px solid var(--line);background:var(--card);border-radius:var(--r);padding:14px;margin:10px 0}
+.news.unread{border-color:var(--accent)}
+.news h4{margin:.2em 0;font-size:1rem}
+a{color:var(--accent)}
+input,textarea,select{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:.7em .8em;width:100%;min-height:46px}
+textarea{min-height:90px;resize:vertical}
+label{display:block;font-weight:600;margin:12px 0 6px;font-size:.92rem}
+.pills{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.pills button{flex:none;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:.4em .9em;min-height:38px}
+.pills button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ages{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ages button{border:2px solid var(--line);background:var(--card);border-radius:16px;padding:14px 10px;min-height:96px}
+.ages button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--card))}
+.ages b{display:block}.ages i{font-style:normal;font-size:30px}
+.avas{display:flex;gap:8px;flex-wrap:wrap}
+.avas button{font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid transparent;background:var(--card2)}
+.avas button.on{border-color:var(--accent)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.badge{text-align:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 6px;font-size:.78rem}
+.badge i{display:block;font-style:normal;font-size:30px}
+.badge.off{opacity:.35;filter:grayscale(1)}
+#toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:.6em 1em;border-radius:99px;font-weight:700;opacity:0;transition:.3s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;z-index:30;padding:16px}
+.modal>div{background:var(--card);border-radius:24px;padding:24px;max-width:360px;width:100%;text-align:center}
+.pop{font-size:64px;animation:pop .6s ease}
+@keyframes pop{0%{transform:scale(.2) rotate(-20deg)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.celebrate{text-align:center;padding:20px 0}
+.celebrate .big{font-size:72px}
+.speak{border:0;background:var(--card2);border-radius:10px;padding:.3em .6em;font-size:.85rem}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav class="tabs" id="tabs"></nav>
+<div id="toast"></div>
+<script src="data.js"></script>
+<script>
+'use strict';
+const KEY = 'ai-academy-v1';
+const $ = (s) => document.querySelector(s);
+const app = $('#app');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeUrl = (u) => /^https?:\/\//i.test(u || '') ? u : '';
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const ymd = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const fmtDate = (s) => { const d = new Date(s + 'T12:00:00'); return isNaN(d) ? s : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); };
+
+// ---------- state ----------
+function defaults() {
+  return { name: '', avatar: '🦊', age: null, big: false, xp: 0, done: {}, read: [], answered: [], badges: [], streak: { last: '', count: 0 },
+    daily: '', custom: [], customTools: [], stats: { ok: 0, total: 0 }, best: {} };
+}
+let S = (() => { try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return defaults(); } })();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+// Обновления и новые ИИ из updates.json (редактируется в репозитории — приходит всем пользователям).
+let REMOTE = { tools: [], updates: [] };
+try { REMOTE = JSON.parse(localStorage.getItem(KEY + '-remote')) || REMOTE; } catch (e) {}
+fetch('updates.json', { cache: 'no-cache' })
+  .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+  .then((j) => {
+    REMOTE = { tools: Array.isArray(j.tools) ? j.tools : [], updates: Array.isArray(j.updates) ? j.updates : [] };
+    try { localStorage.setItem(KEY + '-remote', JSON.stringify(REMOTE)); } catch (e) {}
+    if (!V.busy) render();
+  })
+  .catch(() => {});
+
+// ---------- data helpers ----------
+const AGE_ALL = Object.keys(AGES);
+function normTool(t) {
+  return Object.assign({ emoji: '🤖', color: '#7c6cff', cat: 'Нейросеть', maker: '', start: [], can: [], tips: [], quiz: [], about: '' }, t);
+}
+function allTools() {
+  const map = new Map();
+  for (const t of TOOLS) map.set(t.id, normTool(t));
+  for (const t of [...REMOTE.tools, ...S.customTools]) {
+    if (!t || !t.id || !t.name) continue;
+    map.set(t.id, normTool(Object.assign({}, map.get(t.id) || {}, t)));
+  }
+  return [...map.values()];
+}
+const forAge = (x) => !x.ages || !S.age || x.ages.includes(S.age);
+const tools = () => allTools().filter(forAge);
+const toolById = (id) => allTools().find((t) => t.id === id);
+const pick = (o, key) => (S.age === 'kid' && o[key + 'Kid']) || o[key];
+const kidText = (o) => (S.age === 'kid' && o.kid) || o.text;
+
+function toolModule(t) {
+  const cards = [{ e: t.emoji, h: t.name + (t.maker ? ' · ' + t.maker : ''), text: pick(t, 'about') }];
+  if (t.start.length) cards.push({ e: '🚀', h: 'Как начать', list: t.start, ol: true });
+  if (t.can.length) cards.push({ e: '🛠', h: 'Что умеет', list: t.can });
+  if (t.tips.length) cards.push({ e: '💡', h: 'Лайфхаки', list: t.tips });
+  if (t.prompt) cards.push({ e: '✍️', h: 'Попробуй такой промпт', prompt: t.prompt });
+  if (t.care) cards.push({ e: '⚠️', h: 'Осторожно', text: t.care });
+  return { id: 'tool-' + t.id, title: t.name, emoji: t.emoji, color: t.color, tool: t.id, cards, quiz: t.quiz || [] };
+}
+function modules() { return [...CORE, ...tools().map(toolModule)]; }
+const modById = (id) => modules().find((m) => m.id === id);
+const unlocked = (m) => m.id === 'basics' || !!S.done.basics;
+const quizFor = (m) => (m.quiz || []).filter(forAge);
+
+function allUpdates() {
+  const list = [
+    ...REMOTE.updates.map((u) => Object.assign({ src: 'remote' }, u)),
+    ...S.custom.map((u) => Object.assign({ src: 'custom' }, u)),
+  ].filter((u) => u && u.title);
+  list.forEach((u) => { if (!u.id) u.id = (u.date || '') + '-' + u.title; });
+  return list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+const unreadCount = () => allUpdates().filter((u) => !S.read.includes(u.id)).length;
+function toolLabel(u) { const t = toolById(u.tool); return t ? t.emoji + ' ' + t.name : '🆕 ' + (u.toolName || 'Другое'); }
+
+// ---------- XP, levels, streak, badges ----------
+const LEVELS = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000];
+const TITLES = ['Новичок', 'Любопытный', 'Исследователь', 'Знаток', 'Мастер промптов', 'Эксперт', 'Наставник', 'Гуру ИИ', 'Легенда', 'Архитектор ИИ', 'Сверхразум'];
+function levelInfo(xp = S.xp) {
+  let l = 0; while (l < LEVELS.length - 1 && xp >= LEVELS[l + 1]) l++;
+  const cur = LEVELS[l], next = LEVELS[l + 1];
+  return { lvl: l + 1, title: TITLES[l], pct: next ? Math.round(((xp - cur) / (next - cur)) * 100) : 100, toNext: next ? next - xp : 0 };
+}
+function touchStreak() {
+  const t = ymd(); if (S.streak.last === t) return;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  S.streak.count = S.streak.last === ymd(y) ? S.streak.count + 1 : 1;
+  S.streak.last = t;
+}
+function addXP(n, why) {
+  if (n <= 0) return;
+  const before = levelInfo().lvl;
+  S.xp += n; touchStreak(); save();
+  toast(`+${n} XP${why ? ' · ' + why : ''}`);
+  const after = levelInfo();
+  if (after.lvl > before) setTimeout(() => celebrate('🎉', `Уровень ${after.lvl}!`, `Теперь ты — «${after.title}»`), 700);
+  checkBadges();
+}
+const toolDone = () => Object.keys(S.done).filter((k) => k.startsWith('tool-')).length;
+const BADGES = [
+  { id: 'first', e: '👣', n: 'Первый шаг', d: 'Пройди первый урок', ok: () => Object.keys(S.done).length >= 1 },
+  { id: 'basics', e: '🧠', n: 'Знаю основы', d: 'Пройди «Что такое ИИ»', ok: () => !!S.done.basics },
+  { id: 'shield', e: '🛡️', n: 'Цифровой щит', d: 'Пройди «Безопасность»', ok: () => !!S.done.safety },
+  { id: 'detective', e: '🕵️', n: 'Детектив', d: 'Пройди «Проверяй ИИ»', ok: () => !!S.done.check },
+  { id: 'prompter', e: '✍️', n: 'Мастер промптов', d: '3 звезды в «Искусстве промпта» или 7+ в конструкторе', ok: () => S.done.prompts === 3 || (S.best.constructor || 0) >= 7 },
+  { id: 'explorer', e: '🧭', n: 'Исследователь', d: 'Изучи 3 нейросети', ok: () => toolDone() >= 3 },
+  { id: 'polyglot', e: '🌐', n: 'Полиглот ИИ', d: 'Изучи 7 нейросетей', ok: () => toolDone() >= 7 },
+  { id: 'guru', e: '🏆', n: 'Гуру ИИ', d: 'Пройди все уроки', ok: () => modules().every((m) => S.done[m.id]) },
+  { id: 'hunter', e: '🔍', n: 'Детектор выдумок', d: '10+ в «Детекторе выдумок»', ok: () => (S.best.facts || 0) >= 10 },
+  { id: 'picker', e: '🎯', n: 'Точный выбор', d: '8+ в «Подбери ИИ»', ok: () => (S.best.pick || 0) >= 8 },
+  { id: 'news', e: '📰', n: 'В курсе событий', d: 'Прочитай 5 новостей', ok: () => S.read.length >= 5 },
+  { id: 'author', e: '🗞️', n: 'Корреспондент', d: 'Добавь своё обновление', ok: () => S.custom.length >= 1 },
+  { id: 'daily', e: '⚡', n: 'Вызов принят', d: 'Пройди вызов дня', ok: () => !!S.daily },
+  { id: 'streak3', e: '🔥', n: 'Три дня подряд', d: 'Занимайся 3 дня подряд', ok: () => S.streak.count >= 3 },
+  { id: 'streak7', e: '🌟', n: 'Неделя силы', d: 'Занимайся 7 дней подряд', ok: () => S.streak.count >= 7 },
+];
+function checkBadges() {
+  const fresh = BADGES.filter((b) => !S.badges.includes(b.id) && b.ok());
+  if (!fresh.length) return;
+  fresh.forEach((b) => S.badges.push(b.id)); save();
+  fresh.forEach((b, i) => setTimeout(() => celebrate(b.e, 'Новый значок!', `«${b.n}» — ${b.d}`), 900 + i * 400));
+}
+
+// ---------- UI helpers ----------
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); }
+function celebrate(e, title, text) {
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div><div class="pop">${esc(e)}</div><h2>${esc(title)}</h2><p class="muted">${esc(text)}</p><button class="btn block">Ура!</button></div>`;
+  m.onclick = (ev) => { if (ev.target === m || ev.target.tagName === 'BUTTON') m.remove(); };
+  document.body.appendChild(m);
+}
+function speak(text) {
+  if (!('speechSynthesis' in window)) return toast('Озвучка не поддерживается');
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'ru-RU'; u.rate = S.age === 'senior' || S.age === 'kid' ? 0.9 : 1;
+  speechSynthesis.speak(u);
+}
+const stars = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
+function applyBig() { document.documentElement.classList.toggle('big', !!S.big); }
+
+// ---------- routing ----------
+const V = { tab: 'home', busy: false };
+const TABS = [['home', '🏠', 'Путь'], ['tools', '🤖', 'Нейросети'], ['games', '🎮', 'Игры'], ['news', '📰', 'Новое'], ['me', '👤', 'Я']];
+function go(tab) { V.tab = tab; V.busy = false; V.sub = null; render(); scrollTo(0, 0); }
+function renderTabs(show) {
+  const n = unreadCount();
+  $('#tabs').classList.toggle('hidden', !show);
+  $('#tabs').innerHTML = TABS.map(([id, i, l]) => `<button class="${V.tab === id ? 'on' : ''}" onclick="go('${id}')"><i>${i}</i>${l}${id === 'news' && n ? `<span class="cnt">${n}</span>` : ''}</button>`).join('');
+}
+function render() {
+  applyBig();
+  if (!S.age) return onboarding();
+  renderTabs(true);
+  ({ home, tools: toolsView, games, news, me })[V.tab]();
+}
+
+// ---------- onboarding ----------
+const AVAS = ['🦊', '🐼', '🦉', '🐱', '🐶', '🐸', '🦄', '🐙', '🤖', '👩', '👨', '👵', '👴', '🧑‍🚀'];
+function onboarding(step) {
+  renderTabs(false);
+  const tmp = V.ob || (V.ob = { name: S.name, avatar: S.avatar, age: S.age });
+  app.innerHTML = `
+    <div class="celebrate"><div class="big">🎓</div><h1>ИИ Академия</h1>
+    <p class="muted">Учись пользоваться нейросетями играя: уроки, тесты, игры, значки и свежие новости о каждой ИИ.</p></div>
+    <label for="nm">Как тебя зовут?</label>
+    <input id="nm" maxlength="24" placeholder="Имя" value="${esc(tmp.name)}" oninput="V.ob.name=this.value">
+    <label>Выбери аватар</label>
+    <div class="avas">${AVAS.map((a) => `<button class="${tmp.avatar === a ? 'on' : ''}" onclick="V.ob.avatar='${a}';onboarding()">${a}</button>`).join('')}</div>
+    <label>Сколько тебе лет?</label>
+    <div class="ages">${Object.entries(AGES).map(([k, a]) => `<button class="${tmp.age === k ? 'on' : ''}" onclick="V.ob.age='${k}';onboarding()"><i>${a.e}</i><b>${a.name}</b><span class="muted small">${a.sub}</span></button>`).join('')}</div>
+    <p class="muted small">От возраста зависят объяснения, список нейросетей и вопросы. Поменять можно в профиле.</p>
+    <button class="btn block" style="margin-top:14px" ${tmp.age ? '' : 'disabled'} onclick="finishOnboarding()">Начать обучение →</button>`;
+}
+function finishOnboarding() {
+  const wasNew = !S.age;
+  S.name = (V.ob.name || '').trim() || 'Ученик'; S.avatar = V.ob.avatar; S.big = V.ob.age === 'senior' ? true : (wasNew ? false : S.big); S.age = V.ob.age;
+  V.ob = null; save(); go('home');
+}
+
+// ---------- home / path ----------
+function home() {
+  const L = levelInfo(), n = unreadCount(), today = S.daily === ymd();
+  const node = (m) => {
+    const lock = !unlocked(m), st = S.done[m.id] || 0;
+    return `<button class="node ${lock ? 'locked' : ''}" onclick="${lock ? "toast('Сначала пройди «Что такое ИИ»')" : `openModule('${m.id}')`}">
+      ${lock ? '<span class="lock">🔒</span>' : ''}
+      <span class="em" style="background:${esc(m.color)}33">${esc(m.emoji)}</span><b>${esc(m.title)}</b>
+      <span class="stars" style="color:var(--gold)">${st ? stars(st) : '<span class="muted">новый</span>'}</span></button>`;
+  };
+  const tm = tools().map(toolModule);
+  app.innerHTML = `
+    <div class="hero"><div class="ava">${esc(S.avatar)}</div><div class="grow">
+      <b>Привет, ${esc(S.name)}!</b><div class="muted small">Уровень ${L.lvl} · ${esc(L.title)}</div>
+      <div class="bar" style="margin-top:6px"><i style="width:${L.pct}%"></i></div></div></div>
+    <div class="stat"><span>⚡ ${S.xp} XP</span><span>🔥 ${S.streak.count} ${plural(S.streak.count, 'день', 'дня', 'дней')}</span><span>🏅 ${S.badges.length}/${BADGES.length}</span>${L.toNext ? `<span class="muted">до уровня: ${L.toNext}</span>` : ''}</div>
+    <div class="card row" style="background:linear-gradient(135deg,var(--accent),#b04dff);color:#fff;border:0">
+      <div class="grow"><b>⚡ Вызов дня</b><div class="small" style="opacity:.9">${today ? 'Выполнено! Приходи завтра за новым.' : '5 вопросов · двойной XP'}</div></div>
+      <button class="btn sm" style="background:#fff;color:#4a2fd1" onclick="daily()">${today ? 'Ещё раз' : 'Играть'}</button></div>
+    ${n ? `<div class="card row" onclick="go('news')" style="cursor:pointer"><span style="font-size:28px">📰</span><div class="grow"><b>${n} ${plural(n, 'новость', 'новости', 'новостей')} о нейросетях</b><div class="muted small">Читай и получай XP</div></div><span>›</span></div>` : ''}
+    <h3>📘 Основы</h3><div class="grid">${CORE.map(node).join('')}</div>
+    <h3>🤖 Нейросети</h3><div class="grid">${tm.map(node).join('')}</div>`;
+}
+function plural(n, a, b, c) { n = Math.abs(n) % 100; const d = n % 10; if (n > 10 && n < 20) return c; if (d > 1 && d < 5) return b; if (d === 1) return a; return c; }
+
+// ---------- lesson ----------
+function openModule(id, i = 0) {
+  const m = modById(id); if (!m) return go('home');
+  V.busy = true; renderTabs(false);
+  const c = m.cards[i], last = i === m.cards.length - 1;
+  const list = (S.age === 'kid' && c.listKid) || c.list;
+  const text = c.text ? kidText(c) : '';
+  const speakText = [c.h, text, ...(list || []), c.prompt || ''].join('. ');
+  app.innerHTML = `
+    <div class="top"><button class="x" onclick="go('home')" aria-label="Закрыть">✕</button>
+      <div class="grow bar"><i style="width:${Math.round(((i + 1) / (m.cards.length + 1)) * 100)}%"></i></div>
+      <button class="speak" id="spk">🔊</button></div>
+    <div class="lesson">
+      <div class="big">${esc(c.e || m.emoji)}</div><h2>${esc(c.h)}</h2>
+      ${text ? `<p>${esc(text)}</p>` : ''}
+      ${list ? `<${c.ol ? 'ol' : 'ul'}>${list.map((x) => `<li>${esc(x)}</li>`).join('')}</${c.ol ? 'ol' : 'ul'}>` : ''}
+      ${c.prompt ? `<div class="prompt">${esc(c.prompt)}</div><button class="btn sm ghost" style="margin-top:10px" onclick="copyText(${esc(JSON.stringify(c.prompt))})">📋 Скопировать</button>` : ''}
+      ${last && m.tool && safeUrl((toolById(m.tool) || {}).url) ? `<p style="margin-top:14px"><a href="${esc(toolById(m.tool).url)}" target="_blank" rel="noopener">Открыть ${esc(m.title)} ↗</a></p>` : ''}
+    </div>
+    <div class="row" style="margin-top:14px">
+      ${i > 0 ? `<button class="btn ghost" onclick="openModule('${id}',${i - 1})">←</button>` : ''}
+      <button class="btn grow" onclick="${last ? `startModuleQuiz('${id}')` : `openModule('${id}',${i + 1})`}">${last ? (quizFor(m).length ? 'К тесту 🎯' : 'Завершить ✓') : 'Дальше →'}</button>
+    </div>`;
+  $('#spk').onclick = () => speak(speakText);
+}
+function copyText(t) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Скопировано'), () => toast('Не удалось скопировать')); }
+
+function startModuleQuiz(id) {
+  const m = modById(id), qs = quizFor(m);
+  const finish = (ok, total) => {
+    const st = total ? (ok / total >= 0.9 ? 3 : ok / total >= 0.6 ? 2 : ok / total > 0 ? 1 : 0) : 3;
+    const first = !S.done[id];
+    const passed = st >= 1;
+    if (passed) S.done[id] = Math.max(S.done[id] || 0, st);
+    save();
+    const bonus = passed && first ? 25 : 0;
+    resultScreen({ ok, total, st, title: m.title, xp: ok * 10 + bonus, again: `startModuleQuiz('${id}')`, note: first && passed ? '+25 XP за новый урок' : (!passed ? 'Нужна хотя бы одна звезда — попробуй ещё раз!' : '') });
+  };
+  if (!qs.length) return finish(0, 0);
+  runQuiz(m.title, qs, finish);
+}
+
+// ---------- quiz engine ----------
+let Q = null;
+function prepQ(q) {
+  if (q.type === 'order') return Object.assign({}, q, { pool: shuffle(q.items.map((t, i) => ({ t, i }))), picked: [] });
+  const opts = q.a.map((t, i) => ({ t, ok: i === q.c }));
+  return Object.assign({}, q, { opts: q.keep ? opts : shuffle(opts) });
+}
+function runQuiz(title, questions, onDone) {
+  V.busy = true; renderTabs(false);
+  Q = { title, qs: questions.map(prepQ), i: 0, ok: 0, onDone };
+  showQ();
+}
+function showQ() {
+  const q = Q.qs[Q.i];
+  if (!q) return Q.onDone(Q.ok, Q.qs.length);
+  const head = `<div class="top"><button class="x" onclick="go(V.tab)" aria-label="Закрыть">✕</button>
+    <div class="grow bar"><i style="width:${Math.round((Q.i / Q.qs.length) * 100)}%"></i></div><span class="muted small">${Q.i + 1}/${Q.qs.length}</span></div>
+    <div class="muted small">${esc(Q.title)}</div><h2>${esc(q.q)} <button class="speak" onclick="speak(${esc(JSON.stringify(q.q))})">🔊</button></h2>`;
+  if (q.type === 'order') {
+    app.innerHTML = head + `<p class="muted small">Нажимай варианты по порядку</p>
+      <div class="slotrow" id="picked">${q.picked.map((p, k) => `<div class="ans pick">${k + 1}. ${esc(p.t)}</div>`).join('') || '<span class="muted small">…</span>'}</div>
+      ${q.pool.map((p, k) => `<button class="ans" onclick="orderPick(${k})">${esc(p.t)}</button>`).join('')}
+      ${q.picked.length ? '<button class="btn ghost sm" onclick="orderReset()">↺ Сначала</button>' : ''}<div id="fb"></div>`;
+  } else {
+    app.innerHTML = head + q.opts.map((o, k) => `<button class="ans" data-k="${k}" onclick="answer(${k})">${esc(o.t)}</button>`).join('') + '<div id="fb"></div>';
+  }
+}
+function feedback(ok, why) {
+  Q.ok += ok ? 1 : 0; S.stats.total++; if (ok) S.stats.ok++; save();
+  $('#fb').innerHTML = `<div class="why"><b>${ok ? '✅ Верно!' : '❌ Не совсем'}</b>${why ? `<div>${esc(why)}</div>` : ''}</div>
+    <button class="btn block" onclick="Q.i++;showQ();scrollTo(0,0)">Дальше →</button>`;
+  $('#fb').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function answer(k) {
+  const q = Q.qs[Q.i];
+  document.querySelectorAll('.ans').forEach((b) => { b.disabled = true; const o = q.opts[+b.dataset.k]; if (o.ok) b.classList.add('ok'); else if (+b.dataset.k === k) b.classList.add('no'); });
+  feedback(q.opts[k].ok, q.why);
+}
+function orderPick(k) {
+  const q = Q.qs[Q.i]; q.picked.push(q.pool.splice(k, 1)[0]);
+  if (q.pool.length) return showQ();
+  showQ();
+  document.querySelectorAll('.ans').forEach((b) => (b.disabled = true));
+  document.querySelector('.btn.ghost.sm')?.remove();
+  const ok = q.picked.every((p, i) => p.i === i);
+  feedback(ok, (ok ? '' : 'Правильно: ' + q.items.join(' → ') + '. ') + (q.why || ''));
+}
+function orderReset() { const q = Q.qs[Q.i]; q.pool = shuffle(q.items.map((t, i) => ({ t, i }))); q.picked = []; showQ(); }
+
+function resultScreen({ ok, total, st, title, xp, again, note }) {
+  V.busy = true; renderTabs(false);
+  const e = st === 3 ? '🏆' : st === 2 ? '🎉' : st === 1 ? '👍' : '💪';
+  app.innerHTML = `<div class="celebrate"><div class="big pop">${e}</div><h1>${esc(title)}</h1>
+    ${st != null ? `<div style="font-size:2rem;color:var(--gold)">${stars(st)}</div>` : ''}
+    ${total ? `<p>Правильно: <b>${ok} из ${total}</b></p>` : ''}
+    <p><b>+${xp} XP</b></p>${note ? `<p class="muted">${esc(note)}</p>` : ''}</div>
+    <button class="btn block" onclick="go(V.tab)">Продолжить</button>
+    <button class="btn block ghost" style="margin-top:10px" onclick="${again}">Ещё раз</button>`;
+  addXP(xp, '');
+}
+
+// ---------- daily challenge ----------
+function daily() {
+  const pool = [];
+  modules().filter(unlocked).forEach((m) => quizFor(m).forEach((q) => pool.push(q)));
+  const first = S.daily !== ymd();
+  runQuiz('⚡ Вызов дня', shuffle(pool).slice(0, 5), (ok, total) => {
+    if (first) S.daily = ymd(); save();
+    resultScreen({ ok, total, st: null, title: 'Вызов дня', xp: ok * (first ? 20 : 5), again: 'daily()', note: first ? 'Двойной XP за первый вызов сегодня' : 'Повтор: меньше XP, но больше практики' });
+  });
+}
+
+// ---------- tools catalog ----------
+function toolsView() {
+  if (V.sub === 'add-tool') return addToolForm();
+  if (V.sub) return toolDetail(V.sub);
+  const ts = tools();
+  app.innerHTML = `<h1>🤖 Нейросети</h1><p class="muted">Нажми на любую, чтобы узнать, как ей пользоваться.</p>
+    ${S.age === 'kid' ? '<div class="card small">👨‍👩‍👧 Нейросетями дети пользуются вместе со взрослыми. Здесь только те, что подходят для твоего возраста.</div>' : ''}
+    ${ts.map((t) => `<button class="tool" onclick="V.sub='${esc(t.id)}';render();scrollTo(0,0)">
+      <span class="em" style="background:${esc(t.color)}33">${esc(t.emoji)}</span>
+      <span class="grow"><b>${esc(t.name)}</b> ${S.done['tool-' + t.id] ? `<span style="color:var(--gold)">${stars(S.done['tool-' + t.id])}</span>` : ''}<br><span class="muted small">${esc(t.cat)}${t.maker ? ' · ' + esc(t.maker) : ''}</span></span><span>›</span></button>`).join('')}
+    <button class="btn block ghost" onclick="V.sub='add-tool';render()">＋ Добавить новую нейросеть</button>`;
+}
+function toolDetail(id) {
+  const t = toolById(id); if (!t) { V.sub = null; return toolsView(); }
+  const ups = allUpdates().filter((u) => u.tool === id).slice(0, 5);
+  const custom = S.customTools.some((x) => x.id === id);
+  app.innerHTML = `<div class="top"><button class="x" onclick="V.sub=null;render()">←</button><b class="grow">${esc(t.name)}</b></div>
+    <div class="card" style="text-align:center"><div style="font-size:56px">${esc(t.emoji)}</div><h2>${esc(t.name)}</h2>
+      <div class="muted small">${esc(t.cat)}${t.maker ? ' · ' + esc(t.maker) : ''}</div><p>${esc(pick(t, 'about'))}</p>
+      ${safeUrl(t.url) ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.url.replace(/^https?:\/\//, ''))} ↗</a>` : ''}</div>
+    <button class="btn block" onclick="openModule('tool-${esc(t.id)}')">${S.done['tool-' + t.id] ? 'Повторить урок' : 'Пройти урок'} 🎓</button>
+    ${t.care ? `<div class="card small">⚠️ ${esc(t.care)}</div>` : ''}
+    <h3>📰 Обновления</h3>
+    ${ups.length ? ups.map(newsCard).join('') : '<p class="muted small">Пока нет новостей. Добавь первую во вкладке «Новое».</p>'}
+    ${custom ? `<button class="btn block ghost" style="margin-top:14px" onclick="delTool('${esc(t.id)}')">🗑 Удалить эту нейросеть</button>` : ''}`;
+}
+function delTool(id) { if (!confirm('Удалить нейросеть?')) return; S.customTools = S.customTools.filter((t) => t.id !== id); save(); V.sub = null; render(); }
+function addToolForm() {
+  app.innerHTML = `<div class="top"><button class="x" onclick="V.sub=null;render()">←</button><b class="grow">Новая нейросеть</b></div>
+    <p class="muted small">Вышла новая ИИ? Добавь её — появится урок в разделе «Нейросети».</p>
+    <label>Название*</label><input id="tn" maxlength="40" placeholder="Например, Grok">
+    <div class="row"><div style="width:90px"><label>Значок</label><input id="te" maxlength="4" value="🤖"></div><div class="grow"><label>Разработчик</label><input id="tm" maxlength="40" placeholder="Компания"></div></div>
+    <label>Тип</label><select id="tc">${['Чат-бот', 'Поиск', 'Картинки', 'Видео', 'Музыка', 'Голосовой помощник', 'Код', 'Ассистент', 'Другое'].map((c) => `<option>${c}</option>`).join('')}</select>
+    <label>Сайт</label><input id="tu" type="url" placeholder="https://…">
+    <label>Что это и чем полезна*</label><textarea id="ta"></textarea>
+    <label>Как начать (каждый шаг с новой строки)</label><textarea id="ts"></textarea>
+    <label>Что умеет (с новой строки)</label><textarea id="tw"></textarea>
+    <label>Советы (с новой строки)</label><textarea id="tt"></textarea>
+    <label>Пример промпта</label><textarea id="tp"></textarea>
+    <label>Осторожно (возраст, данные, ограничения)</label><input id="tr">
+    <button class="btn block" style="margin-top:16px" onclick="saveTool()">Сохранить</button>`;
+}
+function saveTool() {
+  const v = (id) => $('#' + id).value.trim(), lines = (id) => v(id).split('\n').map((s) => s.trim()).filter(Boolean);
+  if (!v('tn') || !v('ta')) return toast('Заполни название и описание');
+  const url = v('tu');
+  S.customTools.push({ id: 'u-' + Date.now().toString(36), name: v('tn'), emoji: v('te') || '🤖', maker: v('tm'), cat: v('tc'), url: safeUrl(url) ? url : '',
+    about: v('ta'), start: lines('ts'), can: lines('tw'), tips: lines('tt'), prompt: v('tp'), care: v('tr'), color: '#7c6cff', quiz: [] });
+  save(); addXP(15, 'новая нейросеть'); V.sub = null; render();
+}
+
+// ---------- games ----------
+function games() {
+  const G = [
+    ['constructor', '🧩', 'Промпт-конструктор', 'Собери идеальный запрос из частей', S.best.constructor, 8],
+    ['pick', '🎯', 'Подбери ИИ', 'Какая нейросеть лучше подходит для задачи?', S.best.pick, 10],
+    ['facts', '🔍', 'Детектор выдумок', 'Правда или ИИ ошибся?', S.best.facts, 12],
+  ];
+  app.innerHTML = `<h1>🎮 Игры</h1><p class="muted">Тренируй навыки и зарабатывай XP.</p>
+    ${G.map(([id, e, n, d, b, max]) => `<button class="tool" onclick="game_${id}()"><span class="em" style="background:var(--card2)">${e}</span>
+      <span class="grow"><b>${n}</b><br><span class="muted small">${d}</span>${b != null ? `<br><span class="small">🏅 Рекорд: ${b}/${max}</span>` : ''}</span><span>▶</span></button>`).join('')}
+    <button class="tool" onclick="daily()"><span class="em" style="background:var(--card2)">⚡</span><span class="grow"><b>Вызов дня</b><br><span class="muted small">5 случайных вопросов из пройденных тем</span></span><span>▶</span></button>`;
+}
+function saveBest(k, v) { S.best[k] = Math.max(S.best[k] || 0, v); save(); }
+
+// Промпт-конструктор
+let PC;
+function game_constructor() {
+  const rounds = shuffle(PROMPT_ROUNDS.filter(forAge)).slice(0, 2);
+  PC = { rounds, r: 0, s: 0, picks: [], score: 0, max: rounds.length * 8 };
+  V.busy = true; renderTabs(false); pcShow();
+}
+function pcShow() {
+  const R = PC.rounds[PC.r];
+  if (!R) {
+    const scaled = Math.round((PC.score / PC.max) * 8);
+    saveBest('constructor', scaled);
+    return resultScreen({ ok: PC.score, total: PC.max, st: scaled >= 7 ? 3 : scaled >= 5 ? 2 : 1, title: 'Промпт-конструктор', xp: PC.score * 3, again: 'game_constructor()', note: `Итог: ${scaled} из 8` });
+  }
+  const slot = R.slots[PC.s];
+  if (!slot) {
+    const got = PC.picks.reduce((a, p) => a + p[1], 0);
+    const best = R.slots.map((s) => s[1].find((o) => o[1] === 2)[0]);
+    app.innerHTML = `<div class="top"><button class="x" onclick="go('games')">✕</button><b class="grow">Раунд ${PC.r + 1}/${PC.rounds.length}</b></div>
+      <h2>Твой промпт</h2><div class="prompt">${esc(PC.picks.map((p) => p[0]).join('. '))}.</div>
+      <p><b>${got} из 8</b> ${got >= 7 ? '— отлично! 🔥' : got >= 5 ? '— неплохо 👍' : '— можно лучше 💪'}</p>
+      ${got < 8 ? `<p class="muted small">Лучший вариант:</p><div class="prompt">${esc(best.join('. '))}.</div>` : ''}
+      <button class="btn block" style="margin-top:14px" onclick="PC.score+=${got};PC.r++;PC.s=0;PC.picks=[];pcShow()">Дальше →</button>`;
+    return;
+  }
+  if (!slot.sh) slot.sh = shuffle(slot[1]);
+  app.innerHTML = `<div class="top"><button class="x" onclick="go('games')">✕</button><div class="grow bar"><i style="width:${Math.round(((PC.r * 4 + PC.s) / (PC.rounds.length * 4)) * 100)}%"></i></div></div>
+    <div class="muted small">Задача</div><h2>${esc(R.task)}</h2>
+    ${PC.picks.length ? `<div class="prompt">${esc(PC.picks.map((p) => p[0]).join('. '))}…</div>` : ''}
+    <h3>Выбери: ${esc(slot[0])}</h3>
+    ${slot.sh.map((o, k) => `<button class="ans" onclick="pcPick(${k})">${esc(o[0])}</button>`).join('')}`;
+}
+function pcPick(k) { const slot = PC.rounds[PC.r].slots[PC.s]; PC.picks.push(slot.sh[k]); delete slot.sh; PC.s++; pcShow(); }
+
+// Подбери ИИ
+function game_pick() {
+  const vis = tools().map((t) => t.id);
+  const sc = shuffle(PICK_SCENARIOS.filter((s) => vis.includes(s.t))).slice(0, 10);
+  const qs = sc.map((s) => {
+    const others = shuffle(vis.filter((id) => id !== s.t)).slice(0, 3);
+    return { q: s.s, a: [s.t, ...others].map((id) => { const t = toolById(id); return t.emoji + ' ' + t.name; }), c: 0, why: 'Лучше всего подходит ' + toolById(s.t).name + '.' };
+  });
+  runQuiz('🎯 Подбери ИИ', qs, (ok, total) => { saveBest('pick', ok); resultScreen({ ok, total, st: ok >= 8 ? 3 : ok >= 5 ? 2 : 1, title: 'Подбери ИИ', xp: ok * 5, again: 'game_pick()' }); });
+}
+
+// Детектор выдумок
+function game_facts() {
+  const qs = shuffle(FACTS).slice(0, 12).map((f) => ({ q: 'ИИ ответил: «' + f.s + '»', a: ['✅ Правда', '⚠️ Ошибка / выдумка'], c: f.ok ? 0 : 1, keep: true, why: f.why }));
+  runQuiz('🔍 Детектор выдумок', qs, (ok, total) => { saveBest('facts', ok); resultScreen({ ok, total, st: ok >= 10 ? 3 : ok >= 7 ? 2 : 1, title: 'Детектор выдумок', xp: ok * 5, again: 'game_facts()', note: 'Главное правило: важное всегда проверяй в надёжных источниках.' }); });
+}
+
+// ---------- news / updates ----------
+function newsCard(u) {
+  const unread = !S.read.includes(u.id), open = V.open === u.id;
+  const text = (S.age === 'kid' && u.kid) || u.text || '';
+  const q = u.q && Array.isArray(u.q.a) ? u.q : null, answered = S.answered.includes(u.id);
+  return `<div class="news ${unread ? 'unread' : ''}">
+    <div class="row small"><span class="chip">${esc(toolLabel(u))}</span><span class="muted grow">${esc(fmtDate(u.date))}</span>${unread ? '<b style="color:var(--accent)">● новое</b>' : ''}</div>
+    <h4 onclick="openNews(${esc(JSON.stringify(u.id))})" style="cursor:pointer">${esc(u.title)}</h4>
+    ${open ? `<p>${esc(text)}</p>
+      ${safeUrl(u.link) ? `<p class="small"><a href="${esc(u.link)}" target="_blank" rel="noopener">Источник ↗</a></p>` : ''}
+      ${q ? (answered ? '<p class="small muted">✅ Вопрос по новости пройден</p>' : `<div class="why"><b>🎯 Вопрос (+10 XP):</b> ${esc(q.q)}${q.a.map((a, k) => `<button class="ans" onclick="newsAnswer(${esc(JSON.stringify(u.id))},${k},this)">${esc(a)}</button>`).join('')}</div>`) : ''}
+      <div class="row wrap"><button class="speak" onclick="speak(${esc(JSON.stringify(u.title + '. ' + text))})">🔊 Слушать</button>
+      ${u.src === 'custom' ? `<button class="speak" onclick="delNews(${esc(JSON.stringify(u.id))})">🗑 Удалить</button>` : ''}</div>`
+    : `<button class="btn sm ghost" onclick="openNews(${esc(JSON.stringify(u.id))})">Читать ${unread ? '(+5 XP)' : ''}</button>`}
+  </div>`;
+}
+function openNews(id) {
+  V.open = V.open === id ? null : id;
+  if (!S.read.includes(id)) { S.read.push(id); save(); addXP(5, 'новость'); }
+  render();
+}
+function newsAnswer(id, k, el) {
+  const u = allUpdates().find((x) => x.id === id); if (!u || S.answered.includes(id)) return;
+  const ok = k === (u.q.c || 0);
+  el.parentNode.querySelectorAll('.ans').forEach((b, i) => { b.disabled = true; if (i === (u.q.c || 0)) b.classList.add('ok'); else if (i === k) b.classList.add('no'); });
+  if (ok) { S.answered.push(id); save(); addXP(10, 'вопрос по новости'); setTimeout(render, 1200); } else toast('Не угадал — перечитай новость и попробуй ещё');
+  if (!ok) setTimeout(render, 1500);
+}
+function delNews(id) { if (!confirm('Удалить обновление?')) return; S.custom = S.custom.filter((u) => u.id !== id); save(); render(); }
+
+function news() {
+  if (V.sub === 'add') return addNewsForm();
+  const all = allUpdates(), f = V.filter || 'all';
+  const used = [...new Set(all.map((u) => u.tool))];
+  const list = f === 'all' ? all : f === 'unread' ? all.filter((u) => !S.read.includes(u.id)) : all.filter((u) => u.tool === f);
+  app.innerHTML = `<div class="row"><h1 class="grow">📰 Что нового</h1><button class="btn sm" onclick="V.sub='add';render()">＋ Добавить</button></div>
+    <p class="muted small">Обновления нейросетей: читай, отвечай на вопросы, получай XP. Свои новости добавляй кнопкой «＋».</p>
+    <div class="pills"><button class="${f === 'all' ? 'on' : ''}" onclick="V.filter='all';render()">Все</button><button class="${f === 'unread' ? 'on' : ''}" onclick="V.filter='unread';render()">Непрочитанные</button>
+      ${used.map((id) => { const t = toolById(id); return `<button class="${f === id ? 'on' : ''}" onclick="V.filter=${esc(JSON.stringify(id))};render()">${t ? esc(t.emoji + ' ' + t.name) : '🆕 Другое'}</button>`; }).join('')}</div>
+    ${list.length ? list.map(newsCard).join('') : '<p class="muted">Здесь пока пусто.</p>'}
+    <div class="card small"><b>Обмен обновлениями</b><p class="muted">Сохрани свои обновления в файл, чтобы перенести на другое устройство или добавить в общий <code>updates.json</code> — тогда их увидят все.</p>
+      <div class="row wrap"><button class="btn sm ghost" onclick="exportData()">⬇️ Экспорт</button><button class="btn sm ghost" onclick="$('#imp').click()">⬆️ Импорт</button>
+      <input type="file" id="imp" accept=".json,application/json" class="hidden" onchange="importData(this.files[0])"></div></div>`;
+}
+function addNewsForm() {
+  const ts = allTools();
+  app.innerHTML = `<div class="top"><button class="x" onclick="V.sub=null;render()">←</button><b class="grow">Новое обновление</b></div>
+    <label>Нейросеть*</label><select id="nt" onchange="$('#ntn').classList.toggle('hidden',this.value!=='other')">${ts.map((t) => `<option value="${esc(t.id)}">${esc(t.emoji + ' ' + t.name)}</option>`).join('')}<option value="other">🆕 Другая…</option></select>
+    <input id="ntn" class="hidden" style="margin-top:8px" maxlength="40" placeholder="Название нейросети">
+    <label>Дата*</label><input id="nd" type="date" value="${ymd()}">
+    <label>Заголовок*</label><input id="nh" maxlength="90" placeholder="Что вышло?">
+    <label>Подробности*</label><textarea id="nx" placeholder="Что изменилось и как этим пользоваться"></textarea>
+    <label>Просто для детей (необязательно)</label><textarea id="nk" style="min-height:60px"></textarea>
+    <label>Ссылка на источник</label><input id="nl" type="url" placeholder="https://…">
+    <h3>🎯 Вопрос-проверка (необязательно)</h3>
+    <input id="nq" placeholder="Вопрос">
+    <input id="na0" style="margin-top:8px" placeholder="✅ Правильный ответ">
+    <input id="na1" style="margin-top:8px" placeholder="Неправильный ответ">
+    <input id="na2" style="margin-top:8px" placeholder="Ещё неправильный (необязательно)">
+    <button class="btn block" style="margin-top:16px" onclick="saveNews()">Опубликовать у себя (+15 XP)</button>`;
+}
+function saveNews() {
+  const v = (id) => $('#' + id).value.trim();
+  if (!v('nh') || !v('nx') || !v('nd')) return toast('Заполни дату, заголовок и подробности');
+  const tool = v('nt');
+  if (tool === 'other' && !v('ntn')) return toast('Укажи название нейросети');
+  const u = { id: 'c-' + Date.now().toString(36), date: v('nd'), tool, title: v('nh'), text: v('nx') };
+  if (tool === 'other') u.toolName = v('ntn');
+  if (v('nk')) u.kid = v('nk');
+  if (safeUrl(v('nl'))) u.link = v('nl');
+  if (v('nq') && v('na0') && v('na1')) {
+    const a = [v('na0'), v('na1'), v('na2')].filter(Boolean), order = shuffle(a.map((_, i) => i));
+    u.q = { q: v('nq'), a: order.map((i) => a[i]), c: order.indexOf(0) };
+  }
+  S.custom.push(u); S.read.push(u.id); save(); addXP(15, 'новость добавлена'); V.sub = null; render();
+}
+function exportData() {
+  const data = JSON.stringify({ tools: S.customTools, updates: S.custom.map(({ src, ...u }) => u) }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = 'ai-academy-updates.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importData(file) {
+  if (!file) return;
+  file.text().then((txt) => {
+    const j = JSON.parse(txt); let n = 0;
+    (j.updates || []).forEach((u) => { if (u && u.title && u.date && !allUpdates().some((x) => x.id === u.id)) { S.custom.push(Object.assign({ id: 'c-' + Date.now().toString(36) + n }, u)); n++; } });
+    (j.tools || []).forEach((t) => { if (t && t.id && t.name && !allTools().some((x) => x.id === t.id)) { S.customTools.push(t); n++; } });
+    save(); toast(`Добавлено: ${n}`); render();
+  }).catch(() => toast('Не удалось прочитать файл'));
+}
+
+// ---------- profile ----------
+function me() {
+  const L = levelInfo(), acc = S.stats.total ? Math.round((S.stats.ok / S.stats.total) * 100) : 0;
+  const allM = modules(), doneN = allM.filter((m) => S.done[m.id]).length;
+  app.innerHTML = `<div class="card" style="text-align:center"><div class="ava" style="margin:0 auto;width:80px;height:80px;font-size:48px">${esc(S.avatar)}</div>
+      <h2>${esc(S.name)}</h2><div class="muted">${esc(AGES[S.age].e + ' ' + AGES[S.age].name)} · Уровень ${L.lvl} «${esc(L.title)}»</div>
+      <div class="bar" style="margin:10px 0"><i style="width:${L.pct}%"></i></div>
+      <div class="stat" style="justify-content:center"><span>⚡ ${S.xp} XP</span><span>🔥 ${S.streak.count}</span><span>📚 ${doneN}/${allM.length}</span><span>🎯 ${acc}%</span></div></div>
+    <h3>🏅 Значки</h3>
+    <div class="badges">${BADGES.map((b) => `<div class="badge ${S.badges.includes(b.id) ? '' : 'off'}" title="${esc(b.d)}"><i>${b.e}</i><b>${esc(b.n)}</b><div class="muted">${esc(b.d)}</div></div>`).join('')}</div>
+    <h3>⚙️ Настройки</h3>
+    <div class="card">
+      <div class="row"><span class="grow">Крупный шрифт</span><button class="btn sm ghost" onclick="S.big=!S.big;save();render()">${S.big ? 'Вкл' : 'Выкл'}</button></div>
+      <div class="row" style="margin-top:10px"><span class="grow">Имя, аватар, возраст</span><button class="btn sm ghost" onclick="V.ob={name:S.name,avatar:S.avatar,age:S.age};onboarding()">Изменить</button></div>
+      <div class="row" style="margin-top:10px"><span class="grow">Сбросить прогресс</span><button class="btn sm ghost" onclick="resetAll()">Сбросить</button></div>
+    </div>
+    <p class="muted small">Всё хранится только на этом устройстве. Приложение работает офлайн после первого открытия.</p>`;
+}
+function resetAll() {
+  if (!confirm('Стереть весь прогресс, свои новости и нейросети?')) return;
+  S = defaults(); save(); V.tab = 'home'; render();
+}
+
+render();
+checkBadges();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
