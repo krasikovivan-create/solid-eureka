@@ -20,8 +20,9 @@
   --r:18px;--fs:16px;color-scheme:dark;
 }
 @media (prefers-color-scheme: light){
-  :root{--bg:#f4f3fb;--card:#fff;--card2:#eeecfb;--line:#dddaf1;--text:#1c1a33;--muted:#67648c;color-scheme:light}
+  :root:not([data-theme="dark"]){--bg:#f4f3fb;--card:#fff;--card2:#eeecfb;--line:#dddaf1;--text:#1c1a33;--muted:#67648c;color-scheme:light}
 }
+:root[data-theme="light"]{--bg:#f4f3fb;--card:#fff;--card2:#eeecfb;--line:#dddaf1;--text:#1c1a33;--muted:#67648c;color-scheme:light}
 *{box-sizing:border-box}
 html{font-size:var(--fs)}
 html.big{--fs:19px}
@@ -247,6 +248,12 @@ function celebrate(e, title, text) {
   m.onclick = (ev) => { if (ev.target === m || ev.target.tagName === 'BUTTON') m.remove(); };
   document.body.appendChild(m);
 }
+function ask(text, onYes) {
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div><h2>${esc(text)}</h2><div class="row" style="margin-top:16px"><button class="btn ghost grow" data-a="0">Отмена</button><button class="btn grow" data-a="1" style="background:var(--bad)">Да</button></div></div>`;
+  m.onclick = (ev) => { const a = ev.target.dataset && ev.target.dataset.a; if (ev.target === m || a) { m.remove(); if (a === '1') onYes(); } };
+  document.body.appendChild(m);
+}
 function speak(text) {
   if (!('speechSynthesis' in window)) return toast('Озвучка не поддерживается');
   speechSynthesis.cancel();
@@ -345,7 +352,7 @@ function openModule(id, i = 0) {
     </div>`;
   $('#spk').onclick = () => speak(speakText);
 }
-function copyText(t) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Скопировано'), () => toast('Не удалось скопировать')); }
+function copyText(t) { (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Скопировано'), () => toast('Выдели текст промпта и скопируй вручную')); }
 
 function startModuleQuiz(id) {
   const m = modById(id), qs = quizFor(m);
@@ -460,7 +467,7 @@ function toolDetail(id) {
     ${ups.length ? ups.map(newsCard).join('') : '<p class="muted small">Пока нет новостей. Добавь первую во вкладке «Новое».</p>'}
     ${custom ? `<button class="btn block ghost" style="margin-top:14px" onclick="delTool('${esc(t.id)}')">🗑 Удалить эту нейросеть</button>` : ''}`;
 }
-function delTool(id) { if (!confirm('Удалить нейросеть?')) return; S.customTools = S.customTools.filter((t) => t.id !== id); save(); V.sub = null; render(); }
+function delTool(id) { ask('Удалить нейросеть?', () => { S.customTools = S.customTools.filter((t) => t.id !== id); save(); V.sub = null; render(); }); }
 function addToolForm() {
   app.innerHTML = `<div class="top"><button class="x" onclick="V.sub=null;render()">←</button><b class="grow">Новая нейросеть</b></div>
     <p class="muted small">Вышла новая ИИ? Добавь её — появится урок в разделе «Нейросети».</p>
@@ -578,7 +585,7 @@ function newsAnswer(id, k, el) {
   if (ok) { S.answered.push(id); save(); addXP(10, 'вопрос по новости'); setTimeout(render, 1200); } else toast('Не угадал — перечитай новость и попробуй ещё');
   if (!ok) setTimeout(render, 1500);
 }
-function delNews(id) { if (!confirm('Удалить обновление?')) return; S.custom = S.custom.filter((u) => u.id !== id); save(); render(); }
+function delNews(id) { ask('Удалить обновление?', () => { S.custom = S.custom.filter((u) => u.id !== id); save(); render(); }); }
 
 function news() {
   if (V.sub === 'add') return addNewsForm();
@@ -628,10 +635,17 @@ function saveNews() {
 }
 function exportData() {
   const data = JSON.stringify({ tools: S.customTools, updates: S.custom.map(({ src, ...u }) => u) }, null, 2);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-  a.download = 'ai-academy-updates.json'; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div style="text-align:left"><h2>Экспорт</h2><p class="muted small">Скопируй текст и вставь в updates.json или импортируй на другом устройстве.</p>
+    <textarea id="expTxt" readonly style="min-height:180px;font-family:ui-monospace,Menlo,monospace;font-size:.8rem"></textarea>
+    <div class="row" style="margin-top:12px"><button class="btn ghost grow" data-a="close">Закрыть</button><button class="btn grow" data-a="copy">📋 Копировать</button></div></div>`;
+  document.body.appendChild(m);
+  const ta = m.querySelector('#expTxt'); ta.value = data;
+  m.onclick = (ev) => {
+    const a = ev.target.dataset && ev.target.dataset.a;
+    if (ev.target === m || a === 'close') m.remove();
+    if (a === 'copy') { ta.select(); (navigator.clipboard ? navigator.clipboard.writeText(data) : Promise.reject()).then(() => toast('Скопировано'), () => { try { document.execCommand('copy'); toast('Скопировано'); } catch (e) { toast('Выдели текст и скопируй вручную'); } }); }
+  };
 }
 function importData(file) {
   if (!file) return;
@@ -662,8 +676,7 @@ function me() {
     <p class="muted small">Всё хранится только на этом устройстве. Приложение работает офлайн после первого открытия.</p>`;
 }
 function resetAll() {
-  if (!confirm('Стереть весь прогресс, свои новости и нейросети?')) return;
-  S = defaults(); save(); V.tab = 'home'; render();
+  ask('Стереть весь прогресс, свои новости и нейросети?', () => { S = defaults(); save(); V.tab = 'home'; render(); });
 }
 
 render();
