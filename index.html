@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111317">
+<title>Бокс: комбинации</title>
+<style>
+  :root {
+    --bg: #111317;
+    --panel: #1b1e24;
+    --panel-2: #242832;
+    --text: #f2f3f5;
+    --muted: #9aa1ad;
+    --accent: #e5383b;
+    --accent-2: #ffb703;
+    --ok: #2ec27e;
+    --lead: #3a86ff;
+    --rear: #e5383b;
+    --def: #ffb703;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px 0 6px; }
+  @media (max-width: 520px) { .tabs { width: 100%; } .tabs button { flex: 1; padding: 8px 4px; } }
+  h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
+  h1 span { color: var(--accent); }
+  .tabs { display: flex; gap: 6px; background: var(--panel); padding: 4px; border-radius: 12px; }
+  .tabs button { background: none; border: 0; color: var(--muted); padding: 8px 12px; border-radius: 9px; font: inherit; font-size: 14px; cursor: pointer; }
+  .tabs button.active { background: var(--panel-2); color: var(--text); }
+  section[hidden] { display: none !important; }
+
+  /* Timer strip */
+  .status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 10px 0; }
+  .phase { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .phase.fight { color: var(--ok); }
+  .phase.rest { color: var(--accent-2); }
+  .clock { font-variant-numeric: tabular-nums; font-size: 44px; font-weight: 700; text-align: center; }
+  .round { text-align: right; color: var(--muted); font-size: 14px; }
+  .progress { height: 4px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+  .progress > div { height: 100%; width: 0; background: var(--ok); transition: width .25s linear; }
+
+  /* Stage */
+  .stage { background: radial-gradient(ellipse at 50% 35%, #232833 0%, var(--panel) 70%); border-radius: var(--radius); margin-top: 12px; padding: 8px; position: relative; }
+  .stage svg { display: block; width: 100%; height: auto; max-height: 42vh; }
+  .callout { position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 28px; font-weight: 800; min-height: 36px; text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; }
+  .callout small { display: block; font-size: 14px; font-weight: 500; color: var(--muted); }
+  .legend { display: flex; gap: 14px; justify-content: center; font-size: 12px; color: var(--muted); padding: 4px 0 2px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+  /* Combo chips */
+  .combo { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0 4px; min-height: 64px; }
+  .chip { background: var(--panel); border: 2px solid transparent; border-radius: 12px; padding: 6px 10px; text-align: center; min-width: 64px; transition: transform .15s, border-color .15s, background .15s; }
+  .chip b { display: block; font-size: 22px; line-height: 1.1; }
+  .chip span { font-size: 11px; color: var(--muted); }
+  .chip.lead b { color: var(--lead); }
+  .chip.rear b { color: var(--rear); }
+  .chip.def b { color: var(--def); font-size: 16px; padding: 3px 0; }
+  .chip.on { transform: scale(1.12); border-color: currentColor; background: var(--panel-2); }
+  .chip.lead.on { border-color: var(--lead); }
+  .chip.rear.on { border-color: var(--rear); }
+  .chip.def.on { border-color: var(--def); }
+  .combo-name { text-align: center; color: var(--muted); font-size: 14px; min-height: 20px; }
+
+  .controls { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { flex: 1; border: 0; border-radius: 12px; padding: 14px; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; background: var(--panel-2); color: var(--text); }
+  .btn.primary { background: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  /* Settings */
+  .card { background: var(--panel); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); font-weight: 600; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.05); }
+  .row:first-of-type { border-top: 0; }
+  .row label { font-size: 15px; }
+  .row .hint { display: block; font-size: 12px; color: var(--muted); }
+  select, input[type=number] { background: var(--panel-2); color: var(--text); border: 0; border-radius: 9px; padding: 8px 10px; font: inherit; font-size: 15px; }
+  input[type=number] { width: 76px; text-align: center; }
+  input[type=range] { width: 150px; accent-color: var(--accent); }
+  .seg { display: flex; background: var(--panel-2); border-radius: 9px; padding: 3px; }
+  .seg button { border: 0; background: none; color: var(--muted); padding: 6px 10px; border-radius: 7px; font: inherit; font-size: 14px; cursor: pointer; }
+  .seg button.active { background: var(--accent); color: #fff; }
+  .switch { position: relative; width: 46px; height: 28px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; background: var(--panel-2); border-radius: 28px; transition: .2s; cursor: pointer; }
+  .switch span::after { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + span { background: var(--ok); }
+  .switch input:checked + span::after { transform: translateX(18px); }
+
+  /* Library */
+  .lib-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.05); cursor: pointer; }
+  .lib-item:first-child { border-top: 0; }
+  .lib-item .nums { font-weight: 800; font-size: 18px; min-width: 110px; font-variant-numeric: tabular-nums; }
+  .lib-item .desc { flex: 1; font-size: 14px; }
+  .lib-item .desc small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .lib-item .play { background: var(--panel-2); border: 0; color: var(--text); width: 38px; height: 38px; border-radius: 50%; font-size: 14px; cursor: pointer; flex: none; }
+  .key { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; }
+  .key b { font-size: 18px; text-align: center; min-width: 28px; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥊 Бокс<span>·</span>Комбо</h1>
+    <nav class="tabs">
+      <button data-tab="train" class="active">Тренировка</button>
+      <button data-tab="lib">Комбинации</button>
+      <button data-tab="set">Настройки</button>
+    </nav>
+  </header>
+
+  <!-- TRAINING -->
+  <section id="tab-train">
+    <div class="status">
+      <div class="phase" id="phase">Готов</div>
+      <div class="clock" id="clock">3:00</div>
+      <div class="round" id="round">Раунд 1 / 3</div>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+
+    <div class="stage">
+      <div class="callout" id="callout"></div>
+      <svg id="fighter" viewBox="0 0 400 300" aria-label="Боксёр">
+        <defs>
+          <radialGradient id="gLead" cx="40%" cy="35%"><stop offset="0" stop-color="#7fb0ff"/><stop offset="1" stop-color="#2358c9"/></radialGradient>
+          <radialGradient id="gRear" cx="40%" cy="35%"><stop offset="0" stop-color="#ff7b7d"/><stop offset="1" stop-color="#b0171a"/></radialGradient>
+          <radialGradient id="gSkin" cx="45%" cy="40%"><stop offset="0" stop-color="#e8b894"/><stop offset="1" stop-color="#b9805a"/></radialGradient>
+        </defs>
+        <!-- floor shadow -->
+        <ellipse cx="200" cy="288" rx="120" ry="9" fill="#000" opacity=".35"/>
+        <g id="body">
+          <!-- torso -->
+          <path d="M120 300 L135 170 Q200 140 265 170 L280 300 Z" fill="#2b303b"/>
+          <path d="M150 300 L158 200 Q200 188 242 200 L250 300 Z" fill="#343a47"/>
+          <!-- shorts belt hint -->
+          <rect x="128" y="270" width="144" height="10" rx="3" fill="#e5383b" opacity=".85"/>
+          <!-- target zones -->
+          <circle id="tHead" cx="200" cy="95" r="4" fill="none"/>
+          <circle id="tBody" cx="200" cy="225" r="4" fill="none"/>
+          <!-- neck & head -->
+          <rect x="186" y="128" width="28" height="30" rx="8" fill="url(#gSkin)"/>
+          <g id="head">
+            <ellipse cx="200" cy="100" rx="36" ry="42" fill="url(#gSkin)"/>
+            <path d="M164 92 Q166 56 200 56 Q234 56 236 92 Q224 72 200 72 Q176 72 164 92Z" fill="#3a2a20"/>
+            <ellipse cx="186" cy="102" rx="4" ry="5" fill="#222"/>
+            <ellipse cx="214" cy="102" rx="4" ry="5" fill="#222"/>
+            <path d="M190 124 Q200 128 210 124" stroke="#6b3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+        <!-- arms are drawn as lines from shoulders to gloves, updated per frame -->
+        <line id="armL" x1="140" y1="178" x2="150" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
+        <line id="armR" x1="260" y1="178" x2="250" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
+        <g id="gloveL"><circle r="30" fill="url(#gLead)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
+        <g id="gloveR"><circle r="30" fill="url(#gRear)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
+      </svg>
+      <div class="legend">
+        <span><i style="background:var(--lead)"></i>передняя рука</span>
+        <span><i style="background:var(--rear)"></i>задняя рука</span>
+        <span><i style="background:var(--def)"></i>защита</span>
+      </div>
+    </div>
+
+    <div class="combo" id="combo"></div>
+    <div class="combo-name" id="comboName">Нажми «Старт», чтобы начать тренировку</div>
+
+    <div class="controls">
+      <button class="btn primary" id="startBtn">▶ Старт</button>
+      <button class="btn" id="nextBtn" title="Показать одну комбинацию">Одна комбо</button>
+      <button class="btn" id="stopBtn" disabled>■ Стоп</button>
+    </div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="tab-lib" hidden>
+    <div class="card">
+      <h2>Нумерация ударов</h2>
+      <div class="key" id="key"></div>
+      <div class="note">Удары с пометкой «к» — в корпус (например, «3к» — левый боковой в корпус). Для левши стороны меняются: передняя рука — правая.</div>
+    </div>
+    <div class="card">
+      <h2>Классические комбинации — нажми, чтобы увидеть и услышать</h2>
+      <div id="lib"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-set" hidden>
+    <div class="card">
+      <h2>Раунды</h2>
+      <div class="row"><label>Количество раундов</label><input type="number" id="sRounds" min="1" max="20"></div>
+      <div class="row"><label>Длительность раунда, сек</label><input type="number" id="sRoundLen" min="10" max="600" step="10"></div>
+      <div class="row"><label>Отдых, сек</label><input type="number" id="sRest" min="5" max="300" step="5"></div>
+      <div class="row"><label>Подготовка, сек</label><input type="number" id="sPrep" min="0" max="60"></div>
+    </div>
+    <div class="card">
+      <h2>Комбинации</h2>
+      <div class="row"><label>Уровень<span class="hint">длина и сложность связок</span></label>
+        <div class="seg" id="sLevel">
+          <button data-v="1">Новичок</button><button data-v="2">Средний</button><button data-v="3">Профи</button>
+        </div>
+      </div>
+      <div class="row"><label>Стойка</label>
+        <div class="seg" id="sStance">
+          <button data-v="orthodox">Правша</button><button data-v="southpaw">Левша</button>
+        </div>
+      </div>
+      <div class="row"><label>Озвучка<span class="hint">как называть удары</span></label>
+        <div class="seg" id="sCall">
+          <button data-v="names">Названия</button><button data-v="numbers">Цифры</button><button data-v="off">Без звука</button>
+        </div>
+      </div>
+      <div class="row"><label>Темп ударов<span class="hint" id="sSpeedHint"></span></label><input type="range" id="sSpeed" min="1" max="5" step="1"></div>
+      <div class="row"><label>Пауза между комбо<span class="hint" id="sGapHint"></span></label><input type="range" id="sGap" min="1" max="8" step="0.5"></div>
+      <div class="row"><label>Удары в корпус</label><label class="switch"><input type="checkbox" id="sBody"><span></span></label></div>
+      <div class="row"><label>Защита в связках<span class="hint">нырки, уклоны, блоки</span></label><label class="switch"><input type="checkbox" id="sDef"><span></span></label></div>
+      <div class="row"><label>Гонг и сигнал 10 сек</label><label class="switch"><input type="checkbox" id="sBell"><span></span></label></div>
+    </div>
+    <div class="note">Настройки сохраняются на этом устройстве. Для озвучки используется синтез речи браузера — если голос не звучит, проверь, что звук на телефоне включён и в системе установлен русский голос.</div>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Punch catalogue ----------
+  // hand: 'lead' | 'rear'; kind: straight | hook | upper
+  const PUNCHES = {
+    '1': { hand: 'lead', kind: 'straight', name: 'Джеб' },
+    '2': { hand: 'rear', kind: 'straight', name: 'Кросс' },
+    '3': { hand: 'lead', kind: 'hook',     name: 'боковой', side: true },
+    '4': { hand: 'rear', kind: 'hook',     name: 'боковой', side: true },
+    '5': { hand: 'lead', kind: 'upper',    name: 'апперкот', side: true },
+    '6': { hand: 'rear', kind: 'upper',    name: 'апперкот', side: true },
+  };
+  const DEFENSES = {
+    slipL: { name: 'Уклон влево',  short: 'Уклон ←', move: 'slipL' },
+    slipR: { name: 'Уклон вправо', short: 'Уклон →', move: 'slipR' },
+    duck:  { name: 'Нырок',        short: 'Нырок',   move: 'duck'  },
+    roll:  { name: 'Нырок под руку', short: 'Нырок ↻', move: 'roll' },
+    block: { name: 'Блок',         short: 'Блок',    move: 'block' },
+    back:  { name: 'Шаг назад',    short: 'Назад',   move: 'back'  },
+  };
+
+  const LIBRARY = [
+    { seq: ['1','1'],               title: 'Двойной джеб', note: 'Разведка и контроль дистанции' },
+    { seq: ['1','2'],               title: 'Двойка', note: 'Базовая связка номер один' },
+    { seq: ['1','2','3'],           title: 'Тройка', note: 'Джеб, кросс, левый боковой' },
+    { seq: ['1','2','3','2'],       title: 'Четвёрка', note: 'Тройка с добивающим кроссом' },
+    { seq: ['1','1','2'],           title: 'Двойной джеб — кросс', note: 'Сближение и акцент' },
+    { seq: ['1','6','3','2'],       title: 'Джеб — апперкот — боковой — кросс', note: 'Классика для ближнего боя' },
+    { seq: ['3','2','3'],           title: 'Боковой — кросс — боковой', note: 'Смена уровней ритма' },
+    { seq: ['1','2','3b','3'],      title: 'Двойка, боковой в корпус и в голову', note: 'Смена этажей одной рукой' },
+    { seq: ['2','3','2'],           title: 'Кросс — боковой — кросс', note: 'Силовая серия' },
+    { seq: ['5','4','3'],           title: 'Апперкот — боковой — боковой', note: 'Ближняя дистанция' },
+    { seq: ['1','2','slipR','2','3','2'], title: 'Двойка, уклон, контратака', note: 'Уклон от джеба и ответ' },
+    { seq: ['1','2','roll','2','3'], title: 'Двойка — нырок — кросс — боковой', note: 'Нырок под боковой и ответ' },
+    { seq: ['1','2b','3'],          title: 'Джеб, кросс в корпус, боковой', note: 'Открыть голову через корпус' },
+    { seq: ['6','3','2'],           title: 'Апперкот — боковой — кросс', note: 'Мощная серия с задней руки' },
+    { seq: ['1','2','3','6','3','2'], title: 'Шестёрка', note: 'Длинная серия для выносливости' },
+  ];
+
+  // ---------- Settings ----------
+  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true };
+  let S = { ...DEFAULTS };
+  try { Object.assign(S, JSON.parse(localStorage.getItem('boxing-combo-settings') || '{}')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('boxing-combo-settings', JSON.stringify(S)); } catch (e) {} };
+
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- Naming ----------
+  function sideWord(hand) {
+    const leftIsLead = S.stance === 'orthodox';
+    const isLeft = (hand === 'lead') === leftIsLead;
+    return isLeft ? 'Левый' : 'Правый';
+  }
+  function parseToken(tok) {
+    if (DEFENSES[tok]) return { type: 'def', id: tok, ...DEFENSES[tok] };
+    const num = tok[0];
+    const body = tok.endsWith('b');
+    const p = PUNCHES[num];
+    let name = p.side ? `${sideWord(p.hand)} ${p.name}` : p.name;
+    if (body) name += ' в корпус';
+    return { type: 'punch', id: tok, num, body, ...p, fullName: name, label: num + (body ? 'к' : '') };
+  }
+  function comboSpeech(items) {
+    if (S.call === 'numbers') {
+      return items.map(it => it.type === 'def' ? it.name : (it.num + (it.body ? ' в корпус' : ''))).join(', ');
+    }
+    return items.map(it => it.type === 'def' ? it.name : it.fullName).join(', ');
+  }
+
+  // ---------- Speech ----------
+  let ruVoice = null;
+  function pickVoice() {
+    if (!('speechSynthesis' in window)) return;
+    const voices = speechSynthesis.getVoices();
+    ruVoice = voices.find(v => /^ru/i.test(v.lang) && /google|milena|yuri|premium|enhanced/i.test(v.name))
+           || voices.find(v => /^ru/i.test(v.lang)) || null;
+  }
+  if ('speechSynthesis' in window) {
+    pickVoice();
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+  function say(text, rate) {
+    if (S.call === 'off' || !('speechSynthesis' in window) || !text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ru-RU';
+    if (ruVoice) u.voice = ruVoice;
+    u.rate = rate || (0.9 + S.speed * 0.12);
+    speechSynthesis.speak(u);
+  }
+
+  // ---------- Sounds ----------
+  let actx = null;
+  function audio() {
+    if (!actx) { const C = window.AudioContext || window.webkitAudioContext; if (C) actx = new C(); }
+    if (actx && actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function bell(times = 1) {
+    if (!S.bell) return;
+    const ctx = audio(); if (!ctx) return;
+    for (let i = 0; i < times; i++) {
+      const t0 = ctx.currentTime + i * 0.45;
+      [830, 1245, 1660].forEach((f, k) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.35 / (k + 1), t0 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
+        o.connect(g).connect(ctx.destination); o.start(t0); o.stop(t0 + 1.7);
+      });
+    }
+  }
+  function clack() {
+    if (!S.bell) return;
+    const ctx = audio(); if (!ctx) return;
+    for (let i = 0; i < 2; i++) {
+      const t0 = ctx.currentTime + i * 0.18;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / d.length, 3);
+      const s = ctx.createBufferSource(), g = ctx.createGain();
+      s.buffer = buf; g.gain.value = 0.8;
+      s.connect(g).connect(ctx.destination); s.start(t0);
+    }
+  }
+
+  // ---------- Fighter animation ----------
+  const svg = $('fighter');
+  const gloveEls = { L: $('gloveL'), R: $('gloveR') };
+  const armEls = { L: $('armL'), R: $('armR') };
+  const shoulder = { L: [140, 178], R: [260, 178] };
+  const guard = { L: [158, 132], R: [242, 132] };
+  const pose = { L: { x: 158, y: 132, s: 1 }, R: { x: 242, y: 132, s: 1 }, head: { x: 0, y: 0, r: 0 } };
+  const headEl = $('head');
+
+  function screenSide(hand) {
+    // Mirror view: user's left hand appears on screen-left.
+    const leftIsLead = S.stance === 'orthodox';
+    return (hand === 'lead') === leftIsLead ? 'L' : 'R';
+  }
+  function paintGloves() {
+    const leadSide = screenSide('lead');
+    gloveEls[leadSide].querySelector('circle').setAttribute('fill', 'url(#gLead)');
+    gloveEls[leadSide === 'L' ? 'R' : 'L'].querySelector('circle').setAttribute('fill', 'url(#gRear)');
+  }
+  function render() {
+    for (const k of ['L', 'R']) {
+      const p = pose[k];
+      gloveEls[k].setAttribute('transform', `translate(${p.x + pose.head.x * 0.6} ${p.y + pose.head.y * 0.5}) scale(${p.s})`);
+      armEls[k].setAttribute('x1', shoulder[k][0] + pose.head.x * 0.4);
+      armEls[k].setAttribute('y1', shoulder[k][1] + pose.head.y * 0.3);
+      armEls[k].setAttribute('x2', p.x + pose.head.x * 0.6);
+      armEls[k].setAttribute('y2', p.y + pose.head.y * 0.5);
+      armEls[k].setAttribute('stroke-width', 18 + 6 * p.s);
+    }
+    headEl.setAttribute('transform', `translate(${pose.head.x} ${pose.head.y}) rotate(${pose.head.r} 200 100)`);
+    // bring the active (bigger) glove to front
+    if (pose.L.s > pose.R.s) svg.appendChild(gloveEls.L); else svg.appendChild(gloveEls.R);
+  }
+
+  let animToken = 0;
+  function tween(dur, fn) {
+    const token = animToken;
+    return new Promise(res => {
+      const t0 = performance.now();
+      const step = (now) => {
+        if (token !== animToken) return res(false);
+        const t = Math.min(1, (now - t0) / dur);
+        fn(t); render();
+        if (t < 1) requestAnimationFrame(step); else res(true);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // Build a path (list of keyframes) for a given punch, in screen coordinates.
+  function punchPath(it) {
+    const k = screenSide(it.hand);
+    const dir = k === 'L' ? 1 : -1; // direction toward centre
+    const g = guard[k];
+    const ty = it.body ? 215 : 100;
+    const tx = 200 + (it.hand === 'lead' ? -dir * 10 : dir * 10) * 0;
+    let pts;
+    if (it.kind === 'straight') {
+      pts = [[g[0], g[1], 1], [lerp(g[0], tx, .55), lerp(g[1], ty, .6), 1.35], [tx - dir * 8, ty, 1.7]];
+    } else if (it.kind === 'hook') {
+      const out = g[0] - dir * 70;
+      pts = [[g[0], g[1], 1], [out, (g[1] + ty) / 2 - 10, 1.2], [out + dir * 45, ty - 5, 1.45], [tx + dir * 25, ty, 1.6]];
+    } else {
+      pts = [[g[0], g[1], 1], [g[0] + dir * 5, 245, 1.05], [lerp(g[0], tx, .6), 190, 1.3], [tx - dir * 6, it.body ? 205 : 125, 1.6]];
+    }
+    return { k, pts };
+  }
+  function interpPts(pts, t) {
+    const n = pts.length - 1;
+    const f = Math.min(n - 1e-9, t * n);
+    const i = Math.floor(f), u = f - i;
+    const a = pts[i], b = pts[i + 1];
+    return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+  }
+  async function animPunch(it, dur) {
+    const { k, pts } = punchPath(it);
+    const out = dur * 0.45, back = dur * 0.4;
+    let ok = await tween(out, t => { const [x, y, s] = interpPts(pts, ease(t)); Object.assign(pose[k], { x, y, s }); });
+    if (!ok) return;
+    const end = pts[pts.length - 1];
+    const g = guard[k];
+    await tween(back, t => { const e = ease(t); Object.assign(pose[k], { x: lerp(end[0], g[0], e), y: lerp(end[1], g[1], e), s: lerp(end[2], 1, e) }); });
+  }
+  async function animDefense(it, dur) {
+    const targets = {
+      slipL: { x: -38, y: 10, r: -12 },
+      slipR: { x: 38, y: 10, r: 12 },
+      duck:  { x: 0, y: 42, r: 0 },
+      roll:  null,
+      block: { x: 0, y: 6, r: 0, block: true },
+      back:  { x: 0, y: -6, r: 0, back: true },
+    };
+    const half = dur * 0.45;
+    if (it.move === 'roll') {
+      // U-shaped path under an imaginary hook
+      await tween(dur * 0.9, t => {
+        const a = Math.PI * ease(t);
+        pose.head.x = -40 * Math.cos(a); pose.head.y = 42 * Math.sin(a); pose.head.r = -12 * Math.cos(a);
+      });
+      await tween(dur * 0.2, t => { pose.head.x = lerp(40, 0, t); pose.head.y = 0; pose.head.r = lerp(12, 0, t); });
+      return;
+    }
+    const tg = targets[it.move];
+    const start = { ...pose.head };
+    const gL = { ...pose.L }, gR = { ...pose.R };
+    const apply = (e) => {
+      pose.head.x = lerp(start.x, tg.x, e); pose.head.y = lerp(start.y, tg.y, e); pose.head.r = lerp(start.r, tg.r, e);
+      if (tg.block) {
+        pose.L.x = lerp(gL.x, 178, e); pose.L.y = lerp(gL.y, 100, e); pose.L.s = lerp(1, 1.15, e);
+        pose.R.x = lerp(gR.x, 222, e); pose.R.y = lerp(gR.y, 100, e); pose.R.s = lerp(1, 1.15, e);
+      }
+      if (tg.back) {
+        const s = lerp(1, 0.85, e);
+        svg.querySelector('#body').setAttribute('transform', `translate(${200 * (1 - s)} ${40 * (1 - s)}) scale(${s})`);
+      }
+    };
+    if (!await tween(half, t => apply(ease(t)))) return;
+    await tween(dur - half, t => apply(1 - ease(t)));
+    svg.querySelector('#body').removeAttribute('transform');
+  }
+  function resetPose() {
+    animToken++;
+    pose.L = { x: guard.L[0], y: guard.L[1], s: 1 };
+    pose.R = { x: guard.R[0], y: guard.R[1], s: 1 };
+    pose.head = { x: 0, y: 0, r: 0 };
+    svg.querySelector('#body').removeAttribute('transform');
+    render();
+  }
+
+  // ---------- Combo generation ----------
+  function rand(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function generateCombo() {
+    // Mix classic combos with random, but sensible, sequences.
+    if (Math.random() < 0.4) {
+      const pool = LIBRARY.filter(c => c.seq.length <= [0, 3, 4, 6][S.level] && (S.def || !c.seq.some(t => DEFENSES[t])) && (S.body || !c.seq.some(t => t.endsWith('b'))));
+      if (pool.length) { const c = rand(pool); return { seq: c.seq.slice(), title: c.title }; }
+    }
+    const [minL, maxL] = [[0, 0], [2, 3], [3, 4], [3, 6]][S.level];
+    const len = minL + Math.floor(Math.random() * (maxL - minL + 1));
+    const allowed = S.level === 1 ? ['1', '2', '3', '4'] : ['1', '2', '3', '4', '5', '6'];
+    const seq = [];
+    let prevHand = null;
+    for (let i = 0; i < len; i++) {
+      let n;
+      if (i === 0) n = Math.random() < 0.65 ? '1' : rand(allowed);
+      else {
+        // prefer alternating hands, allow double jab
+        const alt = allowed.filter(x => PUNCHES[x].hand !== prevHand);
+        n = (prevHand === 'lead' && seq[i - 1] === '1' && Math.random() < 0.15) ? '1'
+          : (Math.random() < 0.85 ? rand(alt) : rand(allowed));
+      }
+      let tok = n;
+      if (S.body && S.level >= 2 && n !== '1' && Math.random() < 0.2) tok += 'b';
+      seq.push(tok);
+      prevHand = PUNCHES[n].hand;
+    }
+    if (S.def && S.level >= 2 && Math.random() < 0.45) {
+      const d = rand(Object.keys(DEFENSES));
+      const at = Math.random() < 0.5 ? seq.length : 1 + Math.floor(Math.random() * (seq.length - 1));
+      seq.splice(at, 0, d);
+      if (at === seq.length - 1 && S.level === 3) seq.push(Math.random() < 0.5 ? '2' : '3');
+    }
+    return { seq, title: '' };
+  }
+
+  // ---------- Showing a combo ----------
+  const comboEl = $('combo'), comboNameEl = $('comboName'), calloutEl = $('callout');
+  function renderChips(items) {
+    comboEl.innerHTML = '';
+    items.forEach(it => {
+      const d = document.createElement('div');
+      if (it.type === 'def') {
+        d.className = 'chip def';
+        d.innerHTML = `<b>${it.short}</b><span>защита</span>`;
+      } else {
+        d.className = 'chip ' + it.hand;
+        d.innerHTML = `<b>${it.label}</b><span>${it.fullName}</span>`;
+      }
+      comboEl.appendChild(d);
+    });
+  }
+  function punchDur() { return [0, 750, 600, 480, 380, 300][S.speed]; }
+
+  let showing = false;
+  async function showCombo(combo) {
+    resetPose();
+    const myToken = animToken;
+    showing = true;
+    const items = combo.seq.map(parseToken);
+    renderChips(items);
+    const numbers = items.map(it => it.type === 'def' ? it.short : it.label).join(' – ');
+    comboNameEl.textContent = combo.title ? `${combo.title} · ${numbers}` : numbers;
+    say(comboSpeech(items));
+    const dur = punchDur();
+    const chips = comboEl.children;
+    for (let i = 0; i < items.length; i++) {
+      if (myToken !== animToken) break;
+      [...chips].forEach(c => c.classList.remove('on'));
+      chips[i].classList.add('on');
+      const it = items[i];
+      calloutEl.innerHTML = it.type === 'def' ? it.name : `${it.label} <small>${it.fullName}</small>`;
+      if (it.type === 'def') await animDefense(it, dur * 1.4);
+      else await animPunch(it, dur);
+    }
+    if (myToken === animToken) {
+      [...chips].forEach(c => c.classList.remove('on'));
+      calloutEl.textContent = '';
+    }
+    showing = false;
+    return items.length;
+  }
+
+  // ---------- Workout timer ----------
+  const phaseEl = $('phase'), clockEl = $('clock'), roundEl = $('round'), barEl = $('bar');
+  const startBtn = $('startBtn'), stopBtn = $('stopBtn'), nextBtn = $('nextBtn');
+  let W = null; // workout state
+  let tick = null, comboTimer = null, wakeLock = null;
+
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.max(0, Math.ceil(s) % 60)).padStart(2, '0')}`;
+  function idleView() {
+    phaseEl.textContent = 'Готов'; phaseEl.className = 'phase';
+    clockEl.textContent = fmt(S.roundLen);
+    roundEl.textContent = `Раунд 1 / ${S.rounds}`;
+    barEl.style.width = '0';
+  }
+  function setPhase(name, secs) {
+    W.phase = name; W.left = secs; W.total = secs;
+    const labels = { prep: 'Приготовься', fight: 'Бой', rest: 'Отдых', done: 'Готово' };
+    phaseEl.textContent = labels[name];
+    phaseEl.className = 'phase ' + (name === 'fight' ? 'fight' : name === 'rest' ? 'rest' : '');
+    barEl.style.background = name === 'rest' ? 'var(--accent-2)' : 'var(--ok)';
+    roundEl.textContent = `Раунд ${W.round} / ${S.rounds}`;
+    updateClock();
+  }
+  function updateClock() {
+    clockEl.textContent = fmt(W.left);
+    barEl.style.width = (100 * (1 - W.left / W.total || 0)) + '%';
+  }
+  async function requestWake() {
+    try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  }
+
+  function start() {
+    audio();
+    if (W && W.paused) { W.paused = false; startBtn.textContent = '❚❚ Пауза'; if (W.phase === 'fight') scheduleCombo(800); return; }
+    if (W && !W.paused) { // pause
+      W.paused = true; startBtn.textContent = '▶ Дальше';
+      clearTimeout(comboTimer); resetPose(); if ('speechSynthesis' in window) speechSynthesis.cancel();
+      return;
+    }
+    W = { round: 1, paused: false };
+    startBtn.textContent = '❚❚ Пауза'; stopBtn.disabled = false; nextBtn.disabled = true;
+    requestWake();
+    if (S.prep > 0) { setPhase('prep', S.prep); say('Приготовься', 1); }
+    else beginRound();
+    let last = performance.now();
+    tick = setInterval(() => {
+      const now = performance.now(), dt = (now - last) / 1000; last = now;
+      if (!W || W.paused) return;
+      const before = W.left;
+      W.left -= dt;
+      if (W.phase === 'fight' && before > 10 && W.left <= 10) clack();
+      if (W.phase === 'rest' && before > 5 && W.left <= 5) say('Приготовься', 1);
+      if (W.left <= 0) advance(); else updateClock();
+    }, 200);
+  }
+  function beginRound() {
+    setPhase('fight', S.roundLen);
+    bell(1);
+    scheduleCombo(1500);
+  }
+  function advance() {
+    if (W.phase === 'prep') return beginRound();
+    if (W.phase === 'fight') {
+      clearTimeout(comboTimer); resetPose();
+      bell(3);
+      if (W.round >= S.rounds) return finish();
+      setPhase('rest', S.rest);
+      comboNameEl.textContent = 'Отдых. Дыши глубже.';
+      comboEl.innerHTML = '';
+      setTimeout(() => say(`Отдых. Следующий раунд ${W.round + 1}`, 1), 1800);
+      return;
+    }
+    if (W.phase === 'rest') { W.round++; return beginRound(); }
+  }
+  function scheduleCombo(delay) {
+    clearTimeout(comboTimer);
+    comboTimer = setTimeout(async () => {
+      if (!W || W.paused || W.phase !== 'fight') return;
+      await showCombo(generateCombo());
+      if (!W || W.paused || W.phase !== 'fight') return;
+      const jitter = (Math.random() - 0.5) * 0.8;
+      scheduleCombo(Math.max(600, (S.gap + jitter) * 1000));
+    }, delay);
+  }
+  function finish() {
+    setPhase('done', 1); W.left = 0; updateClock(); barEl.style.width = '100%';
+    comboNameEl.textContent = 'Тренировка завершена! 💪';
+    comboEl.innerHTML = '';
+    setTimeout(() => say('Тренировка завершена. Отличная работа!', 1), 2000);
+    cleanup(false);
+  }
+  function cleanup(reset = true) {
+    clearInterval(tick); clearTimeout(comboTimer);
+    tick = null; W = null;
+    resetPose();
+    startBtn.textContent = '▶ Старт'; stopBtn.disabled = true; nextBtn.disabled = false;
+    try { wakeLock && wakeLock.release(); } catch (e) {}
+    wakeLock = null;
+    if (reset) {
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      idleView(); comboEl.innerHTML = ''; calloutEl.textContent = '';
+      comboNameEl.textContent = 'Нажми «Старт», чтобы начать тренировку';
+    }
+  }
+  startBtn.onclick = start;
+  stopBtn.onclick = () => cleanup(true);
+  nextBtn.onclick = () => { audio(); showCombo(generateCombo()); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && W && !wakeLock) requestWake(); });
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('section').forEach(s => s.hidden = s.id !== 'tab-' + b.dataset.tab);
+    if (b.dataset.tab === 'lib') renderLibrary();
+  });
+
+  // ---------- Library ----------
+  function renderLibrary() {
+    const key = $('key'); key.innerHTML = '';
+    Object.keys(PUNCHES).forEach(n => {
+      const it = parseToken(n);
+      key.insertAdjacentHTML('beforeend', `<b style="color:var(--${it.hand})">${n}</b><span>${it.fullName}${it.kind === 'straight' ? ' (прямой ' + (it.hand === 'lead' ? 'передней' : 'задней') + ' рукой)' : ''}</span>`);
+    });
+    const lib = $('lib'); lib.innerHTML = '';
+    LIBRARY.forEach(c => {
+      const items = c.seq.map(parseToken);
+      const nums = items.map(it => it.type === 'def' ? it.short : it.label).join('-');
+      const row = document.createElement('div');
+      row.className = 'lib-item';
+      row.innerHTML = `<div class="nums">${nums}</div><div class="desc">${c.title}<small>${items.map(i => i.type === 'def' ? i.name : i.fullName).join(' → ')}</small></div><button class="play" aria-label="Показать">▶</button>`;
+      row.onclick = () => {
+        if (W) return;
+        audio();
+        document.querySelector('.tabs button[data-tab="train"]').click();
+        showCombo({ seq: c.seq, title: c.title });
+      };
+      lib.appendChild(row);
+    });
+  }
+
+  // ---------- Settings UI ----------
+  function bindNum(id, key, min, max) {
+    const el = $(id); el.value = S[key];
+    el.onchange = () => { let v = Math.round(+el.value || DEFAULTS[key]); v = Math.min(max, Math.max(min, v)); el.value = v; S[key] = v; save(); if (!W) idleView(); };
+  }
+  function bindSeg(id, key, cast = x => x) {
+    const el = $(id);
+    const sync = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('active', String(S[key]) === b.dataset.v));
+    el.querySelectorAll('button').forEach(b => b.onclick = () => { S[key] = cast(b.dataset.v); save(); sync(); if (key === 'stance') { paintGloves(); resetPose(); } });
+    sync();
+  }
+  function bindCheck(id, key) { const el = $(id); el.checked = !!S[key]; el.onchange = () => { S[key] = el.checked; save(); }; }
+  function bindRange(id, key, hintId, fmtHint) {
+    const el = $(id), h = $(hintId); el.value = S[key];
+    const upd = () => h.textContent = fmtHint(+el.value);
+    el.oninput = () => { S[key] = +el.value; save(); upd(); };
+    upd();
+  }
+  bindNum('sRounds', 'rounds', 1, 20);
+  bindNum('sRoundLen', 'roundLen', 10, 600);
+  bindNum('sRest', 'rest', 5, 300);
+  bindNum('sPrep', 'prep', 0, 60);
+  bindSeg('sLevel', 'level', Number);
+  bindSeg('sStance', 'stance');
+  bindSeg('sCall', 'call');
+  bindCheck('sBody', 'body'); bindCheck('sDef', 'def'); bindCheck('sBell', 'bell');
+  bindRange('sSpeed', 'speed', 'sSpeedHint', v => ['', 'очень медленно', 'медленно', 'средне', 'быстро', 'очень быстро'][v]);
+  bindRange('sGap', 'gap', 'sGapHint', v => `${v} сек`);
+
+  paintGloves();
+  resetPose();
+  idleView();
+})();
+</script>
+</body>
+</html>
