@@ -31,8 +31,9 @@ jobs:
       - name: Build chat app
         working-directory: chat
         env:
-          # Address of the deployed chat server (Settings → Secrets and variables → Actions → Variables).
-          VITE_SERVER_URL: ${{ vars.CHAT_SERVER_URL }}
+          # Address of the chat server. Override with the CHAT_SERVER_URL repository variable
+          # (Settings → Secrets and variables → Actions → Variables).
+          VITE_SERVER_URL: ${{ vars.CHAT_SERVER_URL || 'https://svyaz-server.onrender.com' }}
         run: |
           npm ci
           npm run build
