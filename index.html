@@ -17,6 +17,7 @@
     --bg: #111317;
     --panel: #1b1e24;
     --panel-2: #242832;
+    --line: rgba(255,255,255,.06);
     --text: #f2f3f5;
     --muted: #9aa1ad;
     --accent: #e5383b;
@@ -25,7 +26,10 @@
     --lead: #3a86ff;
     --rear: #e5383b;
     --def: #ffb703;
+    --foot: #2ec27e;
+    --feint: #b388ff;
     --radius: 14px;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text); }
@@ -36,16 +40,24 @@
   }
   .wrap { max-width: 720px; margin: 0 auto; }
   header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px 0 6px; }
-  @media (max-width: 520px) { .tabs { width: 100%; } .tabs button { flex: 1; padding: 8px 4px; } }
   h1 { font-size: 20px; margin: 0; letter-spacing: .3px; }
   h1 span { color: var(--accent); }
-  .tabs { display: flex; gap: 6px; background: var(--panel); padding: 4px; border-radius: 12px; }
+  .tabs { display: flex; gap: 4px; background: var(--panel); padding: 4px; border-radius: 12px; }
   .tabs button { background: none; border: 0; color: var(--muted); padding: 8px 12px; border-radius: 9px; font: inherit; font-size: 14px; cursor: pointer; }
   .tabs button.active { background: var(--panel-2); color: var(--text); }
+  @media (max-width: 560px) { .tabs { width: 100%; } .tabs button { flex: 1; padding: 8px 2px; font-size: 13px; } }
   [hidden] { display: none !important; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+  /* Mode picker */
+  .modes { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
+  .modes::-webkit-scrollbar { display: none; }
+  .modes button { flex: none; border: 1px solid var(--panel-2); background: var(--panel); color: var(--muted); border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .modes button.active { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 700; }
+  .mode-hint { font-size: 12px; color: var(--muted); min-height: 16px; margin-top: 6px; }
 
   /* Timer strip */
-  .status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 10px 0; }
+  .status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 8px 0; }
   .phase { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
   .phase.fight { color: var(--ok); }
   .phase.rest { color: var(--accent-2); }
@@ -55,12 +67,18 @@
   .progress > div { height: 100%; width: 0; background: var(--ok); transition: width .25s linear; }
 
   /* Stage */
-  .stage { background: radial-gradient(ellipse at 50% 35%, #232833 0%, var(--panel) 70%); border-radius: var(--radius); margin-top: 12px; padding: 8px; position: relative; }
+  .stage { background: radial-gradient(ellipse at 50% 35%, #232833 0%, var(--panel) 70%); border-radius: var(--radius); margin-top: 12px; padding: 8px; position: relative; overflow: hidden; }
   .stage svg { display: block; width: 100%; height: auto; max-height: 42vh; }
-  .callout { position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 28px; font-weight: 800; min-height: 36px; text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; }
+  .callout { position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 28px; font-weight: 800; min-height: 36px; text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; z-index: 2; }
   .callout small { display: block; font-size: 14px; font-weight: 500; color: var(--muted); }
-  .legend { display: flex; gap: 14px; justify-content: center; font-size: 12px; color: var(--muted); padding: 4px 0 2px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 12px; color: var(--muted); padding: 4px 0 2px; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .flash { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 18px; z-index: 3; border-radius: var(--radius); }
+  .flash span { background: rgba(0,0,0,.45); color: #fff; font-weight: 800; font-size: 20px; padding: 6px 14px; border-radius: 999px; }
+  .task { position: absolute; left: 12px; right: 12px; top: 50%; transform: translateY(-50%); background: rgba(17,19,23,.92); border: 1px solid var(--feint); border-radius: var(--radius); padding: 16px; text-align: center; z-index: 3; }
+  .task .q { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .task .a { font-size: 22px; font-weight: 700; color: var(--ok); margin-top: 8px; min-height: 28px; font-variant-numeric: tabular-nums; }
+  .task .t { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--feint); margin-bottom: 6px; }
 
   /* Combo chips */
   .combo { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0 4px; min-height: 64px; }
@@ -69,26 +87,34 @@
   .chip span { font-size: 11px; color: var(--muted); }
   .chip.lead b { color: var(--lead); }
   .chip.rear b { color: var(--rear); }
-  .chip.def b { color: var(--def); font-size: 16px; padding: 3px 0; }
-  .chip.on { transform: scale(1.12); border-color: currentColor; background: var(--panel-2); }
+  .chip.def b, .chip.foot b, .chip.feint b { font-size: 16px; padding: 3px 0; }
+  .chip.def b { color: var(--def); }
+  .chip.foot b { color: var(--foot); }
+  .chip.feint b { color: var(--feint); }
+  .chip.on { transform: scale(1.12); background: var(--panel-2); }
   .chip.lead.on { border-color: var(--lead); }
   .chip.rear.on { border-color: var(--rear); }
   .chip.def.on { border-color: var(--def); }
+  .chip.foot.on { border-color: var(--foot); }
+  .chip.feint.on { border-color: var(--feint); }
   .combo-name { text-align: center; color: var(--muted); font-size: 14px; min-height: 20px; }
 
   .controls { display: flex; gap: 10px; margin-top: 16px; }
   .btn { flex: 1; border: 0; border-radius: 12px; padding: 14px; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; background: var(--panel-2); color: var(--text); }
-  .btn.primary { background: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.small { flex: none; padding: 9px 14px; font-size: 14px; border-radius: 10px; }
   .btn:disabled { opacity: .4; cursor: default; }
 
-  /* Settings */
+  /* Cards & settings */
   .card { background: var(--panel); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
   .card h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); font-weight: 600; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.05); }
+  .card h3 { font-size: 17px; margin: 0 0 4px; }
+  .card p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--muted); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
   .row:first-of-type { border-top: 0; }
   .row label { font-size: 15px; }
   .row .hint { display: block; font-size: 12px; color: var(--muted); }
-  select, input[type=number] { background: var(--panel-2); color: var(--text); border: 0; border-radius: 9px; padding: 8px 10px; font: inherit; font-size: 15px; }
+  input[type=number], input[type=text] { background: var(--panel-2); color: var(--text); border: 0; border-radius: 9px; padding: 8px 10px; font: inherit; font-size: 15px; }
   input[type=number] { width: 76px; text-align: center; }
   input[type=range] { width: 150px; accent-color: var(--accent); }
   .seg { display: flex; background: var(--panel-2); border-radius: 9px; padding: 3px; }
@@ -101,20 +127,55 @@
   .switch input:checked + span { background: var(--ok); }
   .switch input:checked + span::after { transform: translateX(18px); }
 
+  /* Builder */
+  .pad { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .pad button, .pad-row button { border: 0; border-radius: 10px; background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer; }
+  .pad button { padding: 10px 0; font-size: 18px; font-weight: 800; }
+  .pad button.lead { color: var(--lead); }
+  .pad button.rear { color: var(--rear); }
+  .pad button.toggle.active { background: var(--accent-2); color: #111; }
+  .pad-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pad-row button { padding: 7px 10px; font-size: 13px; }
+  .pad-row button.def { color: var(--def); }
+  .pad-row button.foot { color: var(--foot); }
+  .pad-row button.feint { color: var(--feint); }
+  .draft { display: flex; flex-wrap: wrap; gap: 6px; min-height: 44px; align-items: center; background: var(--bg); border-radius: 10px; padding: 6px; margin: 10px 0; }
+  .draft .chip { min-width: 48px; padding: 4px 8px; }
+  .draft .chip b { font-size: 17px; }
+  .draft .empty { color: var(--muted); font-size: 13px; padding: 0 6px; }
+  .builder-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .builder-actions input { flex: 1 1 160px; min-width: 0; }
+
   /* Library */
-  .lib-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.05); cursor: pointer; }
-  .lib-item:first-child { border-top: 0; }
-  .lib-item .nums { font-weight: 800; font-size: 18px; min-width: 110px; font-variant-numeric: tabular-nums; }
-  .lib-item .desc { flex: 1; font-size: 14px; }
+  .lib-group { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 14px 0 2px; }
+  .lib-group:first-child { margin-top: 0; }
+  .lib-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .lib-item .check { width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--muted); flex: none; display: grid; place-items: center; font-size: 15px; font-weight: 900; color: transparent; }
+  .lib-item.sel .check { background: var(--ok); border-color: var(--ok); color: #0b1a12; }
+  .lib-item .nums { display: block; font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; margin-bottom: 2px; overflow-wrap: anywhere; }
+  .lib-item .desc { flex: 1; min-width: 0; font-size: 14px; }
   .lib-item .desc small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
-  .lib-item .play { background: var(--panel-2); border: 0; color: var(--text); width: 38px; height: 38px; border-radius: 50%; font-size: 14px; cursor: pointer; flex: none; }
+  .lib-item .icon-btn { background: var(--panel-2); border: 0; color: var(--text); width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; flex: none; }
+  .sel-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .sel-bar strong { font-size: 15px; }
   .key { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; }
   .key b { font-size: 18px; text-align: center; min-width: 28px; }
+
+  /* Lomachenko */
+  .drill { display: grid; gap: 10px; }
+  .drill-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+  .drill-head > div { min-width: 0; }
+  .tag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); margin-bottom: 6px; }
+  .colors { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; }
+  .colors div { border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 700; color: #fff; }
+  ul.tips { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
   .install { display: flex; gap: 12px; align-items: flex-start; background: var(--panel); border: 1px solid var(--panel-2); border-radius: var(--radius); padding: 12px 14px; margin-top: 8px; font-size: 14px; line-height: 1.45; }
   .install p { margin: 0; flex: 1; }
   .install b { color: var(--accent-2); }
   .install button { background: none; border: 0; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 2px; }
   .note { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.4; }
+  @media (prefers-reduced-motion: reduce) { .chip { transition: none; } }
 </style>
 </head>
 <body>
@@ -122,8 +183,9 @@
   <header>
     <h1>🥊 Бокс<span>·</span>Комбо</h1>
     <nav class="tabs">
-      <button data-tab="train" class="active">Тренировка</button>
-      <button data-tab="lib">Комбинации</button>
+      <button data-tab="train" class="active">Бой</button>
+      <button data-tab="lib">Комбо</button>
+      <button data-tab="loma">Ломаченко</button>
       <button data-tab="set">Настройки</button>
     </nav>
   </header>
@@ -135,6 +197,9 @@
 
   <!-- TRAINING -->
   <section id="tab-train">
+    <div class="modes" id="modes" role="tablist" aria-label="Режим тренировки"></div>
+    <div class="mode-hint" id="modeHint"></div>
+
     <div class="status">
       <div class="phase" id="phase">Готов</div>
       <div class="clock" id="clock">3:00</div>
@@ -144,44 +209,36 @@
 
     <div class="stage">
       <div class="callout" id="callout"></div>
+      <div class="flash" id="flash" hidden><span id="flashText"></span></div>
+      <div class="task" id="task" hidden><div class="t" id="taskType"></div><div class="q" id="taskQ"></div><div class="a" id="taskA"></div></div>
       <svg id="fighter" viewBox="0 0 400 300" aria-label="Боксёр">
         <defs>
           <radialGradient id="gLead" cx="40%" cy="35%"><stop offset="0" stop-color="#7fb0ff"/><stop offset="1" stop-color="#2358c9"/></radialGradient>
           <radialGradient id="gRear" cx="40%" cy="35%"><stop offset="0" stop-color="#ff7b7d"/><stop offset="1" stop-color="#b0171a"/></radialGradient>
           <radialGradient id="gSkin" cx="45%" cy="40%"><stop offset="0" stop-color="#e8b894"/><stop offset="1" stop-color="#b9805a"/></radialGradient>
         </defs>
-        <!-- floor shadow -->
         <ellipse cx="200" cy="288" rx="120" ry="9" fill="#000" opacity=".35"/>
-        <g id="body">
-          <!-- torso -->
-          <path d="M120 300 L135 170 Q200 140 265 170 L280 300 Z" fill="#2b303b"/>
-          <path d="M150 300 L158 200 Q200 188 242 200 L250 300 Z" fill="#343a47"/>
-          <!-- shorts belt hint -->
-          <rect x="128" y="270" width="144" height="10" rx="3" fill="#e5383b" opacity=".85"/>
-          <!-- target zones -->
-          <circle id="tHead" cx="200" cy="95" r="4" fill="none"/>
-          <circle id="tBody" cx="200" cy="225" r="4" fill="none"/>
-          <!-- neck & head -->
-          <rect x="186" y="128" width="28" height="30" rx="8" fill="url(#gSkin)"/>
-          <g id="head">
-            <ellipse cx="200" cy="100" rx="36" ry="42" fill="url(#gSkin)"/>
-            <path d="M164 92 Q166 56 200 56 Q234 56 236 92 Q224 72 200 72 Q176 72 164 92Z" fill="#3a2a20"/>
-            <ellipse cx="186" cy="102" rx="4" ry="5" fill="#222"/>
-            <ellipse cx="214" cy="102" rx="4" ry="5" fill="#222"/>
-            <path d="M190 124 Q200 128 210 124" stroke="#6b3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <g id="rig">
+          <g id="body">
+            <path d="M120 300 L135 170 Q200 140 265 170 L280 300 Z" fill="#2b303b"/>
+            <path d="M150 300 L158 200 Q200 188 242 200 L250 300 Z" fill="#343a47"/>
+            <rect x="128" y="270" width="144" height="10" rx="3" fill="#e5383b" opacity=".85"/>
+            <rect x="186" y="128" width="28" height="30" rx="8" fill="url(#gSkin)"/>
+            <g id="head">
+              <ellipse cx="200" cy="100" rx="36" ry="42" fill="url(#gSkin)"/>
+              <path d="M164 92 Q166 56 200 56 Q234 56 236 92 Q224 72 200 72 Q176 72 164 92Z" fill="#3a2a20"/>
+              <ellipse cx="186" cy="102" rx="4" ry="5" fill="#222"/>
+              <ellipse cx="214" cy="102" rx="4" ry="5" fill="#222"/>
+              <path d="M190 124 Q200 128 210 124" stroke="#6b3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </g>
           </g>
+          <line id="armL" x1="140" y1="178" x2="150" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
+          <line id="armR" x1="260" y1="178" x2="250" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
+          <g id="gloveL"><circle r="30" fill="url(#gLead)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
+          <g id="gloveR"><circle r="30" fill="url(#gRear)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
         </g>
-        <!-- arms are drawn as lines from shoulders to gloves, updated per frame -->
-        <line id="armL" x1="140" y1="178" x2="150" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
-        <line id="armR" x1="260" y1="178" x2="250" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
-        <g id="gloveL"><circle r="30" fill="url(#gLead)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
-        <g id="gloveR"><circle r="30" fill="url(#gRear)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
       </svg>
-      <div class="legend">
-        <span><i style="background:var(--lead)"></i>передняя рука</span>
-        <span><i style="background:var(--rear)"></i>задняя рука</span>
-        <span><i style="background:var(--def)"></i>защита</span>
-      </div>
+      <div class="legend" id="legend"></div>
     </div>
 
     <div class="combo" id="combo"></div>
@@ -194,16 +251,78 @@
     </div>
   </section>
 
-  <!-- LIBRARY -->
+  <!-- COMBOS -->
   <section id="tab-lib" hidden>
+    <div class="card">
+      <div class="sel-bar">
+        <strong id="selCount">Выбрано: 0</strong>
+        <div style="display:flex; gap:8px">
+          <button class="btn small" id="selClear">Снять выбор</button>
+          <button class="btn small primary" id="selDrill">Отрабатывать</button>
+        </div>
+      </div>
+      <p class="note" style="margin-top:8px">Отметь галочкой комбинации, которые хочешь отработать. В режиме «Отработка» приложение будет давать только их, в случайном порядке.</p>
+    </div>
+
+    <div class="card">
+      <h2>Своя комбинация</h2>
+      <div class="pad" id="padPunch"></div>
+      <div class="pad-row" id="padOther"></div>
+      <div class="draft" id="draft"></div>
+      <div class="builder-actions">
+        <input type="text" id="draftTitle" placeholder="Название (необязательно)" maxlength="40">
+        <button class="btn small" id="draftUndo" aria-label="Удалить последний">⌫</button>
+        <button class="btn small" id="draftPlay">▶</button>
+        <button class="btn small primary" id="draftSave">Сохранить</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="lib"></div>
+    </div>
+
     <div class="card">
       <h2>Нумерация ударов</h2>
       <div class="key" id="key"></div>
-      <div class="note">Удары с пометкой «к» — в корпус (например, «3к» — левый боковой в корпус). Для левши стороны меняются: передняя рука — правая.</div>
+      <div class="note">«к» после цифры — удар в корпус (например, «3к» — левый боковой в корпус). Для левши стороны меняются: передняя рука — правая.</div>
     </div>
+  </section>
+
+  <!-- LOMACHENKO -->
+  <section id="tab-loma" hidden>
     <div class="card">
-      <h2>Классические комбинации — нажми, чтобы увидеть и услышать</h2>
-      <div id="lib"></div>
+      <p>Упражнения в духе подготовки Василия Ломаченко и его отца-тренера Анатолия Ломаченко: работа ног и углы, финты, скорость реакции и ясная голова под усталостью. Это не официальная программа, а тренировки, собранные по этим принципам. Раунды и отдых берутся из настроек.</p>
+    </div>
+
+    <div class="card drill">
+      <div class="drill-head"><div><span class="tag">Работа ног</span><h3>Углы и пивоты</h3></div><button class="btn small primary" data-loma="angles">Начать</button></div>
+      <p>После каждой серии — уход с линии атаки: пивот или шаг под углом. Ударил — и тебя уже нет там, куда целится соперник.</p>
+      <ul class="tips"><li>Пивот — разворот на носке передней ноги.</li><li>После ухода сразу возвращай стойку и руки.</li></ul>
+    </div>
+
+    <div class="card drill">
+      <div class="drill-head"><div><span class="tag">Обман</span><h3>Финты</h3></div><button class="btn small primary" data-loma="feints">Начать</button></div>
+      <p>Каждая серия начинается с финта: джебом, плечом, шагом или сменой уровня. Финт должен быть коротким и убедительным, а удар — сразу за ним.</p>
+    </div>
+
+    <div class="card drill">
+      <div class="drill-head"><div><span class="tag">Реакция</span><h3>Реакция на цвет</h3></div><button class="btn small primary" data-loma="reaction">Начать</button></div>
+      <p>Экран вспыхивает цветом в случайный момент. Реагируй сразу, без раздумий:</p>
+      <div class="colors" id="reactColors"></div>
+    </div>
+
+    <div class="card drill">
+      <div class="drill-head"><div><span class="tag">Голова</span><h3>Голова под нагрузкой</h3></div><button class="btn small primary" data-loma="brain">Начать</button></div>
+      <p>Между сериями — задачи на счёт и память. Отвечай вслух, не прекращая двигаться. Учит принимать решения, когда устал.</p>
+    </div>
+
+    <div class="card drill">
+      <div><span class="tag">Вне ринга · по таймеру</span><h3>Координация и баланс</h3></div>
+      <p>Эти упражнения делаются без комбинаций — приложение ведёт только раунды и отдых.</p>
+      <div class="row"><label>Жонглирование<span class="hint">2–3 теннисных мяча, затем с шагами</span></label><button class="btn small" data-timer="Жонглирование">Таймер</button></div>
+      <div class="row"><label>Мяч на резинке<span class="hint">теннисный мяч на повязке, удары по мячу</span></label><button class="btn small" data-timer="Мяч на резинке">Таймер</button></div>
+      <div class="row"><label>Стойка на руках<span class="hint">у стены, для баланса и плеч</span></label><button class="btn small" data-timer="Стойка на руках">Таймер</button></div>
+      <div class="row"><label>Скакалка<span class="hint">смена ритма каждые 10–15 секунд</span></label><button class="btn small" data-timer="Скакалка">Таймер</button></div>
     </div>
   </section>
 
@@ -211,10 +330,10 @@
   <section id="tab-set" hidden>
     <div class="card">
       <h2>Раунды</h2>
-      <div class="row"><label>Количество раундов</label><input type="number" id="sRounds" min="1" max="20"></div>
-      <div class="row"><label>Длительность раунда, сек</label><input type="number" id="sRoundLen" min="10" max="600" step="10"></div>
-      <div class="row"><label>Отдых, сек</label><input type="number" id="sRest" min="5" max="300" step="5"></div>
-      <div class="row"><label>Подготовка, сек</label><input type="number" id="sPrep" min="0" max="60"></div>
+      <div class="row"><label for="sRounds">Количество раундов</label><input type="number" id="sRounds" min="1" max="20"></div>
+      <div class="row"><label for="sRoundLen">Длительность раунда, сек</label><input type="number" id="sRoundLen" min="10" max="600" step="10"></div>
+      <div class="row"><label for="sRest">Отдых, сек</label><input type="number" id="sRest" min="5" max="300" step="5"></div>
+      <div class="row"><label for="sPrep">Подготовка, сек</label><input type="number" id="sPrep" min="0" max="60"></div>
     </div>
     <div class="card">
       <h2>Комбинации</h2>
@@ -233,13 +352,18 @@
           <button data-v="names">Названия</button><button data-v="numbers">Цифры</button><button data-v="off">Без звука</button>
         </div>
       </div>
-      <div class="row"><label>Темп ударов<span class="hint" id="sSpeedHint"></span></label><input type="range" id="sSpeed" min="1" max="5" step="1"></div>
-      <div class="row"><label>Пауза между комбо<span class="hint" id="sGapHint"></span></label><input type="range" id="sGap" min="1" max="8" step="0.5"></div>
+      <div class="row"><label for="sSpeed">Темп ударов<span class="hint" id="sSpeedHint"></span></label><input type="range" id="sSpeed" min="1" max="5" step="1"></div>
+      <div class="row"><label for="sGap">Пауза между комбо<span class="hint" id="sGapHint"></span></label><input type="range" id="sGap" min="1" max="8" step="0.5"></div>
       <div class="row"><label>Удары в корпус</label><label class="switch"><input type="checkbox" id="sBody"><span></span></label></div>
       <div class="row"><label>Защита в связках<span class="hint">нырки, уклоны, блоки</span></label><label class="switch"><input type="checkbox" id="sDef"><span></span></label></div>
       <div class="row"><label>Гонг и сигнал 10 сек</label><label class="switch"><input type="checkbox" id="sBell"><span></span></label></div>
     </div>
-    <div class="note">Настройки сохраняются на этом устройстве. Для озвучки используется синтез речи браузера — если голос не звучит, проверь, что звук на телефоне включён и в системе установлен русский голос.</div>
+    <div class="card">
+      <h2>Без повторов</h2>
+      <div class="row"><label>Показано разных комбинаций<span class="hint">случайные комбинации не повторяются — приложение помнит, что уже было</span></label><strong id="uniqCount">0</strong></div>
+      <div class="row"><label>Начать историю заново</label><button class="btn small" id="histReset">Сбросить</button></div>
+    </div>
+    <div class="note">Настройки и свои комбинации сохраняются на этом устройстве. Для озвучки используется синтез речи браузера — если голос не звучит, проверь, что звук на телефоне включён и в системе установлен русский голос.</div>
   </section>
 </div>
 
@@ -247,8 +371,8 @@
 (() => {
   'use strict';
 
-  // ---------- Punch catalogue ----------
-  // hand: 'lead' | 'rear'; kind: straight | hook | upper
+  // ---------- Catalogue ----------
+  // Punches: hand lead|rear, kind straight|hook|upper. Tokens '1'..'6', suffix 'b' = to the body.
   const PUNCHES = {
     '1': { hand: 'lead', kind: 'straight', name: 'Джеб' },
     '2': { hand: 'rear', kind: 'straight', name: 'Кросс' },
@@ -257,49 +381,114 @@
     '5': { hand: 'lead', kind: 'upper',    name: 'апперкот', side: true },
     '6': { hand: 'rear', kind: 'upper',    name: 'апперкот', side: true },
   };
-  const DEFENSES = {
-    slipL: { name: 'Уклон влево',  short: 'Уклон ←', move: 'slipL' },
-    slipR: { name: 'Уклон вправо', short: 'Уклон →', move: 'slipR' },
-    duck:  { name: 'Нырок',        short: 'Нырок',   move: 'duck'  },
-    roll:  { name: 'Нырок под руку', short: 'Нырок ↻', move: 'roll' },
-    block: { name: 'Блок',         short: 'Блок',    move: 'block' },
-    back:  { name: 'Шаг назад',    short: 'Назад',   move: 'back'  },
+  // Non-punch actions. cat: def | foot | feint. dir: -1 screen-left, 1 screen-right.
+  const MOVES = {
+    slipL:  { cat: 'def',   name: 'Уклон влево',          short: 'Уклон ←' },
+    slipR:  { cat: 'def',   name: 'Уклон вправо',         short: 'Уклон →' },
+    duck:   { cat: 'def',   name: 'Нырок',                short: 'Нырок' },
+    roll:   { cat: 'def',   name: 'Нырок под руку',       short: 'Нырок ↻' },
+    block:  { cat: 'def',   name: 'Блок',                 short: 'Блок' },
+    back:   { cat: 'def',   name: 'Шаг назад',            short: 'Назад' },
+    pivotL: { cat: 'foot',  name: 'Пивот влево',          short: 'Пивот ↺', dir: -1 },
+    pivotR: { cat: 'foot',  name: 'Пивот вправо',         short: 'Пивот ↻', dir: 1 },
+    angleL: { cat: 'foot',  name: 'Шаг под углом влево',  short: 'Угол ←', dir: -1 },
+    angleR: { cat: 'foot',  name: 'Шаг под углом вправо', short: 'Угол →', dir: 1 },
+    fJab:   { cat: 'feint', name: 'Финт джебом',          short: 'Финт 1' },
+    fShoulder: { cat: 'feint', name: 'Финт плечом',       short: 'Финт плечом' },
+    fStep:  { cat: 'feint', name: 'Финт шагом',           short: 'Финт шагом' },
+    fLevel: { cat: 'feint', name: 'Финт в корпус',        short: 'Финт вниз' },
   };
+  const CAT_LABEL = { def: 'защита', foot: 'ноги', feint: 'финт' };
+  const DEF_KEYS = Object.keys(MOVES).filter(k => MOVES[k].cat === 'def');
+  const FOOT_KEYS = Object.keys(MOVES).filter(k => MOVES[k].cat === 'foot');
+  const FEINT_KEYS = Object.keys(MOVES).filter(k => MOVES[k].cat === 'feint');
 
   const LIBRARY = [
-    { seq: ['1','1'],               title: 'Двойной джеб', note: 'Разведка и контроль дистанции' },
-    { seq: ['1','2'],               title: 'Двойка', note: 'Базовая связка номер один' },
-    { seq: ['1','2','3'],           title: 'Тройка', note: 'Джеб, кросс, левый боковой' },
-    { seq: ['1','2','3','2'],       title: 'Четвёрка', note: 'Тройка с добивающим кроссом' },
-    { seq: ['1','1','2'],           title: 'Двойной джеб — кросс', note: 'Сближение и акцент' },
-    { seq: ['1','6','3','2'],       title: 'Джеб — апперкот — боковой — кросс', note: 'Классика для ближнего боя' },
-    { seq: ['3','2','3'],           title: 'Боковой — кросс — боковой', note: 'Смена уровней ритма' },
-    { seq: ['1','2','3b','3'],      title: 'Двойка, боковой в корпус и в голову', note: 'Смена этажей одной рукой' },
-    { seq: ['2','3','2'],           title: 'Кросс — боковой — кросс', note: 'Силовая серия' },
-    { seq: ['5','4','3'],           title: 'Апперкот — боковой — боковой', note: 'Ближняя дистанция' },
-    { seq: ['1','2','slipR','2','3','2'], title: 'Двойка, уклон, контратака', note: 'Уклон от джеба и ответ' },
-    { seq: ['1','2','roll','2','3'], title: 'Двойка — нырок — кросс — боковой', note: 'Нырок под боковой и ответ' },
-    { seq: ['1','2b','3'],          title: 'Джеб, кросс в корпус, боковой', note: 'Открыть голову через корпус' },
-    { seq: ['6','3','2'],           title: 'Апперкот — боковой — кросс', note: 'Мощная серия с задней руки' },
-    { seq: ['1','2','3','6','3','2'], title: 'Шестёрка', note: 'Длинная серия для выносливости' },
+    { seq: ['1','1'],                     title: 'Двойной джеб' },
+    { seq: ['1','2'],                     title: 'Двойка' },
+    { seq: ['1','2','3'],                 title: 'Тройка' },
+    { seq: ['1','2','3','2'],             title: 'Четвёрка' },
+    { seq: ['1','1','2'],                 title: 'Двойной джеб — кросс' },
+    { seq: ['1','6','3','2'],             title: 'Джеб — апперкот — боковой — кросс' },
+    { seq: ['3','2','3'],                 title: 'Боковой — кросс — боковой' },
+    { seq: ['1','2','3b','3'],            title: 'Боковой в корпус и в голову' },
+    { seq: ['2','3','2'],                 title: 'Кросс — боковой — кросс' },
+    { seq: ['5','4','3'],                 title: 'Апперкот — боковой — боковой' },
+    { seq: ['1','2b','3'],                title: 'Кросс в корпус, боковой' },
+    { seq: ['6','3','2'],                 title: 'Апперкот — боковой — кросс' },
+    { seq: ['1','2','5','2'],             title: 'Двойка, апперкот, кросс' },
+    { seq: ['1b','2','3'],                title: 'Джеб в корпус — кросс — боковой' },
+    { seq: ['1','2','3','6','3','2'],     title: 'Шестёрка' },
+    { seq: ['1','2','slipR','2','3','2'], title: 'Двойка, уклон, контратака' },
+    { seq: ['1','2','roll','2','3'],      title: 'Двойка — нырок — кросс — боковой' },
+    { seq: ['slipL','2','3','2'],         title: 'Уклон и ответ тройкой' },
+    { seq: ['block','3','2'],             title: 'Блок — боковой — кросс' },
+    { seq: ['1','2','3','pivotL'],        title: 'Тройка и пивот', tag: 'Ломаченко' },
+    { seq: ['1','2','angleR','2','3'],    title: 'Двойка, угол, ещё серия', tag: 'Ломаченко' },
+    { seq: ['fJab','2','3','2'],          title: 'Финт джебом и четвёрка', tag: 'Ломаченко' },
+    { seq: ['fLevel','3','2','pivotR'],   title: 'Финт вниз, боковой, кросс, пивот', tag: 'Ломаченко' },
+    { seq: ['1','angleL','2','3','2'],    title: 'Джеб, угол, тройка с новой позиции', tag: 'Ломаченко' },
+  ].map(c => ({ ...c, id: 'l:' + c.seq.join('-') }));
+
+  const MODES = {
+    random:   { label: 'Случайные', hint: 'Каждая комбинация новая — повторов нет.' },
+    drill:    { label: 'Отработка', hint: 'Только комбинации, отмеченные во вкладке «Комбо».' },
+    angles:   { label: 'Углы',      hint: 'Серия и уход: пивот или шаг под углом.' },
+    feints:   { label: 'Финты',     hint: 'Каждая серия начинается с финта.' },
+    reaction: { label: 'Реакция',   hint: 'Реагируй на цвет вспышки.' },
+    brain:    { label: 'Голова',    hint: 'Серии плюс задачи на счёт и память.' },
+    timer:    { label: 'Таймер',    hint: 'Только раунды и отдых, без комбинаций.' },
+  };
+  const REACT = [
+    { color: '#3a86ff', name: 'Синий',   action: 'Джеб',          seq: ['1'] },
+    { color: '#e5383b', name: 'Красный', action: 'Двойка',        seq: ['1', '2'] },
+    { color: '#e0a100', name: 'Жёлтый',  action: 'Нырок',         seq: ['duck'] },
+    { color: '#1f9e62', name: 'Зелёный', action: 'Уход под угол', seq: ['pivotL'] },
   ];
 
-  // ---------- Settings ----------
-  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true };
-  let S = { ...DEFAULTS };
-  try { Object.assign(S, JSON.parse(localStorage.getItem('boxing-combo-settings') || '{}')); } catch (e) {}
-  const save = () => { try { localStorage.setItem('boxing-combo-settings', JSON.stringify(S)); } catch (e) {} };
+  // ---------- Storage ----------
+  const store = {
+    get(k, d) {
+      let v = null;
+      try { v = localStorage.getItem(k); } catch (e) { return d; }
+      if (v == null) return d;
+      try { return JSON.parse(v); } catch (e) { return v; }
+    },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true, mode: 'random', selected: [], custom: [], uniq: 0 };
+  const S = { ...DEFAULTS, ...store.get('boxing-combo-settings', {}) };
+  if (!MODES[S.mode]) S.mode = 'random';
+  const save = () => store.set('boxing-combo-settings', S);
+  let timerLabel = '';
 
   const $ = (id) => document.getElementById(id);
 
+  // ---------- History: never repeat a random combo ----------
+  const HISTORY_MAX = 1500;
+  let history = store.get('boxing-combo-history', []);
+  if (!Array.isArray(history)) history = [];
+  const seen = new Set(history);
+  function remember(key) {
+    if (seen.has(key)) return;
+    history.push(key); seen.add(key);
+    while (history.length > HISTORY_MAX) seen.delete(history.shift());
+    S.uniq++; save();
+    store.set('boxing-combo-history', history);
+    $('uniqCount').textContent = S.uniq;
+  }
+  function forgetOldest() {
+    history.splice(0, Math.ceil(history.length / 2)).forEach(k => seen.delete(k));
+    store.set('boxing-combo-history', history);
+  }
+
   // ---------- Naming ----------
   function sideWord(hand) {
-    const leftIsLead = S.stance === 'orthodox';
-    const isLeft = (hand === 'lead') === leftIsLead;
+    const isLeft = (hand === 'lead') === (S.stance === 'orthodox');
     return isLeft ? 'Левый' : 'Правый';
   }
   function parseToken(tok) {
-    if (DEFENSES[tok]) return { type: 'def', id: tok, ...DEFENSES[tok] };
+    if (MOVES[tok]) { const m = MOVES[tok]; return { type: m.cat, id: tok, fullName: m.name, label: m.short, ...m }; }
     const num = tok[0];
     const body = tok.endsWith('b');
     const p = PUNCHES[num];
@@ -307,25 +496,20 @@
     if (body) name += ' в корпус';
     return { type: 'punch', id: tok, num, body, ...p, fullName: name, label: num + (body ? 'к' : '') };
   }
+  const shortLine = (items) => items.map(it => it.label).join(' – ');
   function comboSpeech(items) {
-    if (S.call === 'numbers') {
-      return items.map(it => it.type === 'def' ? it.name : (it.num + (it.body ? ' в корпус' : ''))).join(', ');
-    }
-    return items.map(it => it.type === 'def' ? it.name : it.fullName).join(', ');
+    return items.map(it => it.type !== 'punch' ? it.fullName
+      : S.call === 'numbers' ? it.num + (it.body ? ' в корпус' : '') : it.fullName).join(', ');
   }
 
   // ---------- Speech ----------
   let ruVoice = null;
   function pickVoice() {
-    if (!('speechSynthesis' in window)) return;
     const voices = speechSynthesis.getVoices();
     ruVoice = voices.find(v => /^ru/i.test(v.lang) && /google|milena|yuri|premium|enhanced/i.test(v.name))
            || voices.find(v => /^ru/i.test(v.lang)) || null;
   }
-  if ('speechSynthesis' in window) {
-    pickVoice();
-    speechSynthesis.onvoiceschanged = pickVoice;
-  }
+  if ('speechSynthesis' in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
   function say(text, rate) {
     if (S.call === 'off' || !('speechSynthesis' in window) || !text) return;
     speechSynthesis.cancel();
@@ -335,6 +519,7 @@
     u.rate = rate || (0.9 + S.speed * 0.12);
     speechSynthesis.speak(u);
   }
+  const hush = () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); };
 
   // ---------- Sounds ----------
   let actx = null;
@@ -343,79 +528,81 @@
     if (actx && actx.state === 'suspended') actx.resume();
     return actx;
   }
+  function tone(freq, dur, vol = 0.3, delay = 0) {
+    const ctx = audio(); if (!ctx) return;
+    const t0 = ctx.currentTime + delay;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(ctx.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
   function bell(times = 1) {
     if (!S.bell) return;
-    const ctx = audio(); if (!ctx) return;
-    for (let i = 0; i < times; i++) {
-      const t0 = ctx.currentTime + i * 0.45;
-      [830, 1245, 1660].forEach((f, k) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(0.35 / (k + 1), t0 + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
-        o.connect(g).connect(ctx.destination); o.start(t0); o.stop(t0 + 1.7);
-      });
-    }
+    for (let i = 0; i < times; i++) [830, 1245, 1660].forEach((f, k) => tone(f, 1.6, 0.35 / (k + 1), i * 0.45));
   }
   function clack() {
     if (!S.bell) return;
     const ctx = audio(); if (!ctx) return;
     for (let i = 0; i < 2; i++) {
-      const t0 = ctx.currentTime + i * 0.18;
       const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
       const d = buf.getChannelData(0);
       for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / d.length, 3);
       const s = ctx.createBufferSource(), g = ctx.createGain();
       s.buffer = buf; g.gain.value = 0.8;
-      s.connect(g).connect(ctx.destination); s.start(t0);
+      s.connect(g).connect(ctx.destination); s.start(ctx.currentTime + i * 0.18);
     }
   }
 
   // ---------- Fighter animation ----------
-  const svg = $('fighter');
+  const rigEl = $('rig'), headEl = $('head');
   const gloveEls = { L: $('gloveL'), R: $('gloveR') };
   const armEls = { L: $('armL'), R: $('armR') };
   const shoulder = { L: [140, 178], R: [260, 178] };
   const guard = { L: [158, 132], R: [242, 132] };
-  const pose = { L: { x: 158, y: 132, s: 1 }, R: { x: 242, y: 132, s: 1 }, head: { x: 0, y: 0, r: 0 } };
-  const headEl = $('head');
+  const neutral = () => ({
+    L: { x: guard.L[0], y: guard.L[1], s: 1 }, R: { x: guard.R[0], y: guard.R[1], s: 1 },
+    head: { x: 0, y: 0, r: 0 }, rig: { x: 0, y: 0, r: 0, s: 1 },
+  });
+  let pose = neutral();
 
-  function screenSide(hand) {
-    // Mirror view: user's left hand appears on screen-left.
-    const leftIsLead = S.stance === 'orthodox';
-    return (hand === 'lead') === leftIsLead ? 'L' : 'R';
-  }
+  // Mirror view: the user's left hand appears on screen-left.
+  const screenSide = (hand) => (hand === 'lead') === (S.stance === 'orthodox') ? 'L' : 'R';
   function paintGloves() {
     const leadSide = screenSide('lead');
     gloveEls[leadSide].querySelector('circle').setAttribute('fill', 'url(#gLead)');
     gloveEls[leadSide === 'L' ? 'R' : 'L'].querySelector('circle').setAttribute('fill', 'url(#gRear)');
   }
   function render() {
+    const h = pose.head;
     for (const k of ['L', 'R']) {
       const p = pose[k];
-      gloveEls[k].setAttribute('transform', `translate(${p.x + pose.head.x * 0.6} ${p.y + pose.head.y * 0.5}) scale(${p.s})`);
-      armEls[k].setAttribute('x1', shoulder[k][0] + pose.head.x * 0.4);
-      armEls[k].setAttribute('y1', shoulder[k][1] + pose.head.y * 0.3);
-      armEls[k].setAttribute('x2', p.x + pose.head.x * 0.6);
-      armEls[k].setAttribute('y2', p.y + pose.head.y * 0.5);
+      const gx = p.x + h.x * 0.6, gy = p.y + h.y * 0.5;
+      gloveEls[k].setAttribute('transform', `translate(${gx} ${gy}) scale(${p.s})`);
+      armEls[k].setAttribute('x1', shoulder[k][0] + h.x * 0.4);
+      armEls[k].setAttribute('y1', shoulder[k][1] + h.y * 0.3);
+      armEls[k].setAttribute('x2', gx);
+      armEls[k].setAttribute('y2', gy);
       armEls[k].setAttribute('stroke-width', 18 + 6 * p.s);
     }
-    headEl.setAttribute('transform', `translate(${pose.head.x} ${pose.head.y}) rotate(${pose.head.r} 200 100)`);
-    // bring the active (bigger) glove to front
-    if (pose.L.s > pose.R.s) svg.appendChild(gloveEls.L); else svg.appendChild(gloveEls.R);
+    headEl.setAttribute('transform', `translate(${h.x} ${h.y}) rotate(${h.r} 200 100)`);
+    const r = pose.rig;
+    rigEl.setAttribute('transform', `translate(${r.x} ${r.y}) translate(200 230) rotate(${r.r}) scale(${r.s}) translate(-200 -230)`);
+    rigEl.appendChild(pose.L.s > pose.R.s ? gloveEls.L : gloveEls.R); // active glove in front
   }
 
   let animToken = 0;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function tween(dur, fn) {
     const token = animToken;
     return new Promise(res => {
       const t0 = performance.now();
       const step = (now) => {
         if (token !== animToken) return res(false);
-        const t = Math.min(1, (now - t0) / dur);
+        const t = reduceMotion ? 1 : Math.min(1, (now - t0) / dur);
         fn(t); render();
-        if (t < 1) requestAnimationFrame(step); else res(true);
+        if (t < 1) requestAnimationFrame(step); else setTimeout(() => res(token === animToken), reduceMotion ? dur : 0);
       };
       requestAnimationFrame(step);
     });
@@ -423,13 +610,21 @@
   const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   const lerp = (a, b, t) => a + (b - a) * t;
 
-  // Build a path (list of keyframes) for a given punch, in screen coordinates.
+  // Move any subset of pose parts to target values.
+  function poseTo(target, dur) {
+    const from = JSON.parse(JSON.stringify(pose));
+    return tween(dur, t => {
+      const e = ease(t);
+      for (const part in target) for (const key in target[part]) pose[part][key] = lerp(from[part][key], target[part][key], e);
+    });
+  }
+  const toNeutral = (dur) => poseTo(neutral(), dur);
+
   function punchPath(it) {
     const k = screenSide(it.hand);
-    const dir = k === 'L' ? 1 : -1; // direction toward centre
+    const dir = k === 'L' ? 1 : -1; // toward centre
     const g = guard[k];
-    const ty = it.body ? 215 : 100;
-    const tx = 200 + (it.hand === 'lead' ? -dir * 10 : dir * 10) * 0;
+    const ty = it.body ? 215 : 100, tx = 200;
     let pts;
     if (it.kind === 'straight') {
       pts = [[g[0], g[1], 1], [lerp(g[0], tx, .55), lerp(g[1], ty, .6), 1.35], [tx - dir * 8, ty, 1.7]];
@@ -448,151 +643,238 @@
     const a = pts[i], b = pts[i + 1];
     return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
   }
-  async function animPunch(it, dur) {
+  async function animPunch(it, dur, reach = 1) {
     const { k, pts } = punchPath(it);
-    const out = dur * 0.45, back = dur * 0.4;
-    let ok = await tween(out, t => { const [x, y, s] = interpPts(pts, ease(t)); Object.assign(pose[k], { x, y, s }); });
-    if (!ok) return;
-    const end = pts[pts.length - 1];
-    const g = guard[k];
-    await tween(back, t => { const e = ease(t); Object.assign(pose[k], { x: lerp(end[0], g[0], e), y: lerp(end[1], g[1], e), s: lerp(end[2], 1, e) }); });
+    const ok = await tween(dur * 0.45 * reach, t => { const [x, y, s] = interpPts(pts, ease(t) * reach); Object.assign(pose[k], { x, y, s }); });
+    if (ok) await toNeutral(dur * 0.4);
   }
-  async function animDefense(it, dur) {
+  async function animMove(it, dur) {
+    const d = it.dir || 1;
+    const rearK = screenSide('rear');
     const targets = {
-      slipL: { x: -38, y: 10, r: -12 },
-      slipR: { x: 38, y: 10, r: 12 },
-      duck:  { x: 0, y: 42, r: 0 },
-      roll:  null,
-      block: { x: 0, y: 6, r: 0, block: true },
-      back:  { x: 0, y: -6, r: 0, back: true },
+      slipL:  { head: { x: -38, y: 10, r: -12 } },
+      slipR:  { head: { x: 38, y: 10, r: 12 } },
+      duck:   { head: { x: 0, y: 42, r: 0 } },
+      block:  { head: { y: 6 }, L: { x: 178, y: 100, s: 1.15 }, R: { x: 222, y: 100, s: 1.15 } },
+      back:   { rig: { s: 0.86, y: -4 } },
+      pivotL: { rig: { x: d * 45, r: d * 22, s: 0.96 } },
+      pivotR: { rig: { x: d * 45, r: d * 22, s: 0.96 } },
+      angleL: { rig: { x: d * 75, y: -6, r: d * 6, s: 0.93 } },
+      angleR: { rig: { x: d * 75, y: -6, r: d * 6, s: 0.93 } },
+      fShoulder: { head: { x: rearK === 'L' ? 12 : -12, r: rearK === 'L' ? 6 : -6 }, [rearK]: { s: 1.18, y: 118 } },
+      fStep:  { rig: { s: 1.08, y: 10 } },
+      fLevel: { head: { y: 30 }, rig: { s: 1.03 } },
     };
-    const half = dur * 0.45;
-    if (it.move === 'roll') {
-      // U-shaped path under an imaginary hook
-      await tween(dur * 0.9, t => {
-        const a = Math.PI * ease(t);
-        pose.head.x = -40 * Math.cos(a); pose.head.y = 42 * Math.sin(a); pose.head.r = -12 * Math.cos(a);
-      });
-      await tween(dur * 0.2, t => { pose.head.x = lerp(40, 0, t); pose.head.y = 0; pose.head.r = lerp(12, 0, t); });
+    if (it.id === 'roll') {
+      const ok = await tween(dur * 0.9, t => { const a = Math.PI * ease(t); pose.head.x = -40 * Math.cos(a); pose.head.y = 42 * Math.sin(a); pose.head.r = -12 * Math.cos(a); });
+      if (ok) await toNeutral(dur * 0.25);
       return;
     }
-    const tg = targets[it.move];
-    const start = { ...pose.head };
-    const gL = { ...pose.L }, gR = { ...pose.R };
-    const apply = (e) => {
-      pose.head.x = lerp(start.x, tg.x, e); pose.head.y = lerp(start.y, tg.y, e); pose.head.r = lerp(start.r, tg.r, e);
-      if (tg.block) {
-        pose.L.x = lerp(gL.x, 178, e); pose.L.y = lerp(gL.y, 100, e); pose.L.s = lerp(1, 1.15, e);
-        pose.R.x = lerp(gR.x, 222, e); pose.R.y = lerp(gR.y, 100, e); pose.R.s = lerp(1, 1.15, e);
-      }
-      if (tg.back) {
-        const s = lerp(1, 0.85, e);
-        svg.querySelector('#body').setAttribute('transform', `translate(${200 * (1 - s)} ${40 * (1 - s)}) scale(${s})`);
-      }
-    };
-    if (!await tween(half, t => apply(ease(t)))) return;
-    await tween(dur - half, t => apply(1 - ease(t)));
-    svg.querySelector('#body').removeAttribute('transform');
+    if (it.id === 'fJab') return animPunch(parseToken('1'), dur * 0.9, 0.4);
+    const fast = it.cat === 'feint' ? 0.6 : 1;
+    if (await poseTo(targets[it.id], dur * 0.45 * fast)) await toNeutral(dur * 0.45 * fast);
   }
   function resetPose() {
     animToken++;
-    pose.L = { x: guard.L[0], y: guard.L[1], s: 1 };
-    pose.R = { x: guard.R[0], y: guard.R[1], s: 1 };
-    pose.head = { x: 0, y: 0, r: 0 };
-    svg.querySelector('#body').removeAttribute('transform');
+    pose = neutral();
     render();
   }
 
   // ---------- Combo generation ----------
-  function rand(a) { return a[Math.floor(Math.random() * a.length)]; }
-  function generateCombo() {
-    // Mix classic combos with random, but sensible, sequences.
-    if (Math.random() < 0.4) {
-      const pool = LIBRARY.filter(c => c.seq.length <= [0, 3, 4, 6][S.level] && (S.def || !c.seq.some(t => DEFENSES[t])) && (S.body || !c.seq.some(t => t.endsWith('b'))));
-      if (pool.length) { const c = rand(pool); return { seq: c.seq.slice(), title: c.title }; }
-    }
-    const [minL, maxL] = [[0, 0], [2, 3], [3, 4], [3, 6]][S.level];
-    const len = minL + Math.floor(Math.random() * (maxL - minL + 1));
-    const allowed = S.level === 1 ? ['1', '2', '3', '4'] : ['1', '2', '3', '4', '5', '6'];
+  const rand = (a) => a[Math.floor(Math.random() * a.length)];
+  const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const chance = (p) => Math.random() < p;
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  // A sensible punch sequence: mostly alternating hands, often opening with the jab.
+  function punchSeq(len, extra) {
+    const allowed = S.level === 1 && extra < 2 ? ['1', '2', '3', '4'] : ['1', '2', '3', '4', '5', '6'];
+    const bodyP = !S.body ? 0 : S.level === 1 && extra < 1 ? 0 : 0.2;
     const seq = [];
     let prevHand = null;
     for (let i = 0; i < len; i++) {
       let n;
-      if (i === 0) n = Math.random() < 0.65 ? '1' : rand(allowed);
+      if (i === 0) n = chance(0.55) ? '1' : rand(allowed);
+      else if (seq[i - 1] === '1' && chance(0.12)) n = '1';
       else {
-        // prefer alternating hands, allow double jab
         const alt = allowed.filter(x => PUNCHES[x].hand !== prevHand);
-        n = (prevHand === 'lead' && seq[i - 1] === '1' && Math.random() < 0.15) ? '1'
-          : (Math.random() < 0.85 ? rand(alt) : rand(allowed));
+        n = chance(0.85) ? rand(alt) : rand(allowed);
       }
-      let tok = n;
-      if (S.body && S.level >= 2 && n !== '1' && Math.random() < 0.2) tok += 'b';
-      seq.push(tok);
+      seq.push(n + (n !== '1' || S.level === 3 ? (chance(bodyP) ? 'b' : '') : ''));
       prevHand = PUNCHES[n].hand;
     }
-    if (S.def && S.level >= 2 && Math.random() < 0.45) {
-      const d = rand(Object.keys(DEFENSES));
-      const at = Math.random() < 0.5 ? seq.length : 1 + Math.floor(Math.random() * (seq.length - 1));
-      seq.splice(at, 0, d);
-      if (at === seq.length - 1 && S.level === 3) seq.push(Math.random() < 0.5 ? '2' : '3');
+    return seq;
+  }
+  const lenRange = (extra) => [[2, 3], [3, 4], [3, 6]][S.level - 1].map((v, i) => v + (i ? extra : 0));
+
+  const BUILDERS = {
+    random(extra) {
+      if (extra === 0 && chance(0.25)) {
+        const pool = LIBRARY.filter(c => !seen.has(c.seq.join('-')) && fitsLevel(c.seq));
+        if (pool.length) { const c = rand(pool); return { seq: c.seq.slice(), title: c.title }; }
+      }
+      const [a, b] = lenRange(extra);
+      const seq = punchSeq(randInt(a, b), extra);
+      if (S.def && S.level >= 2 && chance(0.4)) {
+        const at = chance(0.5) ? seq.length : randInt(1, seq.length - 1);
+        seq.splice(at, 0, rand(DEF_KEYS));
+        if (at === seq.length - 1) seq.push(chance(0.5) ? '2' : '3');
+      }
+      if (S.level === 3 && chance(0.15)) seq.push(rand(FOOT_KEYS));
+      return { seq };
+    },
+    angles(extra) {
+      const seq = punchSeq(randInt(2, 2 + S.level + extra), extra);
+      if (S.level >= 2 && chance(0.3)) seq.splice(randInt(1, seq.length - 1), 0, rand(FOOT_KEYS));
+      seq.push(rand(FOOT_KEYS));
+      return { seq };
+    },
+    feints(extra) {
+      const seq = [rand(FEINT_KEYS), ...punchSeq(randInt(2, 2 + S.level + extra), extra)];
+      if (S.level >= 2 && chance(0.25)) seq.push(rand(FOOT_KEYS));
+      return { seq };
+    },
+  };
+  function fitsLevel(seq) {
+    const punches = seq.filter(t => !MOVES[t]).length;
+    if (punches > lenRange(0)[1]) return false;
+    if (!S.def && seq.some(t => MOVES[t] && MOVES[t].cat === 'def')) return false;
+    if (!S.body && seq.some(t => t.endsWith('b'))) return false;
+    return true;
+  }
+  // Keep generating until we get something never shown before; widen the variety if needed.
+  function uniqueCombo(kind) {
+    for (let attempt = 0; attempt < 120; attempt++) {
+      const c = BUILDERS[kind](Math.floor(attempt / 30));
+      const key = c.seq.join('-');
+      if (!seen.has(key)) { remember(key); return c; }
     }
-    return { seq, title: '' };
+    forgetOldest();
+    const c = BUILDERS[kind](3);
+    remember(c.seq.join('-'));
+    return c;
+  }
+
+  // Drill: selected combos in shuffled passes, never the same one twice in a row.
+  const allCombos = () => [...S.custom, ...LIBRARY];
+  const drillPool = () => allCombos().filter(c => S.selected.includes(c.id));
+  let drillQueue = [], lastDrill = null;
+  function nextDrill() {
+    const pool = drillPool();
+    if (!pool.length) return null;
+    drillQueue = drillQueue.filter(c => S.selected.includes(c.id));
+    if (!drillQueue.length) {
+      drillQueue = shuffle(pool.slice());
+      if (drillQueue.length > 1 && drillQueue[0].id === lastDrill) drillQueue.push(drillQueue.shift());
+    }
+    const c = drillQueue.shift();
+    lastDrill = c.id;
+    return { seq: c.seq, title: c.title };
+  }
+  function nextCombo() {
+    if (S.mode === 'drill') return nextDrill();
+    if (S.mode === 'angles' || S.mode === 'feints') return uniqueCombo(S.mode);
+    return uniqueCombo('random');
   }
 
   // ---------- Showing a combo ----------
   const comboEl = $('combo'), comboNameEl = $('comboName'), calloutEl = $('callout');
-  function renderChips(items) {
-    comboEl.innerHTML = '';
-    items.forEach(it => {
-      const d = document.createElement('div');
-      if (it.type === 'def') {
-        d.className = 'chip def';
-        d.innerHTML = `<b>${it.short}</b><span>защита</span>`;
-      } else {
-        d.className = 'chip ' + it.hand;
-        d.innerHTML = `<b>${it.label}</b><span>${it.fullName}</span>`;
-      }
-      comboEl.appendChild(d);
-    });
+  function chipHTML(it) {
+    return it.type === 'punch'
+      ? `<div class="chip ${it.hand}"><b>${it.label}</b><span>${it.fullName}</span></div>`
+      : `<div class="chip ${it.type}"><b>${it.label}</b><span>${CAT_LABEL[it.type]}</span></div>`;
   }
-  function punchDur() { return [0, 750, 600, 480, 380, 300][S.speed]; }
+  const punchDur = () => [0, 750, 600, 480, 380, 300][S.speed];
 
-  let showing = false;
   async function showCombo(combo) {
     resetPose();
     const myToken = animToken;
-    showing = true;
     const items = combo.seq.map(parseToken);
-    renderChips(items);
-    const numbers = items.map(it => it.type === 'def' ? it.short : it.label).join(' – ');
-    comboNameEl.textContent = combo.title ? `${combo.title} · ${numbers}` : numbers;
+    comboEl.innerHTML = items.map(chipHTML).join('');
+    comboNameEl.textContent = combo.title ? `${combo.title} · ${shortLine(items)}` : shortLine(items);
     say(comboSpeech(items));
     const dur = punchDur();
-    const chips = comboEl.children;
+    const chips = [...comboEl.children];
     for (let i = 0; i < items.length; i++) {
-      if (myToken !== animToken) break;
-      [...chips].forEach(c => c.classList.remove('on'));
+      if (myToken !== animToken || !chips[i].isConnected) return;
+      chips.forEach(c => c.classList.remove('on'));
       chips[i].classList.add('on');
       const it = items[i];
-      calloutEl.innerHTML = it.type === 'def' ? it.name : `${it.label} <small>${it.fullName}</small>`;
-      if (it.type === 'def') await animDefense(it, dur * 1.4);
-      else await animPunch(it, dur);
+      calloutEl.innerHTML = it.type === 'punch' ? `${it.label} <small>${it.fullName}</small>` : it.fullName;
+      if (it.type === 'punch') await animPunch(it, dur);
+      else await animMove(it, dur * (it.type === 'foot' ? 1.5 : 1.4));
     }
     if (myToken === animToken) {
-      [...chips].forEach(c => c.classList.remove('on'));
+      chips.forEach(c => c.classList.remove('on'));
       calloutEl.textContent = '';
     }
-    showing = false;
-    return items.length;
   }
+
+  // ---------- Reaction drill ----------
+  const flashEl = $('flash'), flashText = $('flashText');
+  let lastReact = -1, reactCount = 0;
+  async function reactionSignal() {
+    resetPose();
+    let i; do { i = Math.floor(Math.random() * REACT.length); } while (i === lastReact && REACT.length > 1);
+    lastReact = i;
+    const r = REACT[i];
+    const seq = r.seq[0] === 'pivotL' ? [rand(['pivotL', 'pivotR', 'angleL', 'angleR'])] : r.seq;
+    flashEl.style.background = r.color;
+    flashText.textContent = r.action;
+    flashEl.hidden = false;
+    tone(1000, 0.12, 0.3);
+    comboEl.innerHTML = '';
+    comboNameEl.textContent = `Сигнал № ${++reactCount}`;
+    setTimeout(() => { flashEl.hidden = true; }, 500);
+    const items = seq.map(parseToken);
+    for (const it of items) {
+      if (it.type === 'punch') await animPunch(it, 320); else await animMove(it, 420);
+    }
+  }
+  const reactionGap = () => randInt(900, 3200) - S.speed * 80;
+
+  // ---------- Brain drill ----------
+  const taskEl = $('task');
+  let memory = null;
+  function brainTask() {
+    if (memory) { const m = memory; memory = null; return { type: 'Память', q: 'Какие числа ты запомнил?', a: m.join(' '), speak: 'Назови числа, которые запомнил' }; }
+    if (chance(0.3)) {
+      memory = Array.from({ length: 2 + S.level }, () => randInt(1, 9));
+      return { type: 'Запомни', q: memory.join('  '), a: '', speak: 'Запомни. ' + memory.join(', ') };
+    }
+    const kind = rand(['+', '−', '×']);
+    let x, y, ans;
+    if (kind === '+') { x = randInt(11, 49); y = randInt(5, 38); ans = x + y; }
+    else if (kind === '−') { x = randInt(30, 90); y = randInt(6, 29); ans = x - y; }
+    else { x = randInt(3, 9); y = randInt(3, 9); ans = x * y; }
+    const word = { '+': 'плюс', '−': 'минус', '×': 'умножить на' }[kind];
+    return { type: 'Посчитай', q: `${x} ${kind} ${y}`, a: '= ' + ans, speak: `${x} ${word} ${y}` };
+  }
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+  async function runTask(alive) {
+    const t = brainTask();
+    resetPose();
+    comboEl.innerHTML = '';
+    $('taskType').textContent = t.type; $('taskQ').textContent = t.q; $('taskA').textContent = '';
+    taskEl.hidden = false;
+    comboNameEl.textContent = t.type === 'Запомни' ? 'Держи числа в голове до следующего вопроса' : 'Отвечай вслух, продолжая двигаться';
+    tone(660, 0.15, 0.25); tone(880, 0.2, 0.25, 0.15);
+    say(t.speak, 1);
+    await wait(t.a ? 4500 : 3500);
+    if (!alive()) return;
+    if (t.a) { $('taskA').textContent = t.a; await wait(1800); }
+    taskEl.hidden = true;
+  }
+  const hideOverlays = () => { flashEl.hidden = true; taskEl.hidden = true; };
 
   // ---------- Workout timer ----------
   const phaseEl = $('phase'), clockEl = $('clock'), roundEl = $('round'), barEl = $('bar');
   const startBtn = $('startBtn'), stopBtn = $('stopBtn'), nextBtn = $('nextBtn');
-  let W = null; // workout state
-  let tick = null, comboTimer = null, wakeLock = null;
+  let W = null, tick = null, comboTimer = null, wakeLock = null, loopToken = 0;
+  let lastTaskAt = 0, nextTaskIn = 15000;
 
-  const fmt = s => `${Math.floor(s / 60)}:${String(Math.max(0, Math.ceil(s) % 60)).padStart(2, '0')}`;
+  const fmt = s => `${Math.floor(Math.max(0, Math.ceil(s)) / 60)}:${String(Math.max(0, Math.ceil(s)) % 60).padStart(2, '0')}`;
+  const IDLE_TEXT = 'Нажми «Старт», чтобы начать тренировку';
   function idleView() {
     phaseEl.textContent = 'Готов'; phaseEl.className = 'phase';
     clockEl.textContent = fmt(S.roundLen);
@@ -601,7 +883,7 @@
   }
   function setPhase(name, secs) {
     W.phase = name; W.left = secs; W.total = secs;
-    const labels = { prep: 'Приготовься', fight: 'Бой', rest: 'Отдых', done: 'Готово' };
+    const labels = { prep: 'Приготовься', fight: S.mode === 'timer' ? 'Работа' : 'Бой', rest: 'Отдых', done: 'Готово' };
     phaseEl.textContent = labels[name];
     phaseEl.className = 'phase ' + (name === 'fight' ? 'fight' : name === 'rest' ? 'rest' : '');
     barEl.style.background = name === 'rest' ? 'var(--accent-2)' : 'var(--ok)';
@@ -615,19 +897,21 @@
   async function requestWake() {
     try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
   }
+  function halt() { loopToken++; clearTimeout(comboTimer); resetPose(); hideOverlays(); }
 
   function start() {
     audio();
-    if (W && W.paused) { W.paused = false; startBtn.textContent = '❚❚ Пауза'; if (W.phase === 'fight') scheduleCombo(800); return; }
-    if (W && !W.paused) { // pause
-      W.paused = true; startBtn.textContent = '▶ Дальше';
-      clearTimeout(comboTimer); resetPose(); if ('speechSynthesis' in window) speechSynthesis.cancel();
+    if (W && W.paused) { W.paused = false; startBtn.textContent = '❚❚ Пауза'; if (W.phase === 'fight') scheduleStep(800); return; }
+    if (W) { W.paused = true; startBtn.textContent = '▶ Дальше'; halt(); hush(); return; }
+    if (S.mode === 'drill' && !drillPool().length) {
+      comboNameEl.textContent = 'Сначала отметь комбинации для отработки во вкладке «Комбо»';
       return;
     }
     W = { round: 1, paused: false };
+    reactCount = 0; memory = null;
     startBtn.textContent = '❚❚ Пауза'; stopBtn.disabled = false; nextBtn.disabled = true;
     requestWake();
-    if (S.prep > 0) { setPhase('prep', S.prep); say('Приготовься', 1); }
+    if (S.prep > 0) { setPhase('prep', S.prep); say('Приготовься', 1); comboNameEl.textContent = timerLabel && S.mode === 'timer' ? timerLabel : MODES[S.mode].hint; }
     else beginRound();
     let last = performance.now();
     tick = setInterval(() => {
@@ -643,31 +927,54 @@
   function beginRound() {
     setPhase('fight', S.roundLen);
     bell(1);
-    scheduleCombo(1500);
+    lastTaskAt = performance.now(); nextTaskIn = randInt(8000, 14000);
+    if (S.mode === 'timer') {
+      halt();
+      comboEl.innerHTML = '';
+      comboNameEl.textContent = (timerLabel || 'Работа') + ' — в своём темпе';
+      if (timerLabel) setTimeout(() => say(timerLabel, 1), 1500);
+      return;
+    }
+    scheduleStep(1500);
   }
   function advance() {
     if (W.phase === 'prep') return beginRound();
     if (W.phase === 'fight') {
-      clearTimeout(comboTimer); resetPose();
+      halt();
       bell(3);
       if (W.round >= S.rounds) return finish();
       setPhase('rest', S.rest);
       comboNameEl.textContent = 'Отдых. Дыши глубже.';
       comboEl.innerHTML = '';
-      setTimeout(() => say(`Отдых. Следующий раунд ${W.round + 1}`, 1), 1800);
+      setTimeout(() => say(`Отдых. Следующий раунд ${W && W.round + 1}`, 1), 1800);
       return;
     }
     if (W.phase === 'rest') { W.round++; return beginRound(); }
   }
-  function scheduleCombo(delay) {
+  function scheduleStep(delay) {
     clearTimeout(comboTimer);
-    comboTimer = setTimeout(async () => {
-      if (!W || W.paused || W.phase !== 'fight') return;
-      await showCombo(generateCombo());
-      if (!W || W.paused || W.phase !== 'fight') return;
-      const jitter = (Math.random() - 0.5) * 0.8;
-      scheduleCombo(Math.max(600, (S.gap + jitter) * 1000));
-    }, delay);
+    const my = ++loopToken;
+    const alive = () => W && !W.paused && W.phase === 'fight' && my === loopToken;
+    const loop = async () => {
+      if (!alive()) return;
+      let gap;
+      if (S.mode === 'timer') return;
+      if (S.mode === 'reaction') {
+        await reactionSignal();
+        gap = reactionGap();
+      } else if (S.mode === 'brain' && performance.now() - lastTaskAt > nextTaskIn) {
+        await runTask(alive);
+        lastTaskAt = performance.now(); nextTaskIn = randInt(10000, 18000);
+        gap = 1000;
+      } else {
+        const c = nextCombo();
+        if (!c) { comboNameEl.textContent = 'Нет выбранных комбинаций — отметь их во вкладке «Комбо»'; return; }
+        await showCombo(c);
+        gap = Math.max(600, (S.gap + (Math.random() - 0.5) * 0.8) * 1000);
+      }
+      if (alive()) comboTimer = setTimeout(loop, gap);
+    };
+    comboTimer = setTimeout(loop, delay);
   }
   function finish() {
     setPhase('done', 1); W.left = 0; updateClock(); barEl.style.width = '100%';
@@ -677,53 +984,149 @@
     cleanup(false);
   }
   function cleanup(reset = true) {
-    clearInterval(tick); clearTimeout(comboTimer);
-    tick = null; W = null;
-    resetPose();
+    clearInterval(tick); tick = null; W = null;
+    halt();
     startBtn.textContent = '▶ Старт'; stopBtn.disabled = true; nextBtn.disabled = false;
     try { wakeLock && wakeLock.release(); } catch (e) {}
     wakeLock = null;
-    if (reset) {
-      if ('speechSynthesis' in window) speechSynthesis.cancel();
-      idleView(); comboEl.innerHTML = ''; calloutEl.textContent = '';
-      comboNameEl.textContent = 'Нажми «Старт», чтобы начать тренировку';
-    }
+    if (reset) { hush(); idleView(); comboEl.innerHTML = ''; calloutEl.textContent = ''; comboNameEl.textContent = IDLE_TEXT; }
   }
   startBtn.onclick = start;
   stopBtn.onclick = () => cleanup(true);
-  nextBtn.onclick = () => { audio(); showCombo(generateCombo()); };
+  nextBtn.onclick = () => {
+    audio();
+    if (S.mode === 'reaction') return reactionSignal();
+    const c = nextCombo();
+    if (!c) { comboNameEl.textContent = 'Сначала отметь комбинации для отработки во вкладке «Комбо»'; return; }
+    showCombo(c);
+  };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && W && !wakeLock) requestWake(); });
 
-  // ---------- Tabs ----------
-  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
-    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x === b));
-    document.querySelectorAll('section').forEach(s => s.hidden = s.id !== 'tab-' + b.dataset.tab);
-    if (b.dataset.tab === 'lib') renderLibrary();
-  });
-
-  // ---------- Library ----------
-  function renderLibrary() {
-    const key = $('key'); key.innerHTML = '';
-    Object.keys(PUNCHES).forEach(n => {
-      const it = parseToken(n);
-      key.insertAdjacentHTML('beforeend', `<b style="color:var(--${it.hand})">${n}</b><span>${it.fullName}${it.kind === 'straight' ? ' (прямой ' + (it.hand === 'lead' ? 'передней' : 'задней') + ' рукой)' : ''}</span>`);
-    });
-    const lib = $('lib'); lib.innerHTML = '';
-    LIBRARY.forEach(c => {
-      const items = c.seq.map(parseToken);
-      const nums = items.map(it => it.type === 'def' ? it.short : it.label).join('-');
-      const row = document.createElement('div');
-      row.className = 'lib-item';
-      row.innerHTML = `<div class="nums">${nums}</div><div class="desc">${c.title}<small>${items.map(i => i.type === 'def' ? i.name : i.fullName).join(' → ')}</small></div><button class="play" aria-label="Показать">▶</button>`;
-      row.onclick = () => {
-        if (W) return;
-        audio();
-        document.querySelector('.tabs button[data-tab="train"]').click();
-        showCombo({ seq: c.seq, title: c.title });
-      };
-      lib.appendChild(row);
-    });
+  // ---------- Modes ----------
+  function renderModes() {
+    $('modes').innerHTML = Object.entries(MODES).map(([k, m]) =>
+      `<button role="tab" data-mode="${k}" class="${k === S.mode ? 'active' : ''}" aria-selected="${k === S.mode}">${m.label}${k === 'drill' ? ` (${drillPool().length})` : ''}</button>`).join('');
+    const act = $('modes').querySelector('.active');
+    if (act) $('modes').scrollLeft = act.offsetLeft - 16;
+    $('modeHint').textContent = S.mode === 'timer' && timerLabel ? `${timerLabel}: только раунды и отдых.` : MODES[S.mode].hint;
+    const legend = $('legend');
+    legend.innerHTML = S.mode === 'reaction'
+      ? REACT.map(r => `<span><i style="background:${r.color}"></i>${r.action}</span>`).join('')
+      : '<span><i style="background:var(--lead)"></i>передняя</span><span><i style="background:var(--rear)"></i>задняя</span><span><i style="background:var(--def)"></i>защита</span><span><i style="background:var(--foot)"></i>ноги</span><span><i style="background:var(--feint)"></i>финт</span>';
   }
+  function setMode(m, label = '') {
+    S.mode = m; timerLabel = label; save();
+    if (W && W.phase === 'fight') { halt(); if (!W.paused) { if (m === 'timer') beginRoundLabelOnly(); else scheduleStep(600); } }
+    renderModes();
+  }
+  function beginRoundLabelOnly() { halt(); comboEl.innerHTML = ''; comboNameEl.textContent = (timerLabel || 'Работа') + ' — в своём темпе'; }
+  $('modes').addEventListener('click', e => { const b = e.target.closest('button[data-mode]'); if (b) setMode(b.dataset.mode); });
+
+  // ---------- Tabs ----------
+  function showTab(name) {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x.dataset.tab === name));
+    document.querySelectorAll('section').forEach(s => s.hidden = s.id !== 'tab-' + name);
+    if (name === 'lib') renderLibrary();
+    if (name === 'train') renderModes();
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+  // ---------- Library & selection ----------
+  function renderLibrary() {
+    const row = (c, custom) => {
+      const items = c.seq.map(parseToken);
+      const sel = S.selected.includes(c.id);
+      return `<div class="lib-item${sel ? ' sel' : ''}" data-id="${c.id}" role="checkbox" aria-checked="${sel}" tabindex="0">
+        <div class="check">✓</div>
+        <div class="desc"><span class="nums">${items.map(i => i.label).join(' – ')}</span>${escapeHTML(c.title)}${c.tag ? ` · <span style="color:var(--feint)">${c.tag}</span>` : ''}<small>${items.map(i => i.fullName).join(' → ')}</small></div>
+        ${custom ? `<button class="icon-btn" data-del="${c.id}" aria-label="Удалить">✕</button>` : ''}
+        <button class="icon-btn" data-play="${c.id}" aria-label="Показать">▶</button>
+      </div>`;
+    };
+    let html = '';
+    if (S.custom.length) html += '<div class="lib-group">Мои комбинации</div>' + S.custom.map(c => row(c, true)).join('');
+    html += '<div class="lib-group">Классические и в стиле Ломаченко</div>' + LIBRARY.map(c => row(c, false)).join('');
+    $('lib').innerHTML = html;
+    $('selCount').textContent = `Выбрано: ${S.selected.length}`;
+    const key = $('key');
+    key.innerHTML = Object.keys(PUNCHES).map(n => { const it = parseToken(n); return `<b style="color:var(--${it.hand})">${n}</b><span>${it.fullName}</span>`; }).join('');
+  }
+  function escapeHTML(s) { return String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
+  function toggleSelect(id) {
+    const i = S.selected.indexOf(id);
+    if (i >= 0) S.selected.splice(i, 1); else S.selected.push(id);
+    save(); renderLibrary();
+  }
+  $('lib').addEventListener('click', e => {
+    const play = e.target.closest('[data-play]'), del = e.target.closest('[data-del]');
+    if (play) {
+      if (W) return;
+      const c = allCombos().find(x => x.id === play.dataset.play);
+      audio(); showTab('train'); showCombo(c);
+      return;
+    }
+    if (del) {
+      const id = del.dataset.del;
+      S.custom = S.custom.filter(c => c.id !== id);
+      S.selected = S.selected.filter(x => x !== id);
+      save(); renderLibrary();
+      return;
+    }
+    const item = e.target.closest('.lib-item');
+    if (item) toggleSelect(item.dataset.id);
+  });
+  $('lib').addEventListener('keydown', e => {
+    if ((e.key === ' ' || e.key === 'Enter') && e.target.classList.contains('lib-item')) { e.preventDefault(); toggleSelect(e.target.dataset.id); }
+  });
+  $('selClear').onclick = () => { S.selected = []; save(); renderLibrary(); };
+  $('selDrill').onclick = () => {
+    if (!S.selected.length) { $('selCount').textContent = 'Отметь хотя бы одну комбинацию'; return; }
+    setMode('drill'); drillQueue = []; showTab('train');
+  };
+
+  // ---------- Combo builder ----------
+  let draft = [], draftBody = false;
+  $('padPunch').innerHTML = Object.keys(PUNCHES).map(n => `<button data-p="${n}" class="${PUNCHES[n].hand}">${n}</button>`).join('')
+    + '<button class="toggle" id="padBody" title="Следующий удар — в корпус">к</button>';
+  $('padOther').innerHTML = Object.keys(MOVES).map(k => `<button data-m="${k}" class="${MOVES[k].cat}">${MOVES[k].short}</button>`).join('');
+  function renderDraft() {
+    $('draft').innerHTML = draft.length ? draft.map(t => chipHTML(parseToken(t))).join('') : '<span class="empty">Нажимай удары и действия — они появятся здесь</span>';
+    $('padBody').classList.toggle('active', draftBody);
+  }
+  $('padPunch').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'padBody') { draftBody = !draftBody; return renderDraft(); }
+    if (draft.length >= 10) return;
+    draft.push(b.dataset.p + (draftBody ? 'b' : '')); draftBody = false; renderDraft();
+  });
+  $('padOther').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || draft.length >= 10) return;
+    draft.push(b.dataset.m); renderDraft();
+  });
+  $('draftUndo').onclick = () => { draft.pop(); renderDraft(); };
+  $('draftPlay').onclick = () => { if (!draft.length || W) return; audio(); showTab('train'); showCombo({ seq: draft.slice(), title: $('draftTitle').value.trim() }); };
+  $('draftSave').onclick = () => {
+    if (!draft.some(t => !MOVES[t])) { $('draft').innerHTML = '<span class="empty">Добавь хотя бы один удар</span>'; return; }
+    const seq = draft.slice();
+    const title = $('draftTitle').value.trim() || seq.map(t => parseToken(t).label).join('-');
+    const id = 'c:' + Date.now().toString(36);
+    S.custom.unshift({ id, seq, title });
+    S.selected.push(id);
+    draft = []; draftBody = false; $('draftTitle').value = '';
+    save(); renderDraft(); renderLibrary();
+  };
+
+  // ---------- Lomachenko tab ----------
+  $('reactColors').innerHTML = REACT.map(r => `<div style="background:${r.color}">${r.name} — ${r.action}</div>`).join('');
+  document.querySelectorAll('[data-loma]').forEach(b => b.onclick = () => {
+    if (W) cleanup(true);
+    setMode(b.dataset.loma); showTab('train'); start();
+  });
+  document.querySelectorAll('[data-timer]').forEach(b => b.onclick = () => {
+    if (W) cleanup(true);
+    setMode('timer', b.dataset.timer); showTab('train'); start();
+  });
 
   // ---------- Settings UI ----------
   function bindNum(id, key, min, max) {
@@ -753,6 +1156,11 @@
   bindCheck('sBody', 'body'); bindCheck('sDef', 'def'); bindCheck('sBell', 'bell');
   bindRange('sSpeed', 'speed', 'sSpeedHint', v => ['', 'очень медленно', 'медленно', 'средне', 'быстро', 'очень быстро'][v]);
   bindRange('sGap', 'gap', 'sGapHint', v => `${v} сек`);
+  $('uniqCount').textContent = S.uniq;
+  $('histReset').onclick = () => {
+    history = []; seen.clear(); S.uniq = 0; save(); store.set('boxing-combo-history', history);
+    $('uniqCount').textContent = '0';
+  };
 
   // ---------- Home screen install ----------
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -760,17 +1168,14 @@
   }
   const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  let tipHidden = false;
-  try { tipHidden = localStorage.getItem('boxing-combo-install-tip') === 'hidden'; } catch (e) {}
-  if (isIOS && !standalone && !tipHidden) $('installTip').hidden = false;
-  $('installClose').onclick = () => {
-    $('installTip').hidden = true;
-    try { localStorage.setItem('boxing-combo-install-tip', 'hidden'); } catch (e) {}
-  };
+  if (isIOS && !standalone && store.get('boxing-combo-install-tip', '') !== 'hidden') $('installTip').hidden = false;
+  $('installClose').onclick = () => { $('installTip').hidden = true; store.set('boxing-combo-install-tip', 'hidden'); };
 
   paintGloves();
   resetPose();
   idleView();
+  renderModes();
+  renderDraft();
 })();
 </script>
 </body>
