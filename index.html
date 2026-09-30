@@ -97,6 +97,9 @@
   .chip.def.on { border-color: var(--def); }
   .chip.foot.on { border-color: var(--foot); }
   .chip.feint.on { border-color: var(--feint); }
+  .lane-title { text-align: center; font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); margin-top: 12px; }
+  .lane-title + .combo { margin-top: 6px; }
+  .lane-title.you { color: var(--ok); }
   .combo-name { text-align: center; color: var(--muted); font-size: 14px; min-height: 20px; }
 
   .controls { display: flex; gap: 10px; margin-top: 16px; }
@@ -241,7 +244,10 @@
       <div class="legend" id="legend"></div>
     </div>
 
+    <div class="lane-title" id="oppTitle" hidden>Соперник бьёт</div>
     <div class="combo" id="combo"></div>
+    <div class="lane-title you" id="ansTitle" hidden>Твой ответ: защита → удары → выход</div>
+    <div class="combo" id="answer" hidden></div>
     <div class="combo-name" id="comboName">Нажми «Старт», чтобы начать тренировку</div>
 
     <div class="controls">
@@ -292,6 +298,14 @@
   <section id="tab-loma" hidden>
     <div class="card">
       <p>Упражнения в духе подготовки Василия Ломаченко и его отца-тренера Анатолия Ломаченко: работа ног и углы, финты, скорость реакции и ясная голова под усталостью. Это не официальная программа, а тренировки, собранные по этим принципам. Раунды и отдых берутся из настроек.</p>
+    </div>
+
+    <div class="card drill">
+      <div class="drill-head"><div><span class="tag">Контратака</span><h3>Защита, ответ и выход</h3></div><button class="btn small primary" data-loma="counter">Начать</button></div>
+      <p>Боксёр на экране — твой соперник: он бьёт удар или серию прямо в тебя. Защитись от каждого удара, ответь своей серией и сразу уйди с линии атаки.</p>
+      <div class="row"><label>Подсказка ответа<span class="hint">«До» — учишь связки, «после» — сначала реагируешь сам</span></label>
+        <div class="seg" id="sCounterHint"><button data-v="before">До</button><button data-v="after">После</button><button data-v="none">Нет</button></div>
+      </div>
     </div>
 
     <div class="card drill">
@@ -393,6 +407,7 @@
     pivotR: { cat: 'foot',  name: 'Пивот вправо',         short: 'Пивот ↻', dir: 1 },
     angleL: { cat: 'foot',  name: 'Шаг под углом влево',  short: 'Угол ←', dir: -1 },
     angleR: { cat: 'foot',  name: 'Шаг под углом вправо', short: 'Угол →', dir: 1 },
+    parry:  { cat: 'def',   name: 'Отбив',                short: 'Отбив' },
     fJab:   { cat: 'feint', name: 'Финт джебом',          short: 'Финт 1' },
     fShoulder: { cat: 'feint', name: 'Финт плечом',       short: 'Финт плечом' },
     fStep:  { cat: 'feint', name: 'Финт шагом',           short: 'Финт шагом' },
@@ -433,6 +448,7 @@
   const MODES = {
     random:   { label: 'Случайные', hint: 'Каждая комбинация новая — повторов нет.' },
     drill:    { label: 'Отработка', hint: 'Только комбинации, отмеченные во вкладке «Комбо».' },
+    counter:  { label: 'Ответ',     hint: 'Соперник атакует — защитись, ответь и уйди.' },
     angles:   { label: 'Углы',      hint: 'Серия и уход: пивот или шаг под углом.' },
     feints:   { label: 'Финты',     hint: 'Каждая серия начинается с финта.' },
     reaction: { label: 'Реакция',   hint: 'Реагируй на цвет вспышки.' },
@@ -456,7 +472,7 @@
     },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
-  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true, mode: 'random', selected: [], custom: [], uniq: 0 };
+  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true, mode: 'random', selected: [], custom: [], uniq: 0, counterHint: 'after' };
   const S = { ...DEFAULTS, ...store.get('boxing-combo-settings', {}) };
   if (!MODES[S.mode]) S.mode = 'random';
   const save = () => store.set('boxing-combo-settings', S);
@@ -568,7 +584,8 @@
   let pose = neutral();
 
   // Mirror view: the user's left hand appears on screen-left.
-  const screenSide = (hand) => (hand === 'lead') === (S.stance === 'orthodox') ? 'L' : 'R';
+  // In the counter drill the figure is the opponent facing you, so his lead hand is on the other side.
+  const screenSide = (hand) => ((hand === 'lead') === (S.stance === 'orthodox')) !== (S.mode === 'counter') ? 'L' : 'R';
   function paintGloves() {
     const leadSide = screenSide('lead');
     gloveEls[leadSide].querySelector('circle').setAttribute('fill', 'url(#gLead)');
@@ -662,6 +679,7 @@
       angleL: { rig: { x: d * 75, y: -6, r: d * 6, s: 0.93 } },
       angleR: { rig: { x: d * 75, y: -6, r: d * 6, s: 0.93 } },
       fShoulder: { head: { x: rearK === 'L' ? 12 : -12, r: rearK === 'L' ? 6 : -6 }, [rearK]: { s: 1.18, y: 118 } },
+      parry:  { [rearK]: { x: 200, y: 112, s: 1.12 } },
       fStep:  { rig: { s: 1.08, y: 10 } },
       fLevel: { head: { y: 30 }, rig: { s: 1.03 } },
     };
@@ -735,6 +753,36 @@
       return { seq };
     },
   };
+  // Defence + counter options per opponent punch (written for orthodox vs orthodox; mirrored for southpaw).
+  // Each option: first token is the defence, the rest is the counter.
+  const COUNTERS = {
+    '1':  [['slipR', '2'], ['slipR', '2', '3'], ['parry', '1', '2'], ['slipL', '2', '3'], ['back', '1', '2']],
+    '2':  [['slipL', '3', '2'], ['block', '2', '3'], ['roll', '2', '3'], ['back', '2']],
+    '3':  [['roll', '3', '2'], ['block', '3', '2'], ['back', '2', '3']],
+    '4':  [['roll', '3', '2'], ['block', '2', '3'], ['back', '1', '2']],
+    '5':  [['block', '2', '3'], ['back', '1', '2']],
+    '6':  [['block', '3', '2'], ['back', '1', '2']],
+    body: [['block', '3', '2'], ['back', '1', '2'], ['block', '2', '3b']],
+  };
+  const MIRROR = { slipL: 'slipR', slipR: 'slipL', pivotL: 'pivotR', pivotR: 'pivotL', angleL: 'angleR', angleR: 'angleL' };
+  BUILDERS.counter = (extra) => {
+    const [a, b] = [[1, 2], [1, 3], [2, 4]][S.level - 1];
+    const attack = punchSeq(randInt(a, b + extra), extra);
+    const opts = (t) => COUNTERS[t.endsWith('b') ? 'body' : t[0]];
+    const defs = attack.slice(0, -1).map(t => rand(opts(t))[0]);
+    const last = rand(opts(attack[attack.length - 1]));
+    defs.push(last[0]);
+    const hits = last.slice(1, 1 + S.level + 1);
+    const maxHits = S.level + 1 + extra;
+    while (hits.length < maxHits && chance(S.level === 1 ? 0.2 : 0.45)) {
+      const prevHand = PUNCHES[hits[hits.length - 1][0]].hand;
+      hits.push(rand(['1', '2', '3', '4', '5', '6'].filter(x => PUNCHES[x].hand !== prevHand && (S.level > 1 || +x < 5))));
+    }
+    if (S.body && S.level > 1) for (let i = 1; i < hits.length; i++) if (hits[i] !== '1' && !hits[i].endsWith('b') && chance(0.15)) hits[i] += 'b';
+    let answer = [...defs, ...hits, rand(FOOT_KEYS)];
+    if (S.stance === 'southpaw') answer = answer.map(t => MIRROR[t] || t);
+    return { seq: attack, answer, key: 'vs:' + attack.join('-') + '>' + answer.join('-') };
+  };
   function fitsLevel(seq) {
     const punches = seq.filter(t => !MOVES[t]).length;
     if (punches > lenRange(0)[1]) return false;
@@ -746,12 +794,12 @@
   function uniqueCombo(kind) {
     for (let attempt = 0; attempt < 120; attempt++) {
       const c = BUILDERS[kind](Math.floor(attempt / 30));
-      const key = c.seq.join('-');
+      const key = c.key || c.seq.join('-');
       if (!seen.has(key)) { remember(key); return c; }
     }
     forgetOldest();
     const c = BUILDERS[kind](3);
-    remember(c.seq.join('-'));
+    remember(c.key || c.seq.join('-'));
     return c;
   }
 
@@ -791,6 +839,7 @@
     const myToken = animToken;
     const items = combo.seq.map(parseToken);
     comboEl.innerHTML = items.map(chipHTML).join('');
+    answerEl.innerHTML = '';
     comboNameEl.textContent = combo.title ? `${combo.title} · ${shortLine(items)}` : shortLine(items);
     say(comboSpeech(items));
     const dur = punchDur();
@@ -808,6 +857,64 @@
       chips.forEach(c => c.classList.remove('on'));
       calloutEl.textContent = '';
     }
+  }
+
+  // ---------- Counter drill: opponent attacks, you defend, counter and exit ----------
+  const answerEl = $('answer');
+  async function counterStep(c) {
+    resetPose();
+    const my = animToken;
+    const live = () => my === animToken;
+    const atk = c.seq.map(parseToken), ans = c.answer.map(parseToken);
+    const hint = S.counterHint, dur = punchDur();
+    comboEl.innerHTML = atk.map(chipHTML).join('');
+    answerEl.innerHTML = hint === 'before' ? ans.map(chipHTML).join('') : '';
+    comboNameEl.textContent = 'Соперник: ' + shortLine(atk);
+    if (hint === 'before') {
+      calloutEl.textContent = 'Приготовься';
+      say('Ответ: ' + comboSpeech(ans));
+      await wait(1300 + 380 * ans.length);
+      if (!live()) return;
+    } else {
+      say(comboSpeech(atk));
+    }
+    // The attack: gloves fly at you.
+    tone(1000, 0.1, 0.3);
+    const atkChips = [...comboEl.children];
+    for (let i = 0; i < atk.length; i++) {
+      if (!live() || !atkChips[i].isConnected) return;
+      atkChips.forEach(x => x.classList.remove('on'));
+      atkChips[i].classList.add('on');
+      calloutEl.innerHTML = `Атака! <small>${atk[i].fullName}</small>`;
+      await animPunch(atk[i], dur * 0.85);
+    }
+    if (!live()) return;
+    atkChips.forEach(x => x.classList.remove('on'));
+    // Your answer.
+    if (hint === 'none') {
+      calloutEl.textContent = 'Твой ответ!';
+      await wait(ans.length * dur * 1.3 + 600);
+      if (live()) calloutEl.textContent = '';
+      return;
+    }
+    if (hint === 'after') { answerEl.innerHTML = ans.map(chipHTML).join(''); say(comboSpeech(ans)); }
+    const ansChips = [...answerEl.children];
+    for (let i = 0; i < ans.length; i++) {
+      if (!live() || !ansChips[i].isConnected) return;
+      ansChips.forEach(x => x.classList.remove('on'));
+      ansChips[i].classList.add('on');
+      const it = ans[i];
+      calloutEl.innerHTML = it.type === 'punch' ? `${it.label} <small>${it.fullName}</small>` : it.fullName;
+      // The opponent reacts: flinches from your punches, shifts on screen as you move around him.
+      const d = it.dir || 1;
+      const react = it.type === 'punch' ? { head: { x: (Math.random() < 0.5 ? -1 : 1) * 8, y: -4, r: (Math.random() < 0.5 ? -1 : 1) * 6 } }
+        : it.type === 'foot' ? { rig: { x: -d * 55, r: -d * 8, s: 0.95 } }
+        : it.id === 'back' ? { rig: { s: 0.88 } } : null;
+      const step = dur * (it.type === 'punch' ? 1 : 1.3);
+      if (react) { if (await poseTo(react, step * 0.4)) await toNeutral(step * 0.5); }
+      else await wait(step);
+    }
+    if (live()) { ansChips.forEach(x => x.classList.remove('on')); calloutEl.textContent = ''; }
   }
 
   // ---------- Reaction drill ----------
@@ -959,7 +1066,10 @@
       if (!alive()) return;
       let gap;
       if (S.mode === 'timer') return;
-      if (S.mode === 'reaction') {
+      if (S.mode === 'counter') {
+        await counterStep(uniqueCombo('counter'));
+        gap = Math.max(900, (S.gap + (Math.random() - 0.5) * 0.8) * 1000);
+      } else if (S.mode === 'reaction') {
         await reactionSignal();
         gap = reactionGap();
       } else if (S.mode === 'brain' && performance.now() - lastTaskAt > nextTaskIn) {
@@ -996,6 +1106,7 @@
   nextBtn.onclick = () => {
     audio();
     if (S.mode === 'reaction') return reactionSignal();
+    if (S.mode === 'counter') return counterStep(uniqueCombo('counter'));
     const c = nextCombo();
     if (!c) { comboNameEl.textContent = 'Сначала отметь комбинации для отработки во вкладке «Комбо»'; return; }
     showCombo(c);
@@ -1009,13 +1120,17 @@
     const act = $('modes').querySelector('.active');
     if (act) $('modes').scrollLeft = act.offsetLeft - 16;
     $('modeHint').textContent = S.mode === 'timer' && timerLabel ? `${timerLabel}: только раунды и отдых.` : MODES[S.mode].hint;
+    const counter = S.mode === 'counter';
+    $('oppTitle').hidden = $('ansTitle').hidden = answerEl.hidden = !counter;
     const legend = $('legend');
     legend.innerHTML = S.mode === 'reaction'
       ? REACT.map(r => `<span><i style="background:${r.color}"></i>${r.action}</span>`).join('')
       : '<span><i style="background:var(--lead)"></i>передняя</span><span><i style="background:var(--rear)"></i>задняя</span><span><i style="background:var(--def)"></i>защита</span><span><i style="background:var(--foot)"></i>ноги</span><span><i style="background:var(--feint)"></i>финт</span>';
   }
   function setMode(m, label = '') {
+    const flip = (m === 'counter') !== (S.mode === 'counter');
     S.mode = m; timerLabel = label; save();
+    if (flip) { paintGloves(); resetPose(); comboEl.innerHTML = ''; answerEl.innerHTML = ''; }
     if (W && W.phase === 'fight') { halt(); if (!W.paused) { if (m === 'timer') beginRoundLabelOnly(); else scheduleStep(600); } }
     renderModes();
   }
@@ -1153,6 +1268,7 @@
   bindSeg('sLevel', 'level', Number);
   bindSeg('sStance', 'stance');
   bindSeg('sCall', 'call');
+  bindSeg('sCounterHint', 'counterHint');
   bindCheck('sBody', 'body'); bindCheck('sDef', 'def'); bindCheck('sBell', 'bell');
   bindRange('sSpeed', 'speed', 'sSpeedHint', v => ['', 'очень медленно', 'медленно', 'средне', 'быстро', 'очень быстро'][v]);
   bindRange('sGap', 'gap', 'sGapHint', v => `${v} сек`);
