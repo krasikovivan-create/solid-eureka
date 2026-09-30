@@ -1,4 +1,4 @@
-import type { Contact, Message } from './types';
+import type { CallLog, Chat, Contact, Message } from './types';
 
 export function uid(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -87,12 +87,97 @@ export function initials(name: string) {
     .join('');
 }
 
+export function callLabel(call: CallLog) {
+  const what = call.kind === 'video' ? 'видеозвонок' : 'звонок';
+  switch (call.outcome) {
+    case 'answered':
+      return call.direction === 'out' ? `Исходящий ${what}` : `Входящий ${what}`;
+    case 'missed':
+      return `Пропущенный ${what}`;
+    case 'declined':
+      return call.direction === 'out' ? `Отклонённый ${what}` : `Вы отклонили ${what}`;
+    case 'cancelled':
+      return `Отменённый ${what}`;
+    case 'unavailable':
+      return `${what[0].toUpperCase()}${what.slice(1)} · нет ответа`;
+  }
+}
+
 export function messagePreview(m: Message) {
+  if (m.call) return `${m.call.kind === 'video' ? '📹' : '📞'} ${callLabel(m.call)}`;
   if (m.media) {
     const label = m.media.kind === 'image' ? '📷 Фото' : '🎬 Видео';
     return m.text ? `${label} · ${m.text}` : label;
   }
   return m.text;
+}
+
+export function plural(n: number, one: string, few: string, many: string) {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+}
+
+// ---- chats ---------------------------------------------------------------------------
+
+const GROUP_COLORS: [string, string][] = [
+  ['#667eea', '#764ba2'],
+  ['#f093fb', '#f5576c'],
+  ['#4facfe', '#00c6fb'],
+  ['#fa709a', '#fee140'],
+  ['#30cfd0', '#330867'],
+  ['#5ee7df', '#b490ca'],
+];
+
+export function pickGroupColors(seed: string): [string, string] {
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return GROUP_COLORS[h % GROUP_COLORS.length];
+}
+
+/** Name and avatar colors of a chat: the contact for a direct chat, the group itself otherwise. */
+export function chatLook(chat: Chat, contacts: Contact[]) {
+  if (chat.kind === 'direct') {
+    const c = contacts.find((x) => x.id === chat.memberIds[0]);
+    return { name: c?.name ?? 'Контакт', colors: c?.colors ?? (['#c3cad8', '#9aa4b5'] as [string, string]), contact: c };
+  }
+  return { name: chat.title || 'Группа', colors: chat.colors ?? pickGroupColors(chat.id), contact: undefined };
+}
+
+// ---- phone numbers ---------------------------------------------------------------------
+
+/** "8 (999) 123-45-67" → "79991234567"; null if it doesn't look like a phone number. */
+export function normalizePhone(input: string): string | null {
+  let d = input.replace(/\D/g, '');
+  if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
+  if (d.length === 10 && d[0] === '9') d = '7' + d;
+  return d.length >= 10 && d.length <= 15 ? d : null;
+}
+
+/** "79991234567" → "+7 999 123-45-67" */
+export function formatPhone(digits: string) {
+  if (digits.length === 11 && digits[0] === '7') {
+    return `+7 ${digits.slice(1, 4)} ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9)}`;
+  }
+  return '+' + digits;
+}
+
+/** Formats the phone field while typing. */
+export function formatPhoneInput(input: string) {
+  let d = input.replace(/\D/g, '').slice(0, 15);
+  if (!d) return input.trim().startsWith('+') ? '+' : '';
+  if (d[0] === '8') d = '7' + d.slice(1);
+  if (d[0] === '9') d = '7' + d;
+  if (d[0] !== '7') return '+' + d;
+  const p = [d.slice(1, 4), d.slice(4, 7), d.slice(7, 9), d.slice(9, 11)];
+  let out = '+7';
+  if (p[0]) out += ' ' + p[0];
+  if (p[1]) out += ' ' + p[1];
+  if (p[2]) out += '-' + p[2];
+  if (p[3]) out += '-' + p[3];
+  return out;
 }
 
 export function isSameDay(a: number, b: number) {

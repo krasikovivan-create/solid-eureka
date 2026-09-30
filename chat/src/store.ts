@@ -1,10 +1,10 @@
 // A tiny global store (no Redux): state + subscribe, used via useSyncExternalStore.
-// Every change to contacts/messages/drafts is written to localStorage right away.
+// Every change to contacts/chats/messages/drafts is written to localStorage right away.
 import { useSyncExternalStore } from 'react';
-import type { AppState, Contact, Message, Toast } from './types';
+import type { ActiveCall, AppState, Chat, Contact, Message, Toast } from './types';
 import { loadSimulatedOffline, loadState, saveState } from './storage/local';
 import { createSeedState } from './mock/seed';
-import { uid } from './utils';
+import { pickGroupColors, uid } from './utils';
 
 const persisted = loadState() ?? createSeedState();
 
@@ -17,6 +17,7 @@ let state: AppState = {
     syncing: 0,
   },
   toasts: [],
+  call: null,
 };
 
 const listeners = new Set<() => void>();
@@ -34,8 +35,8 @@ export function subscribe(listener: () => void) {
 function setState(next: AppState) {
   const prev = state;
   state = next;
-  if (prev.contacts !== next.contacts || prev.messages !== next.messages || prev.drafts !== next.drafts) {
-    const ok = saveState({ contacts: next.contacts, messages: next.messages, drafts: next.drafts });
+  if (prev.contacts !== next.contacts || prev.chats !== next.chats || prev.messages !== next.messages || prev.drafts !== next.drafts) {
+    const ok = saveState({ contacts: next.contacts, chats: next.chats, messages: next.messages, drafts: next.drafts });
     if (!ok && !saveWarned) {
       saveWarned = true;
       queueMicrotask(() => showToast('Хранилище браузера переполнено — новые сообщения могут не сохраниться', 'warning'));
@@ -54,6 +55,50 @@ export function isOnline(s: AppState = state) {
 
 export function getContact(id: string): Contact | undefined {
   return state.contacts.find((c) => c.id === id);
+}
+
+export function getChat(id: string): Chat | undefined {
+  return state.chats.find((c) => c.id === id);
+}
+
+// ---- contacts & chats ---------------------------------------------------------
+
+export function findContactByPhone(phone: string) {
+  return state.contacts.find((c) => c.phone === phone);
+}
+
+export function addContact(contact: Contact) {
+  if (state.contacts.some((c) => c.id === contact.id)) return;
+  setState({ ...state, contacts: [...state.contacts, contact] });
+}
+
+/** The direct chat with a contact, created on first use. */
+export function ensureDirectChat(contactId: string): Chat {
+  const existing = getChat(contactId);
+  if (existing) return existing;
+  const chat: Chat = { id: contactId, kind: 'direct', memberIds: [contactId], createdAt: Date.now() };
+  setState({ ...state, chats: [...state.chats, chat] });
+  return chat;
+}
+
+export function createGroup(title: string, memberIds: string[]): Chat {
+  const id = 'g-' + uid().slice(0, 8);
+  const now = Date.now();
+  const chat: Chat = { id, kind: 'group', title: title.trim(), memberIds, colors: pickGroupColors(id), createdAt: now };
+  const names = memberIds.map((m) => getContact(m)?.name.split(' ')[0]).filter(Boolean).join(', ');
+  const first: Message = { id: uid(), chatId: id, author: 'system', text: `Вы создали группу «${chat.title}» · ${names}`, createdAt: now, status: 'read' };
+  setState({ ...state, chats: [...state.chats, chat], messages: { ...state.messages, [id]: [first] } });
+  return chat;
+}
+
+export function addGroupMembers(chatId: string, memberIds: string[]) {
+  const chat = getChat(chatId);
+  if (!chat || chat.kind !== 'group') return;
+  const added = memberIds.filter((m) => !chat.memberIds.includes(m));
+  if (!added.length) return;
+  const names = added.map((m) => getContact(m)?.name).filter(Boolean).join(', ');
+  setState({ ...state, chats: state.chats.map((c) => (c.id === chatId ? { ...c, memberIds: [...c.memberIds, ...added] } : c)) });
+  addMessage({ id: uid(), chatId, author: 'system', text: `Вы добавили: ${names}`, createdAt: Date.now(), status: 'read' });
 }
 
 // ---- messages -------------------------------------------------------------
@@ -80,7 +125,7 @@ export function findMessage(chatId: string, id: string) {
   return state.messages[chatId]?.find((m) => m.id === id);
 }
 
-/** Marks the contact's messages in this chat as read by me. */
+/** Marks the others' messages in this chat as read by me. */
 export function markChatRead(chatId: string) {
   const list = state.messages[chatId];
   if (!list || !list.some((m) => m.author === 'them' && m.status !== 'read')) return;
@@ -96,7 +141,7 @@ export function pendingMessages(): Message[] {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
-// ---- drafts, contacts, typing ------------------------------------------------
+// ---- drafts, presence, typing ------------------------------------------------
 
 export function setDraft(chatId: string, text: string) {
   if ((state.drafts[chatId] ?? '') === text) return;
@@ -113,9 +158,10 @@ export function setPresence(contactId: string, online: boolean, at: number) {
   });
 }
 
-export function setTyping(chatId: string, typing: boolean) {
-  if (!!state.typing[chatId] === typing) return;
-  setState({ ...state, typing: { ...state.typing, [chatId]: typing } });
+/** contactId = who is typing; undefined = nobody. */
+export function setTyping(chatId: string, contactId: string | undefined) {
+  if (state.typing[chatId] === contactId) return;
+  setState({ ...state, typing: { ...state.typing, [chatId]: contactId } });
 }
 
 // ---- connection ---------------------------------------------------------------
@@ -124,10 +170,21 @@ export function setConnection(patch: Partial<AppState['connection']>) {
   setState({ ...state, connection: { ...state.connection, ...patch } });
 }
 
+// ---- call ---------------------------------------------------------------------------
+
+export function setCall(call: ActiveCall | null) {
+  setState({ ...state, call });
+}
+
+export function patchCall(patch: Partial<ActiveCall>) {
+  if (!state.call) return;
+  setState({ ...state, call: { ...state.call, ...patch } });
+}
+
 // ---- toasts ---------------------------------------------------------------------
 
-export function showToast(text: string, kind: Toast['kind'] = 'info', chatId?: string) {
-  const toast: Toast = { id: uid(), text, kind, chatId };
+export function showToast(text: string, kind: Toast['kind'] = 'info', chatId?: string, contactId?: string) {
+  const toast: Toast = { id: uid(), text, kind, chatId, contactId };
   setState({ ...state, toasts: [...state.toasts.slice(-2), toast] });
   setTimeout(() => dismissToast(toast.id), kind === 'warning' ? 6000 : 4000);
 }
@@ -139,6 +196,6 @@ export function dismissToast(id: string) {
 
 // ---- demo reset --------------------------------------------------------------------
 
-export function replaceData(data: Pick<AppState, 'contacts' | 'messages' | 'drafts'>) {
+export function replaceData(data: Pick<AppState, 'contacts' | 'chats' | 'messages' | 'drafts'>) {
   setState({ ...state, ...data, typing: {}, toasts: [] });
 }

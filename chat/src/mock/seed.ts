@@ -1,5 +1,5 @@
-// Demo data: contacts and a short history, created on the first launch.
-import type { Contact, Message } from '../types';
+// Demo data: contacts, chats (including two groups) and a short history, created on the first launch.
+import type { Chat, Contact, Message } from '../types';
 import type { PersistedState } from '../storage/local';
 import { getMedia, MEDIA_READY_EVENT, putMedia } from '../storage/media';
 
@@ -8,70 +8,125 @@ const HOUR = 60 * MIN;
 
 export const SEED_PHOTO_ID = 'seed-sunset-photo';
 
+/** Phone numbers of the demo contacts (also used to upgrade data saved by the first version). */
+export const SEED_PHONES: Record<string, string> = {
+  anna: '79161112233',
+  max: '79262223344',
+  mom: '79031234567',
+  dima: '79853334455',
+  kate: '79154445566',
+  igor: '79995556677',
+  sofia: '79206667788',
+};
+
+type Profile = Pick<Contact, 'name' | 'phone' | 'gender' | 'about' | 'colors'>;
+
+/** People "registered" on the demo server who are not in your contacts yet — try adding them by number. */
+export const DIRECTORY: Profile[] = [
+  { name: 'Ольга Никитина', phone: '79161234567', gender: 'f', about: 'Йога и путешествия ✈️', colors: ['#ffecd2', '#fcb69f'] },
+  { name: 'Артём Соколов', phone: '79035550101', gender: 'm', about: 'Играю на гитаре 🎸', colors: ['#89f7fe', '#66a6ff'] },
+  { name: 'Полина Морозова', phone: '79267778899', gender: 'f', about: 'Учусь на журфаке', colors: ['#fbc2eb', '#a6c1ee'] },
+];
+
 export function createSeedState(): PersistedState {
   const now = Date.now();
   const contacts: Contact[] = [
-    { id: 'anna', name: 'Анна Смирнова', gender: 'f', about: 'Дизайнер, любит закаты', colors: ['#ff9a8b', '#ff6a88'], online: true, lastSeen: now },
-    { id: 'max', name: 'Максим Орлов', gender: 'm', about: 'Бэкенд-разработчик', colors: ['#56ccf2', '#2f80ed'], online: false, lastSeen: now - 25 * MIN },
-    { id: 'mom', name: 'Мама', gender: 'f', about: '❤️', colors: ['#f6d365', '#fda085'], online: true, lastSeen: now },
-    { id: 'dima', name: 'Дмитрий Ковалёв', gender: 'm', about: 'Футбол по четвергам ⚽', colors: ['#84fab0', '#2bb673'], online: false, lastSeen: now - 3 * HOUR },
-    { id: 'kate', name: 'Екатерина Волкова', gender: 'f', about: 'Менеджер проекта', colors: ['#a18cd1', '#7b61ff'], online: true, lastSeen: now },
-    { id: 'igor', name: 'Игорь Петров', gender: 'm', about: 'В отпуске до понедельника', colors: ['#fccb90', '#d57eeb'], online: false, lastSeen: now - 26 * HOUR },
-    { id: 'sofia', name: 'София Лебедева', gender: 'f', about: 'Фотограф', colors: ['#43e97b', '#38f9d7'], online: false, lastSeen: now - 50 * MIN },
+    { id: 'anna', name: 'Анна Смирнова', phone: SEED_PHONES.anna, gender: 'f', about: 'Дизайнер, любит закаты', colors: ['#ff9a8b', '#ff6a88'], online: true, lastSeen: now },
+    { id: 'max', name: 'Максим Орлов', phone: SEED_PHONES.max, gender: 'm', about: 'Бэкенд-разработчик', colors: ['#56ccf2', '#2f80ed'], online: false, lastSeen: now - 25 * MIN },
+    { id: 'mom', name: 'Мама', phone: SEED_PHONES.mom, gender: 'f', about: '❤️', colors: ['#f6d365', '#fda085'], online: true, lastSeen: now },
+    { id: 'dima', name: 'Дмитрий Ковалёв', phone: SEED_PHONES.dima, gender: 'm', about: 'Футбол по четвергам ⚽', colors: ['#84fab0', '#2bb673'], online: false, lastSeen: now - 3 * HOUR },
+    { id: 'kate', name: 'Екатерина Волкова', phone: SEED_PHONES.kate, gender: 'f', about: 'Менеджер проекта', colors: ['#a18cd1', '#7b61ff'], online: true, lastSeen: now },
+    { id: 'igor', name: 'Игорь Петров', phone: SEED_PHONES.igor, gender: 'm', about: 'В отпуске до понедельника', colors: ['#fccb90', '#d57eeb'], online: false, lastSeen: now - 26 * HOUR },
+    { id: 'sofia', name: 'София Лебедева', phone: SEED_PHONES.sofia, gender: 'f', about: 'Фотограф', colors: ['#43e97b', '#38f9d7'], online: false, lastSeen: now - 50 * MIN },
   ];
 
-  let n = 0;
-  const msg = (chatId: string, author: 'me' | 'them', text: string, ago: number, extra: Partial<Message> = {}): Message => {
-    const createdAt = now - ago;
-    const base: Message = { id: `seed-${chatId}-${n++}`, chatId, author, text, createdAt, status: 'read' };
-    if (author === 'me') {
-      base.sentAt = createdAt + 400;
-      base.deliveredAt = createdAt + 900;
-      base.readAt = createdAt + 2 * MIN;
-    } else {
-      base.readAt = createdAt + MIN;
-    }
-    return { ...base, ...extra };
-  };
+  const chats: Chat[] = [
+    ...contacts.map((c): Chat => ({ id: c.id, kind: 'direct', memberIds: [c.id], createdAt: now - 30 * 24 * HOUR })),
+    ...seedGroups(now),
+  ];
 
   const messages: Record<string, Message[]> = {
+    ...seedGroupMessages(now),
     anna: [
-      msg('anna', 'them', 'Привет! Как выходные? 😊', 26 * HOUR),
-      msg('anna', 'me', 'Привет! Отлично, ездили за город', 25.9 * HOUR),
-      msg('anna', 'them', 'Смотри, какой закат вчера был 🌅', 12 * MIN, {
+      msg(now, 'anna', 'them', 'Привет! Как выходные? 😊', 26 * HOUR),
+      msg(now, 'anna', 'me', 'Привет! Отлично, ездили за город', 25.9 * HOUR),
+      msg(now, 'anna', 'me', '', 25 * HOUR, { call: { kind: 'video', direction: 'out', outcome: 'answered', duration: 734 } }),
+      msg(now, 'anna', 'them', 'Смотри, какой закат вчера был 🌅', 12 * MIN, {
         status: 'delivered',
         readAt: undefined,
         media: { id: SEED_PHOTO_ID, kind: 'image', mime: 'image/jpeg', name: 'sunset.jpg', size: 86_000, width: 960, height: 640 },
       }),
-      msg('anna', 'them', 'Кстати, встреча завтра в 11, не забудь', 11 * MIN, { status: 'delivered', readAt: undefined }),
+      msg(now, 'anna', 'them', 'Кстати, встреча завтра в 11, не забудь', 11 * MIN, { status: 'delivered', readAt: undefined }),
     ],
     max: [
-      msg('max', 'them', 'Задеплоил новую версию API', 5 * HOUR),
-      msg('max', 'me', 'Супер, проверю вечером', 4.8 * HOUR),
-      msg('max', 'me', 'Всё работает 👍 Спасибо!', 40 * MIN, { status: 'delivered', readAt: undefined }),
+      msg(now, 'max', 'them', 'Задеплоил новую версию API', 5 * HOUR),
+      msg(now, 'max', 'me', 'Супер, проверю вечером', 4.8 * HOUR),
+      msg(now, 'max', 'me', 'Всё работает 👍 Спасибо!', 40 * MIN, { status: 'delivered', readAt: undefined }),
     ],
     mom: [
-      msg('mom', 'them', 'Как дела? Не забудь пообедать 🙂', 2 * HOUR),
-      msg('mom', 'me', 'Всё хорошо, мам ❤️', 1.9 * HOUR),
-      msg('mom', 'them', 'Позвони, как будет минутка', 1.5 * HOUR),
+      msg(now, 'mom', 'them', 'Как дела? Не забудь пообедать 🙂', 2 * HOUR),
+      msg(now, 'mom', 'me', 'Всё хорошо, мам ❤️', 1.9 * HOUR),
+      msg(now, 'mom', 'them', '', 1.55 * HOUR, { call: { kind: 'audio', direction: 'in', outcome: 'missed' } }),
+      msg(now, 'mom', 'them', 'Позвони, как будет минутка', 1.5 * HOUR),
     ],
     dima: [
-      msg('dima', 'them', 'В четверг играем в 19:00, ты с нами?', 28 * HOUR),
-      msg('dima', 'me', 'Конечно, буду!', 27 * HOUR),
+      msg(now, 'dima', 'them', 'В четверг играем в 19:00, ты с нами?', 28 * HOUR),
+      msg(now, 'dima', 'me', 'Конечно, буду!', 27 * HOUR),
     ],
     kate: [
-      msg('kate', 'them', 'Скинешь макеты до пятницы?', 3 * HOUR),
-      msg('kate', 'me', 'Да, почти готово', 2.9 * HOUR),
-      msg('kate', 'them', 'Отлично, жду 🙌', 2.8 * HOUR),
+      msg(now, 'kate', 'them', 'Скинешь макеты до пятницы?', 3 * HOUR),
+      msg(now, 'kate', 'me', 'Да, почти готово', 2.9 * HOUR),
+      msg(now, 'kate', 'them', 'Отлично, жду 🙌', 2.8 * HOUR),
     ],
-    igor: [msg('igor', 'me', 'Как отпуск? Где отдыхаешь?', 30 * HOUR, { status: 'sent', deliveredAt: undefined, readAt: undefined })],
+    igor: [msg(now, 'igor', 'me', 'Как отпуск? Где отдыхаешь?', 30 * HOUR, { status: 'sent', deliveredAt: undefined, readAt: undefined })],
     sofia: [
-      msg('sofia', 'them', 'Фотосессия переносится на субботу', 3 * 24 * HOUR),
-      msg('sofia', 'me', 'Хорошо, договорились', 3 * 24 * HOUR - 10 * MIN),
+      msg(now, 'sofia', 'them', 'Фотосессия переносится на субботу', 3 * 24 * HOUR),
+      msg(now, 'sofia', 'me', 'Хорошо, договорились', 3 * 24 * HOUR - 10 * MIN),
     ],
   };
 
-  return { contacts, messages, drafts: {} };
+  return { contacts, chats, messages, drafts: {} };
+}
+
+export function seedGroups(now: number): Chat[] {
+  return [
+    { id: 'g-football', kind: 'group', title: 'Футбол по четвергам ⚽', memberIds: ['dima', 'max', 'igor'], colors: ['#84fab0', '#2f80ed'], createdAt: now - 10 * 24 * HOUR },
+    { id: 'g-alpha', kind: 'group', title: 'Проект «Альфа»', memberIds: ['kate', 'anna', 'max'], colors: ['#a18cd1', '#fbc2eb'], createdAt: now - 7 * 24 * HOUR },
+  ];
+}
+
+export function seedGroupMessages(now: number): Record<string, Message[]> {
+  return {
+    'g-football': [
+      msg(now, 'g-football', 'system', 'Дмитрий создал группу «Футбол по четвергам ⚽»', 10 * 24 * HOUR),
+      msg(now, 'g-football', 'them', 'Бронь на четверг подтвердили, 19:00 🙌', 29 * HOUR, { senderId: 'dima' }),
+      msg(now, 'g-football', 'them', 'Я буду', 28.8 * HOUR, { senderId: 'max' }),
+      msg(now, 'g-football', 'me', '+1, возьму мяч', 28.5 * HOUR),
+      msg(now, 'g-football', 'them', 'Я пропускаю, в отпуске 🏖️', 26 * HOUR, { senderId: 'igor' }),
+    ],
+    'g-alpha': [
+      msg(now, 'g-alpha', 'system', 'Екатерина создала группу «Проект «Альфа»»', 7 * 24 * HOUR),
+      msg(now, 'g-alpha', 'them', 'Коллеги, созвон сегодня в 15:00', 4 * HOUR, { senderId: 'kate' }),
+      msg(now, 'g-alpha', 'them', 'Макеты скинула в общую папку', 3.5 * HOUR, { senderId: 'anna' }),
+      msg(now, 'g-alpha', 'me', 'Отлично, посмотрю до созвона', 3.4 * HOUR),
+      msg(now, 'g-alpha', 'them', 'Бэкенд готов к демо 🚀', 20 * MIN, { senderId: 'max', status: 'delivered', readAt: undefined }),
+    ],
+  };
+}
+
+let n = 0;
+function msg(now: number, chatId: string, author: Message['author'], text: string, ago: number, extra: Partial<Message> = {}): Message {
+  const createdAt = now - ago;
+  const base: Message = { id: `seed-${chatId}-${n++}`, chatId, author, text, createdAt, status: 'read' };
+  if (author === 'me') {
+    base.sentAt = createdAt + 400;
+    base.deliveredAt = createdAt + 900;
+    base.readAt = createdAt + 2 * MIN;
+  } else if (author === 'them') {
+    base.senderId = chatId;
+    base.readAt = createdAt + MIN;
+  }
+  return { ...base, ...extra };
 }
 
 /** The demo photo is drawn on a canvas once and stored in IndexedDB like any other photo. */

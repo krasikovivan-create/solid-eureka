@@ -3,15 +3,22 @@
 // Every message is saved locally first with status "pending". The outbox sends
 // pending messages oldest-first whenever the connection is up, and stops as soon
 // as it drops; the rest go out automatically when it comes back.
-import type { MediaKind, MediaRef, Message } from './types';
+import type { Contact, MediaKind, MediaRef, Message } from './types';
 import {
+  addContact,
+  addGroupMembers,
   addMessage,
+  createGroup,
+  ensureDirectChat,
+  findContactByPhone,
   findMessage,
+  getChat,
   getContact,
   getState,
   isOnline,
   pendingMessages,
   replaceData,
+  setCall,
   setConnection,
   setPresence,
   setTyping,
@@ -19,11 +26,12 @@ import {
   subscribe,
   updateMessage,
 } from './store';
-import { server, type ServerEvent } from './mock/server';
+import { server, type Profile, type ServerEvent } from './mock/server';
+import { handleCallEvent, onConnectionLost } from './calls';
 import { createSeedState, ensureSeedMedia } from './mock/seed';
 import { clearMedia, putMedia, rememberMediaUrl } from './storage/media';
 import { clearState, saveSimulatedOffline } from './storage/local';
-import { messagePreview, uid } from './utils';
+import { chatLook, messagePreview, plural, uid } from './utils';
 
 /** Chat the user is looking at; incoming messages there don't raise a toast. */
 let activeChat: string | null = null;
@@ -114,8 +122,10 @@ export async function flushOutbox() {
     for (const message of queue) {
       if (!isOnline()) break;
       if (findMessage(message.chatId, message.id)?.status !== 'pending') continue;
+      const chat = getChat(message.chatId);
+      if (!chat) continue;
       try {
-        const sentAt = await server.send(message);
+        const sentAt = await server.send(message, chat);
         updateMessage(message.chatId, message.id, { status: 'sent', sentAt });
         sent++;
         setConnection({ syncing: Math.max(0, queue.length - sent) });
@@ -130,14 +140,6 @@ export async function flushOutbox() {
   if (sent && wasBacklog) showToast(`Синхронизация завершена: отправлено ${sent} ${plural(sent, 'сообщение', 'сообщения', 'сообщений')}`, 'success');
   // Anything written while we were busy, or left after a failure, gets another go.
   if (pendingMessages().length) retryTimer = window.setTimeout(flushOutbox, isOnline() ? 300 : 3000);
-}
-
-function plural(n: number, one: string, few: string, many: string) {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-  return many;
 }
 
 // ---- receiving -----------------------------------------------------------------------
@@ -158,11 +160,18 @@ function applyEvent(event: ServerEvent) {
       }
       break;
     case 'message': {
-      addMessage(event.message);
-      const contact = getContact(event.message.chatId);
+      const m = event.message;
+      // Someone from my contacts wrote first: the direct chat appears in the list.
+      if (!getChat(m.chatId) && getContact(m.chatId)) ensureDirectChat(m.chatId);
+      const chat = getChat(m.chatId);
+      if (!chat) break;
+      addMessage(m);
+      const sender = m.senderId ? getContact(m.senderId) : undefined;
       const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
-      if (contact && (event.message.chatId !== activeChat || hidden)) {
-        showToast(`${contact.name}: ${messagePreview(event.message)}`, 'message', contact.id);
+      if (m.chatId !== activeChat || hidden) {
+        const { name } = chatLook(chat, getState().contacts);
+        const who = chat.kind === 'group' && sender ? `${name} · ${sender.name.split(' ')[0]}` : name;
+        showToast(`${who}: ${messagePreview(m)}`, 'message', chat.id, sender?.id);
       }
       break;
     }
@@ -170,8 +179,10 @@ function applyEvent(event: ServerEvent) {
       setPresence(event.contactId, event.online, event.at);
       break;
     case 'typing':
-      setTyping(event.chatId, event.typing);
+      setTyping(event.chatId, event.contactId);
       break;
+    default:
+      handleCallEvent(event);
   }
 }
 
@@ -195,7 +206,8 @@ function onConnectionChange() {
     flushOutbox();
   } else {
     // Without a connection we can't know who is typing.
-    for (const chatId of Object.keys(getState().typing)) setTyping(chatId, false);
+    for (const chatId of Object.keys(getState().typing)) setTyping(chatId, undefined);
+    onConnectionLost();
     if (!first) showToast('Нет подключения. Сообщения сохранятся и отправятся позже', 'warning');
   }
 }
@@ -206,7 +218,7 @@ export function startSync() {
   subscribe(onConnectionChange);
 
   const s = getState();
-  server.start(s.contacts, s.messages, applyEvent);
+  server.start(s.contacts, s.chats, s.messages, applyEvent);
   onConnectionChange();
   ensureSeedMedia();
 
@@ -215,13 +227,72 @@ export function startSync() {
 }
 
 export async function resetDemo() {
+  onConnectionLost();
+  setCall(null);
   server.stop();
   clearState();
   await clearMedia().catch(() => {});
   const seed = createSeedState();
   replaceData(seed);
-  server.start(seed.contacts, seed.messages, applyEvent);
+  server.start(seed.contacts, seed.chats, seed.messages, applyEvent);
   server.setClientOnline(isOnline());
   await ensureSeedMedia();
   showToast('Демо-данные восстановлены', 'info');
+}
+
+// ---- contacts & groups -----------------------------------------------------------------
+
+export type LookupResult =
+  | { status: 'found'; profile: Profile }
+  | { status: 'existing'; contact: Contact }
+  | { status: 'not-found' }
+  | { status: 'offline' }
+  | { status: 'error' };
+
+/** Ask the server who uses this number. */
+export async function lookupPhone(phone: string): Promise<LookupResult> {
+  const existing = findContactByPhone(phone);
+  if (existing) return { status: 'existing', contact: existing };
+  if (!isOnline()) return { status: 'offline' };
+  try {
+    const profile = await server.lookup(phone);
+    return profile ? { status: 'found', profile } : { status: 'not-found' };
+  } catch {
+    return isOnline() ? { status: 'error' } : { status: 'offline' };
+  }
+}
+
+/** Save a found person to my contacts (under the name I chose) and open a chat with them. */
+export function saveContact(profile: Profile, name: string): Contact {
+  const existing = findContactByPhone(profile.phone);
+  if (existing) return existing;
+  const contact: Contact = {
+    ...profile,
+    id: 'u' + profile.phone,
+    name: name.trim() || profile.name,
+    online: Math.random() < 0.5,
+    lastSeen: Date.now() - Math.round(Math.random() * 3_600_000),
+  };
+  addContact(contact);
+  server.registerContact(contact);
+  server.registerChat(ensureDirectChat(contact.id));
+  return contact;
+}
+
+export function openDirectChat(contactId: string) {
+  const chat = ensureDirectChat(contactId);
+  server.registerChat(chat);
+  return chat.id;
+}
+
+export function newGroup(title: string, memberIds: string[]) {
+  const chat = createGroup(title, memberIds);
+  server.registerChat(chat);
+  return chat.id;
+}
+
+export function addMembers(chatId: string, memberIds: string[]) {
+  addGroupMembers(chatId, memberIds);
+  const chat = getChat(chatId);
+  if (chat) server.registerChat(chat);
 }

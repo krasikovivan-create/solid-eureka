@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppState } from './store';
+import { UiContext, type SheetState } from './ui';
+import { Sheets } from './components/Sheets';
+import { CallScreen } from './components/CallScreen';
 import { Sidebar } from './components/Sidebar';
 import { ChatView } from './components/ChatView';
 import { Toasts } from './components/Toasts';
@@ -16,7 +19,8 @@ export function App() {
   const [chatId, setChatId] = useState<string | null>(readHash);
   // Keep the last chat mounted while the mobile pane slides away.
   const [shownId, setShownId] = useState<string | null>(chatId);
-  const known = useAppState((s) => s.contacts.some((c) => c.id === shownId));
+  const known = useAppState((s) => s.chats.some((c) => c.id === shownId));
+  const [sheet, setSheet] = useState<SheetState>(null);
 
   useEffect(() => {
     const onHash = () => {
@@ -54,9 +58,12 @@ export function App() {
     }
   }, []);
 
+  const ui = useMemo(() => ({ openChat, openSheet: setSheet }), [openChat]);
+
   return (
+    <UiContext.Provider value={ui}>
     <div className={`app ${chatId ? 'app--chat-open' : ''}`}>
-      <Sidebar activeId={chatId} onOpen={openChat} />
+      <Sidebar activeId={chatId} />
       <main className="pane">
         {shownId && known ? (
           <ChatView key={shownId} chatId={shownId} active={shownId === chatId} onBack={closeChat} />
@@ -67,10 +74,21 @@ export function App() {
             </div>
             <h2>Выберите чат</h2>
             <p>Сообщения хранятся на устройстве — писать можно даже без интернета. Всё отправится, как только появится связь.</p>
+            <div className="empty-state__actions">
+              <button className="btn btn--primary" onClick={() => setSheet({ type: 'add-contact' })}>
+                Добавить друга по номеру
+              </button>
+              <button className="btn" onClick={() => setSheet({ type: 'new-group' })}>
+                Создать группу
+              </button>
+            </div>
           </div>
         )}
       </main>
       <Toasts onOpenChat={openChat} />
+      <Sheets sheet={sheet} />
+      <CallScreen />
     </div>
+    </UiContext.Provider>
   );
 }
