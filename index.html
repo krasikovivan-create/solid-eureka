@@ -68,7 +68,26 @@
 
   /* Stage */
   .stage { background: radial-gradient(ellipse at 50% 35%, #232833 0%, var(--panel) 70%); border-radius: var(--radius); margin-top: 12px; padding: 8px; position: relative; overflow: hidden; }
-  .stage svg { display: block; width: 100%; height: auto; max-height: 42vh; }
+  .stage svg { display: block; width: 100%; height: auto; max-height: 54vh; }
+  #fighter { --fig-top: #8a8373; --fig-top-dark: #6e685c; --fig-pants: #1c1c1f; --fig-shoes: #3a322b; --fig-skin: #d7a585; }
+  .fig-top { fill: var(--fig-top); } .fig-top-dark { fill: var(--fig-top-dark); }
+  .fig-pants { fill: var(--fig-pants); } .fig-shoes { fill: var(--fig-shoes); } .fig-skin { fill: var(--fig-skin); }
+  .fig-sleeve { stroke: var(--fig-top); }
+  /* My boxer */
+  .me { display: flex; gap: 14px; align-items: center; }
+  .me-face { width: 74px; height: 90px; border-radius: 50%; background: var(--panel-2); flex: none; overflow: hidden; display: grid; place-items: center; color: var(--muted); font-size: 28px; }
+  .me-face img { width: 100%; height: 100%; object-fit: cover; }
+  .me > div { min-width: 0; display: grid; gap: 8px; }
+  .me .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  input[type=color] { width: 46px; height: 32px; border: 0; padding: 0; background: none; cursor: pointer; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: grid; place-items: center; padding: 16px; z-index: 20; }
+  .modal-box { background: var(--panel); border-radius: var(--radius); padding: 16px; width: min(100%, 340px); display: grid; gap: 12px; }
+  .modal-box h3 { margin: 0; font-size: 17px; }
+  .crop { position: relative; width: 240px; height: 280px; margin: 0 auto; overflow: hidden; border-radius: 12px; background: #000; touch-action: none; cursor: grab; }
+  .crop img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .crop-oval { position: absolute; left: 15%; top: 13%; width: 70%; height: 73%; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 999px rgba(0,0,0,.55); pointer-events: none; }
+  .modal-box label { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); }
+  .modal-box label input { flex: 1; }
   .callout { position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 28px; font-weight: 800; min-height: 36px; text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; z-index: 2; }
   .callout small { display: block; font-size: 14px; font-weight: 500; color: var(--muted); }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; font-size: 12px; color: var(--muted); padding: 4px 0 2px; }
@@ -214,29 +233,44 @@
       <div class="callout" id="callout"></div>
       <div class="flash" id="flash" hidden><span id="flashText"></span></div>
       <div class="task" id="task" hidden><div class="t" id="taskType"></div><div class="q" id="taskQ"></div><div class="a" id="taskA"></div></div>
-      <svg id="fighter" viewBox="0 0 400 300" aria-label="Боксёр">
+      <svg id="fighter" viewBox="0 0 400 520" aria-label="Боксёр">
         <defs>
           <radialGradient id="gLead" cx="40%" cy="35%"><stop offset="0" stop-color="#7fb0ff"/><stop offset="1" stop-color="#2358c9"/></radialGradient>
           <radialGradient id="gRear" cx="40%" cy="35%"><stop offset="0" stop-color="#ff7b7d"/><stop offset="1" stop-color="#b0171a"/></radialGradient>
           <radialGradient id="gSkin" cx="45%" cy="40%"><stop offset="0" stop-color="#e8b894"/><stop offset="1" stop-color="#b9805a"/></radialGradient>
+          <clipPath id="faceClip"><ellipse cx="200" cy="98" rx="37" ry="45"/></clipPath>
         </defs>
-        <ellipse cx="200" cy="288" rx="120" ry="9" fill="#000" opacity=".35"/>
+        <ellipse cx="200" cy="506" rx="118" ry="10" fill="#000" opacity=".35"/>
         <g id="rig">
           <g id="body">
-            <path d="M120 300 L135 170 Q200 140 265 170 L280 300 Z" fill="#2b303b"/>
-            <path d="M150 300 L158 200 Q200 188 242 200 L250 300 Z" fill="#343a47"/>
-            <rect x="128" y="270" width="144" height="10" rx="3" fill="#e5383b" opacity=".85"/>
-            <rect x="186" y="128" width="28" height="30" rx="8" fill="url(#gSkin)"/>
+            <!-- legs in a boxing stance -->
+            <path class="fig-pants" d="M148 322 L140 410 L132 492 L166 494 L176 412 L198 334 Z"/>
+            <path class="fig-pants" d="M202 334 L226 412 L236 494 L270 492 L260 410 L252 322 Z"/>
+            <path class="fig-shoes" d="M126 488 H168 Q176 488 176 498 V506 H118 V500 Q118 488 126 488 Z"/>
+            <path class="fig-shoes" d="M232 488 H274 Q282 488 282 500 V506 H224 V498 Q224 488 232 488 Z"/>
+            <!-- belt -->
+            <rect class="fig-pants" x="144" y="314" width="112" height="14" rx="4"/>
+            <rect x="192" y="315" width="16" height="12" rx="2" fill="#9aa1ad"/>
+            <!-- hoodie -->
+            <path class="fig-top" d="M126 178 Q200 146 274 178 L266 324 Q200 334 134 324 Z"/>
+            <path class="fig-top-dark" d="M158 266 H242 L252 318 Q200 326 148 318 Z" opacity=".7"/>
+            <path class="fig-top-dark" d="M166 150 Q200 172 234 150 Q230 180 200 184 Q170 180 166 150 Z"/>
+            <path d="M191 176 L189 226 M209 176 L211 226" stroke="#e8e2d4" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+            <rect x="222" y="200" width="18" height="13" rx="3" fill="#e8e2d4" opacity=".55"/>
+            <rect class="fig-skin" x="186" y="130" width="28" height="30" rx="8"/>
             <g id="head">
-              <ellipse cx="200" cy="100" rx="36" ry="42" fill="url(#gSkin)"/>
-              <path d="M164 92 Q166 56 200 56 Q234 56 236 92 Q224 72 200 72 Q176 72 164 92Z" fill="#3a2a20"/>
-              <ellipse cx="186" cy="102" rx="4" ry="5" fill="#222"/>
-              <ellipse cx="214" cy="102" rx="4" ry="5" fill="#222"/>
-              <path d="M190 124 Q200 128 210 124" stroke="#6b3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <g id="cartoonHead">
+                <ellipse cx="200" cy="100" rx="36" ry="42" fill="url(#gSkin)"/>
+                <path d="M164 92 Q166 56 200 56 Q234 56 236 92 Q224 72 200 72 Q176 72 164 92Z" fill="#3a2a20"/>
+                <ellipse cx="186" cy="102" rx="4" ry="5" fill="#222"/>
+                <ellipse cx="214" cy="102" rx="4" ry="5" fill="#222"/>
+                <path d="M190 124 Q200 128 210 124" stroke="#6b3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </g>
+              <image id="faceImg" x="163" y="53" width="74" height="90" preserveAspectRatio="none" clip-path="url(#faceClip)" display="none"/>
             </g>
           </g>
-          <line id="armL" x1="140" y1="178" x2="150" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
-          <line id="armR" x1="260" y1="178" x2="250" y2="140" stroke="#c99270" stroke-width="22" stroke-linecap="round"/>
+          <line id="armL" class="fig-sleeve" x1="140" y1="178" x2="150" y2="140" stroke-width="22" stroke-linecap="round"/>
+          <line id="armR" class="fig-sleeve" x1="260" y1="178" x2="250" y2="140" stroke-width="22" stroke-linecap="round"/>
           <g id="gloveL"><circle r="30" fill="url(#gLead)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
           <g id="gloveR"><circle r="30" fill="url(#gRear)"/><path d="M-16 8 Q0 20 16 8" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></g>
         </g>
@@ -373,12 +407,39 @@
       <div class="row"><label>Гонг и сигнал 10 сек</label><label class="switch"><input type="checkbox" id="sBell"><span></span></label></div>
     </div>
     <div class="card">
+      <h2>Мой боксёр</h2>
+      <div class="me">
+        <div class="me-face" id="meFace">🙂</div>
+        <div>
+          <p class="note" style="margin:0">Загрузи своё фото — лицо появится у боксёра. Фото остаётся только на этом устройстве и никуда не отправляется.</p>
+          <div class="buttons">
+            <button class="btn small primary" id="faceBtn">Загрузить фото</button>
+            <button class="btn small" id="faceRemove" hidden>Убрать</button>
+          </div>
+          <input type="file" id="faceFile" accept="image/*" hidden>
+        </div>
+      </div>
+      <div class="row" style="margin-top:8px"><label for="cTop">Кофта</label><input type="color" id="cTop"></div>
+      <div class="row"><label for="cPants">Штаны</label><input type="color" id="cPants"></div>
+      <div class="row"><label for="cShoes">Обувь</label><input type="color" id="cShoes"></div>
+      <div class="row"><label for="cSkin">Цвет кожи<span class="hint">шея; подбирается по фото</span></label><input type="color" id="cSkin"></div>
+    </div>
+    <div class="card">
       <h2>Без повторов</h2>
       <div class="row"><label>Показано разных комбинаций<span class="hint">случайные комбинации не повторяются — приложение помнит, что уже было</span></label><strong id="uniqCount">0</strong></div>
       <div class="row"><label>Начать историю заново</label><button class="btn small" id="histReset">Сбросить</button></div>
     </div>
     <div class="note">Настройки и свои комбинации сохраняются на этом устройстве. Для озвучки используется синтез речи браузера — если голос не звучит, проверь, что звук на телефоне включён и в системе установлен русский голос.</div>
   </section>
+</div>
+
+<div class="modal" id="cropModal" hidden>
+  <div class="modal-box" role="dialog" aria-label="Выбор лица">
+    <h3>Помести лицо в овал</h3>
+    <div class="crop" id="crop"><img id="cropImg" alt=""><div class="crop-oval"></div></div>
+    <label>Масштаб <input type="range" id="cropZoom" min="1" max="5" step="0.01" value="1"></label>
+    <div class="controls" style="margin-top:0"><button class="btn" id="cropCancel">Отмена</button><button class="btn primary" id="cropOk">Готово</button></div>
+  </div>
 </div>
 
 <script>
@@ -472,7 +533,7 @@
     },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
-  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true, mode: 'random', selected: [], custom: [], uniq: 0, counterHint: 'after' };
+  const DEFAULTS = { rounds: 3, roundLen: 180, rest: 60, prep: 10, level: 2, stance: 'orthodox', call: 'names', speed: 3, gap: 3, body: true, def: true, bell: true, mode: 'random', selected: [], custom: [], uniq: 0, counterHint: 'after', look: { top: '#8a8373', pants: '#1c1c1f', shoes: '#3a322b', skin: '#d7a585' } };
   const S = { ...DEFAULTS, ...store.get('boxing-combo-settings', {}) };
   if (!MODES[S.mode]) S.mode = 'random';
   const save = () => store.set('boxing-combo-settings', S);
@@ -576,7 +637,7 @@
   const gloveEls = { L: $('gloveL'), R: $('gloveR') };
   const armEls = { L: $('armL'), R: $('armR') };
   const shoulder = { L: [140, 178], R: [260, 178] };
-  const guard = { L: [158, 132], R: [242, 132] };
+  const guard = { L: [146, 136], R: [254, 136] };
   const neutral = () => ({
     L: { x: guard.L[0], y: guard.L[1], s: 1 }, R: { x: guard.R[0], y: guard.R[1], s: 1 },
     head: { x: 0, y: 0, r: 0 }, rig: { x: 0, y: 0, r: 0, s: 1 },
@@ -605,7 +666,7 @@
     }
     headEl.setAttribute('transform', `translate(${h.x} ${h.y}) rotate(${h.r} 200 100)`);
     const r = pose.rig;
-    rigEl.setAttribute('transform', `translate(${r.x} ${r.y}) translate(200 230) rotate(${r.r}) scale(${r.s}) translate(-200 -230)`);
+    rigEl.setAttribute('transform', `translate(${r.x} ${r.y}) translate(200 470) rotate(${r.r * 0.6}) scale(${r.s}) translate(-200 -470)`);
     rigEl.appendChild(pose.L.s > pose.R.s ? gloveEls.L : gloveEls.R); // active glove in front
   }
 
@@ -1278,6 +1339,93 @@
     $('uniqCount').textContent = '0';
   };
 
+  // ---------- My boxer: face photo and outfit (kept on this device only) ----------
+  const FACE_KEY = 'boxing-combo-face';
+  S.look = { ...DEFAULTS.look, ...(S.look || {}) };
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16);
+    const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v * k));
+    return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+  function applyLook() {
+    const f = $('fighter').style, L = S.look;
+    f.setProperty('--fig-top', L.top); f.setProperty('--fig-top-dark', shade(L.top, 0.78));
+    f.setProperty('--fig-pants', L.pants); f.setProperty('--fig-shoes', L.shoes); f.setProperty('--fig-skin', L.skin);
+    const face = store.get(FACE_KEY, '');
+    const has = typeof face === 'string' && face.startsWith('data:image');
+    $('faceImg').setAttribute('display', has ? 'inline' : 'none');
+    if (has) $('faceImg').setAttribute('href', face);
+    $('cartoonHead').style.display = has ? 'none' : '';
+    $('meFace').innerHTML = has ? `<img src="${face}" alt="Твоё лицо">` : '🙂';
+    $('faceRemove').hidden = !has;
+    $('faceBtn').textContent = has ? 'Другое фото' : 'Загрузить фото';
+  }
+  [['cTop', 'top'], ['cPants', 'pants'], ['cShoes', 'shoes'], ['cSkin', 'skin']].forEach(([id, key]) => {
+    const el = $(id); el.value = S.look[key];
+    el.oninput = () => { S.look[key] = el.value; save(); applyLook(); };
+  });
+  $('faceBtn').onclick = () => $('faceFile').click();
+  $('faceRemove').onclick = () => { try { localStorage.removeItem(FACE_KEY); } catch (e) {} applyLook(); };
+
+  // Crop: drag the photo and zoom until the face sits in the oval.
+  const crop = { img: $('cropImg'), box: $('crop'), x: 0, y: 0, base: 1, z: 1, url: '' };
+  const BOX_W = 240, BOX_H = 280, OVAL = { x: 36, y: 36.4, w: 168, h: 204.4 };
+  function layoutCrop() {
+    const s = crop.base * crop.z, im = crop.img;
+    im.style.width = im.naturalWidth * s + 'px';
+    im.style.left = crop.x + 'px'; im.style.top = crop.y + 'px';
+  }
+  function zoomTo(z) {
+    const cx = BOX_W / 2, cy = BOX_H / 2, old = crop.base * crop.z;
+    crop.z = z;
+    const s = crop.base * crop.z;
+    crop.x = cx - (cx - crop.x) * s / old; crop.y = cy - (cy - crop.y) * s / old;
+    layoutCrop();
+  }
+  $('faceFile').onchange = (e) => {
+    const file = e.target.files[0]; e.target.value = '';
+    if (!file) return;
+    if (crop.url) URL.revokeObjectURL(crop.url);
+    crop.url = URL.createObjectURL(file);
+    crop.img.onload = () => {
+      const im = crop.img;
+      crop.base = Math.max(BOX_W / im.naturalWidth, BOX_H / im.naturalHeight);
+      crop.z = 1; $('cropZoom').value = 1;
+      crop.x = (BOX_W - im.naturalWidth * crop.base) / 2; crop.y = (BOX_H - im.naturalHeight * crop.base) / 2;
+      layoutCrop();
+      $('cropModal').hidden = false;
+    };
+    crop.img.src = crop.url;
+  };
+  $('cropZoom').oninput = (e) => zoomTo(+e.target.value);
+  let drag = null;
+  crop.box.addEventListener('pointerdown', e => { drag = { px: e.clientX, py: e.clientY, x: crop.x, y: crop.y }; crop.box.setPointerCapture(e.pointerId); });
+  crop.box.addEventListener('pointermove', e => { if (!drag) return; crop.x = drag.x + e.clientX - drag.px; crop.y = drag.y + e.clientY - drag.py; layoutCrop(); });
+  crop.box.addEventListener('pointerup', () => { drag = null; });
+  crop.box.addEventListener('pointercancel', () => { drag = null; });
+  crop.box.addEventListener('wheel', e => { e.preventDefault(); const z = Math.min(5, Math.max(1, crop.z * (e.deltaY < 0 ? 1.08 : 0.93))); $('cropZoom').value = z; zoomTo(z); }, { passive: false });
+  const closeCrop = () => { $('cropModal').hidden = true; if (crop.url) { URL.revokeObjectURL(crop.url); crop.url = ''; } };
+  $('cropCancel').onclick = closeCrop;
+  $('cropOk').onclick = () => {
+    const W = 222, H = 270, s = crop.base * crop.z;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#2b303b'; g.fillRect(0, 0, W, H);
+    g.drawImage(crop.img, (OVAL.x - crop.x) / s, (OVAL.y - crop.y) / s, OVAL.w / s, OVAL.h / s, 0, 0, W, H);
+    // Pick the neck colour from the chin area of the crop.
+    try {
+      const d = g.getImageData(W * 0.4, H * 0.84, W * 0.2, H * 0.08).data;
+      let r = 0, gg = 0, b = 0, n = d.length / 4;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; }
+      S.look.skin = '#' + [r, gg, b].map(v => Math.round(v / n).toString(16).padStart(2, '0')).join('');
+      $('cSkin').value = S.look.skin; save();
+    } catch (e) {}
+    try { localStorage.setItem(FACE_KEY, cv.toDataURL('image/jpeg', 0.85)); }
+    catch (e) { $('faceBtn').textContent = 'Не хватило места — попробуй другое фото'; }
+    closeCrop();
+    applyLook();
+  };
+
   // ---------- Home screen install ----------
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -1287,6 +1435,7 @@
   if (isIOS && !standalone && store.get('boxing-combo-install-tip', '') !== 'hidden') $('installTip').hidden = false;
   $('installClose').onclick = () => { $('installTip').hidden = true; store.set('boxing-combo-install-tip', 'hidden'); };
 
+  applyLook();
   paintGloves();
   resetPose();
   idleView();
