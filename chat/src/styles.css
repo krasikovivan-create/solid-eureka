@@ -1200,7 +1200,8 @@ textarea {
   .toasts {
     left: auto;
     right: 20px;
-    bottom: 20px;
+    /* above the composer, so a toast never covers the send / record button */
+    bottom: 84px;
     align-items: flex-end;
     transform: none;
   }
@@ -2505,6 +2506,302 @@ button.members__item:hover {
 .hint + .sheet-action,
 .notice + .sheet-action {
   margin-top: 6px;
+}
+
+/* ============ Voice messages & video notes ============ */
+.composer__row {
+  position: relative;
+}
+.rec-btn {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  position: relative;
+  z-index: 5;
+}
+.rec-btn svg {
+  margin-left: 0;
+}
+.rec-btn.is-recording {
+  background: linear-gradient(135deg, #ff5f6d, #e8304a);
+  box-shadow: 0 0 0 8px rgba(232, 48, 74, 0.15);
+  transition: transform 0.1s linear, box-shadow 0.2s;
+}
+.rec-btn.is-starting {
+  opacity: 0.7;
+}
+.rec-bar {
+  position: absolute;
+  inset: 0 52px 0 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 20px;
+  background: #fff;
+  animation: fade-in 0.15s;
+  overflow: hidden;
+}
+.rec-bar__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e8304a;
+  animation: blink 1s infinite;
+}
+.rec-bar__time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 56px;
+}
+.rec-bar__cancel {
+  flex: 1;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.rec-bar__trash {
+  color: var(--danger);
+}
+.rec-bar__wave {
+  flex: 1;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.rec-bar__wave span {
+  flex: 1;
+  max-width: 4px;
+  border-radius: 2px;
+  background: #e8304a;
+  transition: height 0.1s;
+}
+.rec-lock {
+  position: absolute;
+  right: 4px;
+  bottom: 56px;
+  z-index: 6;
+  width: 40px;
+  padding: 8px 0;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #fff;
+  color: var(--text-2);
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  animation: toast-in 0.25s var(--ease-spring);
+  pointer-events: none;
+}
+.rec-hint {
+  position: absolute;
+  right: 0;
+  bottom: 52px;
+  z-index: 6;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: #1f2430;
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+  animation: toast-in 0.25s var(--ease-spring);
+  pointer-events: none;
+}
+.round-rec {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 14, 22, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fade-in 0.2s;
+  pointer-events: none;
+}
+.round-rec__circle {
+  position: relative;
+  width: min(72vw, 300px);
+  aspect-ratio: 1;
+  animation: pop 0.3s var(--ease-spring);
+}
+.round-rec__circle video {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  background: #000;
+}
+.round-rec__ring,
+.round-note__ring {
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.round-rec__track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 2.5;
+}
+.round-rec__progress {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+
+.msg--voice .msg__bubble {
+  min-width: 250px;
+}
+.msg__voice {
+  display: flow-root;
+  padding: 8px 10px 6px 8px;
+}
+.voice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.voice__play {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: #fff;
+  transition: transform 0.15s;
+}
+.voice__play:active {
+  transform: scale(0.92);
+}
+.voice__play svg {
+  margin-left: 1px;
+}
+.voice__body {
+  flex: 1;
+  min-width: 0;
+}
+.voice__wave {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+}
+.voice__wave span {
+  flex: 1;
+  max-width: 3px;
+  min-width: 2px;
+  border-radius: 2px;
+  background: #b9c4dc;
+  transition: background 0.15s;
+}
+.voice--mine .voice__wave span {
+  background: #a6bde6;
+}
+.voice__wave span.is-played {
+  background: var(--accent);
+}
+.voice__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.voice__speed {
+  padding: 0 6px;
+  border-radius: 8px;
+  background: rgba(59, 108, 246, 0.12);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+.msg__voice .msg__meta {
+  margin-top: -14px;
+}
+
+.msg--round .msg__bubble {
+  background: transparent !important;
+  box-shadow: none;
+  overflow: visible;
+  width: auto;
+}
+.round-note {
+  position: relative;
+  width: min(60vw, 240px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: width 0.3s var(--ease);
+}
+.round-note.is-active {
+  width: min(72vw, 300px);
+}
+.round-note video,
+.round-note .media__skeleton {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1f2430;
+  display: block;
+}
+.round-note__ring circle {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.round-note__badge {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.round-note__pending {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+}
+.msg__round-meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.msg--theirs .msg__round-meta {
+  justify-content: flex-start;
+}
+.msg__round-meta .msg__meta {
+  float: none;
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 /* ============ Animations ============ */

@@ -1,6 +1,7 @@
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read';
 
-export type MediaKind = 'image' | 'video';
+/** audio — voice message; a video with `round` — video note ("кружок"). */
+export type MediaKind = 'image' | 'video' | 'audio';
 
 /** Metadata of a photo/video; the file itself lives in IndexedDB under `id`. */
 export interface MediaRef {
@@ -11,8 +12,12 @@ export interface MediaRef {
   size: number;
   width?: number;
   height?: number;
-  /** Video length in seconds. */
+  /** Video/audio length in seconds. */
   duration?: number;
+  /** Video note ("кружок"): shown as a circle. */
+  round?: boolean;
+  /** Voice message: loudness bars 0..1 for the waveform. */
+  waveform?: number[];
 }
 
 export type CallKind = 'audio' | 'video';

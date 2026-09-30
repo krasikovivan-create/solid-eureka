@@ -218,3 +218,31 @@ export const CallArrowIcon = ({ incoming, ...p }: P & { incoming: boolean }) => 
     {incoming ? <path d="M17 7 7 17M7 9v8h8" /> : <path d="M7 17 17 7M9 7h8v8" />}
   </svg>
 );
+
+/** Video note ("кружок") mode of the record button. */
+export const RoundVideoIcon = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M10 9.3v5.4l4.5-2.7L10 9.3Z" fill="currentColor" />
+  </svg>
+);
+
+export const TrashIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+  </svg>
+);
+
+export const LockIcon = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </svg>
+);
+
+export const PauseIcon = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="7" y="5" width="3.5" height="14" rx="1" fill="currentColor" stroke="none" />
+    <rect x="13.5" y="5" width="3.5" height="14" rx="1" fill="currentColor" stroke="none" />
+  </svg>
+);

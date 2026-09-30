@@ -106,6 +106,8 @@ export function callLabel(call: CallLog) {
 
 export function messagePreview(m: Message) {
   if (m.call) return `${m.call.kind === 'video' ? '📹' : '📞'} ${callLabel(m.call)}`;
+  if (m.media?.kind === 'audio') return `🎤 Голосовое сообщение${m.media.duration ? ' · ' + formatDuration(m.media.duration) : ''}`;
+  if (m.media?.round) return `⭕ Видеосообщение${m.media.duration ? ' · ' + formatDuration(m.media.duration) : ''}`;
   if (m.media) {
     const label = m.media.kind === 'image' ? '📷 Фото' : '🎬 Видео';
     return m.text ? `${label} · ${m.text}` : label;

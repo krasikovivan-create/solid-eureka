@@ -66,17 +66,28 @@ export async function sendMedia(chatId: string, file: File, caption = '') {
     showToast(`«${file.name}» больше 100 МБ`, 'warning');
     return;
   }
+  await storeAndSend(chatId, file, { kind, name: file.name, ...(await probeMedia(file, kind)) }, caption);
+}
+
+/** A voice message or a video note ("кружок") recorded in the app. */
+export async function sendRecording(chatId: string, blob: Blob, meta: { kind: 'audio' | 'video'; duration: number; round?: boolean; waveform?: number[]; width?: number; height?: number }) {
+  const ext = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+  const name = meta.kind === 'audio' ? `voice.${ext}` : `video-note.${ext}`;
+  await storeAndSend(chatId, blob, { ...meta, name });
+}
+
+async function storeAndSend(chatId: string, blob: Blob, meta: Omit<MediaRef, 'id' | 'mime' | 'size'>, caption = '') {
   const id = uid();
-  const media: MediaRef = { id, kind, mime: file.type, name: file.name, size: file.size, ...(await probeMedia(file, kind)) };
+  const media: MediaRef = { id, mime: blob.type || 'application/octet-stream', size: blob.size, ...meta };
   // The file goes to IndexedDB before the message exists, so a pending message
-  // always has its photo/video available, even after a reload without internet.
+  // always has its file available, even after a reload without internet.
   try {
-    await putMedia(id, file);
+    await putMedia(id, blob);
   } catch {
     showToast('Не удалось сохранить файл на устройстве — не хватает места?', 'warning');
     return;
   }
-  rememberMediaUrl(id, file);
+  rememberMediaUrl(id, blob);
   addMessage({ id: uid(), chatId, author: 'me', text: caption.trim(), media, createdAt: Date.now(), status: 'pending' });
   flushOutbox();
 }
