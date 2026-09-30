@@ -5,6 +5,7 @@ import { startCall } from '../calls';
 import { callLabel, formatDuration, formatMoment, formatSize, formatTime } from '../utils';
 import { useMediaUrl } from './useMediaUrl';
 import { ContactAvatar } from './Avatar';
+import { RoundNote, VoiceNote } from './MediaNotes';
 import { CallArrowIcon, ImageIcon, PhoneIcon, PlayIcon, StatusIcon, VideoIcon } from './icons';
 
 interface Props {
@@ -37,7 +38,9 @@ function TextBubble({
   setShowInfo,
 }: Props & { showInfo: boolean; setShowInfo: (fn: (v: boolean) => boolean) => void }) {
   const mine = message.author === 'me';
-  const mediaOnly = !!message.media && !message.text;
+  const voice = message.media?.kind === 'audio';
+  const round = !!message.media?.round;
+  const mediaOnly = !!message.media && !message.text && !voice;
   const groupTheirs = inGroup && !mine;
 
   const classes = [
@@ -46,7 +49,9 @@ function TextBubble({
     first && 'msg--first',
     last && 'msg--last',
     animate && 'msg--new',
-    message.media && 'msg--has-media',
+    message.media && !voice && 'msg--has-media',
+    voice && 'msg--voice',
+    round && 'msg--round',
     mediaOnly && 'msg--media-only',
     message.status === 'pending' && 'msg--pending',
     groupTheirs && 'msg--group',
@@ -77,7 +82,19 @@ function TextBubble({
             {sender.name}
           </div>
         )}
-        {message.media && <MediaView media={message.media} pending={message.status === 'pending'} onOpen={onOpenImage} overlayMeta={mediaOnly ? meta : null} />}
+        {voice && (
+          <div className="msg__voice">
+            <VoiceNote media={message.media!} mine={mine} pending={message.status === 'pending'} />
+            {meta}
+          </div>
+        )}
+        {round && (
+          <>
+            <RoundNote media={message.media!} pending={message.status === 'pending'} />
+            <div className="msg__round-meta">{meta}</div>
+          </>
+        )}
+        {message.media && !voice && !round && <MediaView media={message.media} pending={message.status === 'pending'} onOpen={onOpenImage} overlayMeta={mediaOnly ? meta : null} />}
         {message.text && (
           <div className="msg__text">
             {message.text}

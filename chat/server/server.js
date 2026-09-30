@@ -7,7 +7,7 @@
 //  - store-and-forward for messages and receipts: delivered right away to online
 //    devices, queued for offline ones and handed over when they connect;
 //  - presence ("в сети" / "был в сети") and "печатает…";
-//  - photo/video upload for messages (kept until 14 days old);
+//  - photo/video/voice upload for messages (kept until 14 days old);
 //  - WebRTC call signaling (invite/accept/decline/end + SDP/ICE relay).
 //
 // The server doesn't keep chat history: once a message is delivered it is gone from here;
@@ -290,10 +290,13 @@ function onMessage(ws, m) {
 
 function sanitizeMedia(media) {
   const mime = str(media.mime, 80);
-  if (!/^(image|video)\//.test(mime)) return undefined;
+  if (!/^(image|video|audio)\//.test(mime)) return undefined;
+  const waveform = Array.isArray(media.waveform) ? media.waveform.slice(0, 64).map((v) => Math.max(0, Math.min(1, Number(v) || 0))) : undefined;
   return {
     id: str(media.id, 64),
-    kind: mime.startsWith('image/') ? 'image' : 'video',
+    kind: mime.startsWith('image/') ? 'image' : mime.startsWith('audio/') ? 'audio' : 'video',
+    round: media.round === true || undefined,
+    waveform,
     mime,
     name: str(media.name, 120),
     size: Number(media.size) || 0,
@@ -346,7 +349,7 @@ const server = http.createServer((req, res) => {
 
     if (req.method === 'POST') {
       const mime = String(req.headers['content-type'] || '');
-      if (!/^(image|video)\//.test(mime)) return void res.writeHead(415).end('only photos and videos');
+      if (!/^(image|video|audio)\//.test(mime)) return void res.writeHead(415).end('only photos, videos and voice');
       if (Number(req.headers['content-length'] || 0) > MAX_MEDIA) return void res.writeHead(413).end('too large');
       let size = 0;
       const tmp = file + '.' + randomUUID() + '.part';

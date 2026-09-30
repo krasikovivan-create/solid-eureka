@@ -4,6 +4,7 @@ import { sendMedia, sendText } from '../sync';
 import { notifyTyping } from '../real';
 import { formatSize } from '../utils';
 import { CloseIcon, PaperclipIcon, PlayIcon, SendIcon } from './icons';
+import { RecordControl } from './RecordControl';
 
 export interface Attachment {
   key: string;
@@ -125,9 +126,14 @@ export function Composer({ chatId, attachments, onAddFiles, onRemove, onClear }:
             }
           }}
         />
-        <button className={`send-btn ${canSend ? 'is-active' : ''}`} onClick={submit} disabled={!canSend} aria-label="Отправить">
-          <SendIcon />
-        </button>
+        {canSend ? (
+          <button className="send-btn is-active" onClick={submit} aria-label="Отправить">
+            <SendIcon />
+          </button>
+        ) : (
+          // Empty field: the button records a voice message or a video note instead.
+          <RecordControl chatId={chatId} />
+        )}
       </div>
     </div>
   );
