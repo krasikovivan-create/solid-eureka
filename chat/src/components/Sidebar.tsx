@@ -1,110 +1,153 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import type { Contact, Message } from '../types';
+import type { Chat, Contact, Message } from '../types';
 import { isOnline, useAppState } from '../store';
-import { resetDemo, setSimulatedOffline } from '../sync';
-import { formatListTime, messagePreview } from '../utils';
-import { Avatar } from './Avatar';
-import { MoreIcon, RefreshIcon, SearchIcon, StatusIcon, WifiOffIcon } from './icons';
+import { openDirectChat, resetDemo, setSimulatedOffline } from '../sync';
+import { demoIncomingCall, startCall } from '../calls';
+import { useUi } from '../ui';
+import { chatLook, formatLastSeen, formatListTime, formatPhone, messagePreview } from '../utils';
+import { ChatAvatar, ContactAvatar } from './Avatar';
+import { EditIcon, MoreIcon, PhoneIcon, RefreshIcon, SearchIcon, StatusIcon, UserPlusIcon, UsersIcon, VideoIcon, WifiOffIcon } from './icons';
 
 interface Props {
   activeId: string | null;
-  onOpen: (chatId: string) => void;
 }
 
-export function Sidebar({ activeId, onOpen }: Props) {
+type Tab = 'chats' | 'contacts';
+
+export function Sidebar({ activeId }: Props) {
+  const { openSheet } = useUi();
   const contacts = useAppState((s) => s.contacts);
-  const messages = useAppState((s) => s.messages);
-  const drafts = useAppState((s) => s.drafts);
-  const typing = useAppState((s) => s.typing);
   const online = useAppState(isOnline);
+  const [tab, setTab] = useState<Tab>('chats');
   const [query, setQuery] = useState('');
-
-  const chats = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return contacts
-      .map((contact) => {
-        const list = messages[contact.id] ?? [];
-        return {
-          contact,
-          last: list[list.length - 1] as Message | undefined,
-          unread: list.filter((m) => m.author === 'them' && m.status !== 'read').length,
-        };
-      })
-      .filter(({ contact, last }) => !q || contact.name.toLowerCase().includes(q) || last?.text.toLowerCase().includes(q))
-      .sort((a, b) => (b.last?.createdAt ?? 0) - (a.last?.createdAt ?? 0));
-  }, [contacts, messages, query]);
-
   const onlineCount = contacts.filter((c) => c.online).length;
 
   return (
     <aside className="sidebar">
       <header className="sidebar__header">
         <div className="sidebar__title">
-          <h1>Чаты</h1>
+          <h1>{tab === 'chats' ? 'Чаты' : 'Контакты'}</h1>
           <ConnectionPill />
         </div>
-        <Menu />
+        <div className="sidebar__actions">
+          <button className="icon-btn icon-btn--accent" onClick={() => openSheet({ type: 'new-chat' })} aria-label="Новый чат" title="Новый чат или группа">
+            <EditIcon />
+          </button>
+          <Menu />
+        </div>
       </header>
+      <div className="tabs" role="tablist">
+        {(['chats', 'contacts'] as const).map((t) => (
+          <button key={t} role="tab" aria-selected={tab === t} className={`tabs__tab ${tab === t ? 'is-active' : ''}`} onClick={() => setTab(t)}>
+            {t === 'chats' ? 'Чаты' : 'Контакты'}
+          </button>
+        ))}
+        <span className="tabs__indicator" style={{ transform: `translateX(${tab === 'chats' ? 0 : 100}%)` }} />
+      </div>
       <label className="search">
         <SearchIcon width={18} height={18} />
-        <input type="search" placeholder="Поиск" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input type="search" placeholder={tab === 'chats' ? 'Поиск по чатам' : 'Имя или номер'} value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
       <div className="sidebar__sub">{online ? `В сети: ${onlineCount} из ${contacts.length}` : 'Статусы контактов обновятся после подключения'}</div>
-      <ul className="chat-list">
-        {chats.map(({ contact, last, unread }, i) => (
-          <ChatListItem
-            key={contact.id}
-            index={i}
-            contact={contact}
-            last={last}
-            unread={unread}
-            draft={contact.id !== activeId ? drafts[contact.id] : undefined}
-            typing={!!typing[contact.id]}
-            active={contact.id === activeId}
-            showPresence={online}
-            onOpen={onOpen}
-          />
-        ))}
-        {chats.length === 0 && <li className="chat-list__empty">Ничего не найдено</li>}
-      </ul>
+      {tab === 'chats' ? <ChatList activeId={activeId} query={query} /> : <ContactList query={query} />}
     </aside>
+  );
+}
+
+// ---- chats ---------------------------------------------------------------------------------------
+
+function ChatList({ activeId, query }: { activeId: string | null; query: string }) {
+  const { openChat } = useUi();
+  const chats = useAppState((s) => s.chats);
+  const contacts = useAppState((s) => s.contacts);
+  const messages = useAppState((s) => s.messages);
+  const drafts = useAppState((s) => s.drafts);
+  const typing = useAppState((s) => s.typing);
+  const online = useAppState(isOnline);
+
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return chats
+      .map((chat) => {
+        const list = messages[chat.id] ?? [];
+        return {
+          chat,
+          name: chatLook(chat, contacts).name,
+          last: list[list.length - 1] as Message | undefined,
+          unread: list.filter((m) => m.author === 'them' && m.status !== 'read').length,
+        };
+      })
+      // A direct chat with no messages stays out of the list until someone writes.
+      .filter(({ chat, last }) => last || chat.kind === 'group' || chat.id === activeId)
+      .filter(({ name, last }) => !q || name.toLowerCase().includes(q) || last?.text.toLowerCase().includes(q))
+      .sort((a, b) => (b.last?.createdAt ?? b.chat.createdAt) - (a.last?.createdAt ?? a.chat.createdAt));
+  }, [chats, contacts, messages, query, activeId]);
+
+  return (
+    <ul className="chat-list">
+      {rows.map(({ chat, name, last, unread }, i) => {
+        const typer = typing[chat.id];
+        return (
+          <ChatListItem
+            key={chat.id}
+            index={i}
+            chat={chat}
+            name={name}
+            last={last}
+            senderName={chat.kind === 'group' && last?.author === 'them' && last.senderId ? contacts.find((c) => c.id === last.senderId)?.name.split(' ')[0] : undefined}
+            unread={unread}
+            draft={chat.id !== activeId ? drafts[chat.id] : undefined}
+            typing={typer ? (chat.kind === 'group' ? `${contacts.find((c) => c.id === typer)?.name.split(' ')[0] ?? 'Кто-то'} печатает…` : 'печатает…') : undefined}
+            active={chat.id === activeId}
+            showPresence={online}
+            onOpen={openChat}
+          />
+        );
+      })}
+      {rows.length === 0 && <li className="chat-list__empty">Ничего не найдено</li>}
+    </ul>
   );
 }
 
 interface ItemProps {
   index: number;
-  contact: Contact;
+  chat: Chat;
+  name: string;
   last?: Message;
+  senderName?: string;
   unread: number;
   draft?: string;
-  typing: boolean;
+  typing?: string;
   active: boolean;
   showPresence: boolean;
   onOpen: (id: string) => void;
 }
 
-const ChatListItem = memo(function ChatListItem({ index, contact, last, unread, draft, typing, active, showPresence, onOpen }: ItemProps) {
-  let preview: React.ReactNode = last ? messagePreview(last) : 'Нет сообщений';
+const ChatListItem = memo(function ChatListItem({ index, chat, name, last, senderName, unread, draft, typing, active, showPresence, onOpen }: ItemProps) {
+  let preview: React.ReactNode = last ? messagePreview(last) : chat.kind === 'group' ? 'Группа создана' : 'Нет сообщений';
+  const mineLast = last?.author === 'me' && !last.call;
+  if (senderName) preview = (<><span className="chat-item__you">{senderName}: </span>{preview}</>);
+  if (mineLast && !typing && !draft) preview = (<><span className="chat-item__you">Вы: </span>{preview}</>);
   if (draft) preview = (<><span className="chat-item__draft">Черновик:</span> {draft}</>);
-  if (typing) preview = <span className="chat-item__typing">печатает…</span>;
+  if (typing) preview = <span className="chat-item__typing">{typing}</span>;
 
   return (
-    <li style={{ '--i': index } as React.CSSProperties}>
-      <button className={`chat-item ${active ? 'is-active' : ''} ${unread ? 'has-unread' : ''}`} onClick={() => onOpen(contact.id)}>
-        <Avatar contact={contact} size={52} showStatus={showPresence} />
+    <li style={{ '--i': Math.min(index, 12) } as React.CSSProperties}>
+      <button className={`chat-item ${active ? 'is-active' : ''} ${unread ? 'has-unread' : ''}`} onClick={() => onOpen(chat.id)}>
+        <ChatAvatar chat={chat} size={52} showStatus={showPresence} />
         <div className="chat-item__body">
           <div className="chat-item__top">
-            <span className="chat-item__name">{contact.name}</span>
+            <span className="chat-item__name">
+              {chat.kind === 'group' && <UsersIcon className="chat-item__group" width={15} height={15} />}
+              {name}
+            </span>
             <span className="chat-item__time">
-              {last?.author === 'me' && !typing && !draft && <StatusIcon status={last.status} />}
+              {mineLast && !typing && !draft && <StatusIcon status={last!.status} />}
               {last && formatListTime(last.createdAt)}
             </span>
           </div>
           <div className="chat-item__bottom">
-            <span className="chat-item__preview">
-              {last?.author === 'me' && !typing && !draft && <span className="chat-item__you">Вы: </span>}
-              {preview}
-            </span>
+            <span className={`chat-item__preview ${last?.call?.outcome === 'missed' ? 'is-missed' : ''}`}>{preview}</span>
             {unread > 0 && <span className="badge">{unread}</span>}
           </div>
         </div>
@@ -112,6 +155,76 @@ const ChatListItem = memo(function ChatListItem({ index, contact, last, unread, 
     </li>
   );
 });
+
+// ---- contacts -------------------------------------------------------------------------------------
+
+function ContactList({ query }: { query: string }) {
+  const { openChat, openSheet } = useUi();
+  const contacts = useAppState((s) => s.contacts);
+  const online = useAppState(isOnline);
+
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const qDigits = q.replace(/\D/g, '');
+    return contacts
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || (qDigits.length > 2 && c.phone.includes(qDigits)))
+      .sort((a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name, 'ru'));
+  }, [contacts, query]);
+
+  return (
+    <ul className="chat-list">
+      <li>
+        <button className="list-action" onClick={() => openSheet({ type: 'add-contact' })}>
+          <span className="list-action__icon">
+            <UserPlusIcon width={22} height={22} />
+          </span>
+          Добавить друга по номеру
+        </button>
+      </li>
+      <li>
+        <button className="list-action" onClick={() => openSheet({ type: 'new-group' })}>
+          <span className="list-action__icon">
+            <UsersIcon width={22} height={22} />
+          </span>
+          Создать группу
+        </button>
+      </li>
+      {list.map((c, i) => (
+        <ContactRow key={c.id} contact={c} index={i} showPresence={online} onOpen={() => openChat(openDirectChat(c.id))} />
+      ))}
+      {list.length === 0 && <li className="chat-list__empty">Никого не найдено</li>}
+    </ul>
+  );
+}
+
+function ContactRow({ contact, index, showPresence, onOpen }: { contact: Contact; index: number; showPresence: boolean; onOpen: () => void }) {
+  const { openChat } = useUi();
+  const call = (kind: 'audio' | 'video') => {
+    openChat(openDirectChat(contact.id));
+    startCall(contact.id, kind);
+  };
+  return (
+    <li style={{ '--i': Math.min(index + 2, 12) } as React.CSSProperties} className="contact-row">
+      <button className="chat-item" onClick={onOpen}>
+        <ContactAvatar contact={contact} size={48} showStatus={showPresence} />
+        <div className="chat-item__body">
+          <div className="chat-item__name">{contact.name}</div>
+          <div className={`chat-item__preview ${contact.online && showPresence ? 'is-online' : ''}`}>
+            {contact.online && showPresence ? 'в сети' : formatLastSeen(contact)} · {formatPhone(contact.phone)}
+          </div>
+        </div>
+      </button>
+      <div className="contact-row__calls">
+        <button className="icon-btn icon-btn--accent" onClick={() => call('audio')} aria-label={`Позвонить: ${contact.name}`} title="Аудиозвонок">
+          <PhoneIcon width={20} height={20} />
+        </button>
+        <button className="icon-btn icon-btn--accent" onClick={() => call('video')} aria-label={`Видеозвонок: ${contact.name}`} title="Видеозвонок">
+          <VideoIcon width={20} height={20} />
+        </button>
+      </div>
+    </li>
+  );
+}
 
 function ConnectionPill() {
   const { browserOnline, simulatedOffline, syncing } = useAppState((s) => s.connection);
@@ -172,6 +285,20 @@ function Menu() {
           </span>
           <input type="checkbox" className="switch" checked={simulatedOffline} onChange={(e) => setSimulatedOffline(e.target.checked)} />
         </label>
+        <button
+          className="menu__item"
+          role="menuitem"
+          onClick={() => {
+            setOpen(false);
+            demoIncomingCall();
+          }}
+        >
+          <PhoneIcon width={20} height={20} />
+          <span className="menu__label">
+            Демо: входящий звонок
+            <small>Кто-то из друзей в сети позвонит вам</small>
+          </span>
+        </button>
         <button
           className="menu__item"
           role="menuitem"

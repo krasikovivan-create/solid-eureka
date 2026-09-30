@@ -1,22 +1,44 @@
 import { memo, useState } from 'react';
-import type { MediaRef, Message } from '../types';
+import type { Contact, MediaRef, Message } from '../types';
 import { isOnline, useAppState } from '../store';
-import { formatDuration, formatMoment, formatSize, formatTime } from '../utils';
+import { startCall } from '../calls';
+import { callLabel, formatDuration, formatMoment, formatSize, formatTime } from '../utils';
 import { useMediaUrl } from './useMediaUrl';
-import { ImageIcon, PlayIcon, StatusIcon, VideoIcon } from './icons';
+import { ContactAvatar } from './Avatar';
+import { CallArrowIcon, ImageIcon, PhoneIcon, PlayIcon, StatusIcon, VideoIcon } from './icons';
 
 interface Props {
   message: Message;
   first: boolean;
   last: boolean;
   animate: boolean;
+  /** Group chats: who wrote it (name above the first bubble, avatar next to the last). */
+  sender?: Contact;
+  inGroup?: boolean;
   onOpenImage: (media: MediaRef) => void;
 }
 
-export const MessageBubble = memo(function MessageBubble({ message, first, last, animate, onOpenImage }: Props) {
+export const MessageBubble = memo(function MessageBubble({ message, first, last, animate, sender, inGroup, onOpenImage }: Props) {
   const [showInfo, setShowInfo] = useState(false);
+  if (message.author === 'system') return <div className={`msg-system ${animate ? 'msg--new' : ''}`}>{message.text}</div>;
+  if (message.call) return <CallBubble message={message} first={first} animate={animate} />;
+  return <TextBubble {...{ message, first, last, animate, sender, inGroup, onOpenImage, showInfo, setShowInfo }} />;
+});
+
+function TextBubble({
+  message,
+  first,
+  last,
+  animate,
+  sender,
+  inGroup,
+  onOpenImage,
+  showInfo,
+  setShowInfo,
+}: Props & { showInfo: boolean; setShowInfo: (fn: (v: boolean) => boolean) => void }) {
   const mine = message.author === 'me';
   const mediaOnly = !!message.media && !message.text;
+  const groupTheirs = inGroup && !mine;
 
   const classes = [
     'msg',
@@ -27,6 +49,7 @@ export const MessageBubble = memo(function MessageBubble({ message, first, last,
     message.media && 'msg--has-media',
     mediaOnly && 'msg--media-only',
     message.status === 'pending' && 'msg--pending',
+    groupTheirs && 'msg--group',
   ]
     .filter(Boolean)
     .join(' ');
@@ -38,8 +61,8 @@ export const MessageBubble = memo(function MessageBubble({ message, first, last,
     </span>
   );
 
-  return (
-    <div className={classes}>
+  const bubble = (
+    <>
       <div
         className="msg__bubble"
         onClick={mine ? () => setShowInfo((v) => !v) : undefined}
@@ -49,6 +72,11 @@ export const MessageBubble = memo(function MessageBubble({ message, first, last,
         aria-expanded={mine ? showInfo : undefined}
         title={mine ? 'Нажмите, чтобы увидеть время доставки' : undefined}
       >
+        {groupTheirs && first && sender && (
+          <div className="msg__sender" style={{ color: sender.colors[1] }}>
+            {sender.name}
+          </div>
+        )}
         {message.media && <MediaView media={message.media} pending={message.status === 'pending'} onOpen={onOpenImage} overlayMeta={mediaOnly ? meta : null} />}
         {message.text && (
           <div className="msg__text">
@@ -67,9 +95,49 @@ export const MessageBubble = memo(function MessageBubble({ message, first, last,
           </div>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <div className={classes}>
+      {groupTheirs ? (
+        <div className="msg__row">
+          <div className="msg__avatar">{last && sender && <ContactAvatar contact={sender} size={32} showStatus={false} />}</div>
+          <div className="msg__col">{bubble}</div>
+        </div>
+      ) : (
+        bubble
+      )}
     </div>
   );
-});
+}
+
+function CallBubble({ message, first, animate }: { message: Message; first: boolean; animate: boolean }) {
+  const call = message.call!;
+  const mine = message.author === 'me';
+  const bad = call.outcome !== 'answered';
+  const Icon = call.kind === 'video' ? VideoIcon : PhoneIcon;
+  return (
+    <div className={`msg ${mine ? 'msg--mine' : 'msg--theirs'} ${first ? 'msg--first' : ''} ${animate ? 'msg--new' : ''} msg--last`}>
+      <div className="msg__bubble call-bubble">
+        <span className={`call-bubble__icon ${bad ? 'is-bad' : ''}`}>
+          <Icon width={20} height={20} />
+        </span>
+        <span className="call-bubble__text">
+          <span className="call-bubble__title">{callLabel(call)}</span>
+          <span className={`call-bubble__sub ${bad ? 'is-bad' : ''}`}>
+            <CallArrowIcon incoming={call.direction === 'in'} width={14} height={14} />
+            {formatTime(message.createdAt)}
+            {call.duration !== undefined && ` · ${formatDuration(call.duration)}`}
+          </span>
+        </span>
+        <button className="call-bubble__again" onClick={() => startCall(message.chatId, call.kind)} aria-label="Перезвонить" title="Перезвонить">
+          <Icon width={18} height={18} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function InfoRow({ label, time, waiting = '' }: { label: string; time?: number; waiting?: string }) {
   return (

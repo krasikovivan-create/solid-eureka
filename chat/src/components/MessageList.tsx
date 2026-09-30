@@ -1,19 +1,30 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { MediaRef, Message } from '../types';
+import type { Chat, MediaRef, Message } from '../types';
+import { useAppState } from '../store';
 import { formatDay, isSameDay } from '../utils';
 import { MessageBubble } from './MessageBubble';
 import { ArrowDownIcon } from './icons';
 
 interface Props {
+  chat: Chat;
   messages: Message[];
-  typing: boolean;
+  /** Contact who is typing right now. */
+  typer?: string;
   onOpenImage: (media: MediaRef) => void;
 }
 
 const GROUP_GAP = 5 * 60_000;
 const NEAR_BOTTOM = 120;
 
-export function MessageList({ messages, typing, onOpenImage }: Props) {
+/** Same person, same side, close in time → one visual group of bubbles. */
+const sameGroup = (a: Message, b: Message) =>
+  a.author === b.author && a.author !== 'system' && !a.call && !b.call && (a.author === 'me' || a.senderId === b.senderId) && Math.abs(b.createdAt - a.createdAt) <= GROUP_GAP;
+
+export function MessageList({ chat, messages, typer, onOpenImage }: Props) {
+  const contacts = useAppState((s) => s.contacts);
+  const typing = !!typer;
+  const inGroup = chat.kind === 'group';
+  const typerContact = typer ? contacts.find((c) => c.id === typer) : undefined;
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
   const [showJump, setShowJump] = useState(false);
@@ -82,8 +93,9 @@ export function MessageList({ messages, typing, onOpenImage }: Props) {
             const prev = messages[i - 1];
             const next = messages[i + 1];
             const newDay = !prev || !isSameDay(prev.createdAt, m.createdAt);
-            const first = newDay || prev.author !== m.author || m.createdAt - prev.createdAt > GROUP_GAP || m.id === firstUnreadId;
-            const last = !next || next.author !== m.author || next.createdAt - m.createdAt > GROUP_GAP || !isSameDay(next.createdAt, m.createdAt) || next.id === firstUnreadId;
+            const first = newDay || !sameGroup(prev, m) || m.id === firstUnreadId;
+            const last = !next || !sameGroup(m, next) || !isSameDay(next.createdAt, m.createdAt) || next.id === firstUnreadId;
+            const sender = m.author === 'them' && m.senderId ? contacts.find((c) => c.id === m.senderId) : undefined;
             return (
               <Fragment key={m.id}>
                 {newDay && (
@@ -92,13 +104,14 @@ export function MessageList({ messages, typing, onOpenImage }: Props) {
                   </div>
                 )}
                 {m.id === firstUnreadId && <div className="unread-divider">Новые сообщения</div>}
-                <MessageBubble message={m} first={first} last={last} animate={!initialIds.has(m.id)} onOpenImage={onOpenImage} />
+                <MessageBubble message={m} first={first} last={last} animate={!initialIds.has(m.id)} sender={sender} inGroup={inGroup} onOpenImage={onOpenImage} />
               </Fragment>
             );
           })}
           <div className={`typing-row ${typing ? 'is-visible' : ''}`} aria-live="polite">
             {typing && (
-              <div className="typing-bubble" aria-label="печатает">
+              <div className="typing-bubble" aria-label={`${typerContact?.name ?? ''} печатает`}>
+                {inGroup && typerContact && <em className="typing-bubble__name">{typerContact.name.split(' ')[0]}</em>}
                 <span />
                 <span />
                 <span />

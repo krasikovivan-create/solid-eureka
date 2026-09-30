@@ -1,12 +1,13 @@
-import { dismissToast, getContact, useAppState } from '../store';
-import { Avatar } from './Avatar';
+import { dismissToast, getChat, getContact, useAppState } from '../store';
+import { ChatAvatar, ContactAvatar } from './Avatar';
 
 export function Toasts({ onOpenChat }: { onOpenChat: (chatId: string) => void }) {
   const toasts = useAppState((s) => s.toasts);
   return (
     <div className="toasts" aria-live="polite">
       {toasts.map((t) => {
-        const contact = t.chatId ? getContact(t.chatId) : undefined;
+        const contact = t.contactId ? getContact(t.contactId) : undefined;
+        const chat = !contact && t.chatId ? getChat(t.chatId) : undefined;
         return (
           <button
             key={t.id}
@@ -16,7 +17,8 @@ export function Toasts({ onOpenChat }: { onOpenChat: (chatId: string) => void })
               if (t.chatId) onOpenChat(t.chatId);
             }}
           >
-            {contact && <Avatar contact={contact} size={32} showStatus={false} />}
+            {contact && <ContactAvatar contact={contact} size={32} showStatus={false} />}
+            {chat && <ChatAvatar chat={chat} size={32} showStatus={false} />}
             <span className="toast__text">{t.text}</span>
           </button>
         );

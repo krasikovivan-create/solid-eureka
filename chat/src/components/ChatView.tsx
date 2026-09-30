@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import type { MediaRef, Message } from '../types';
 import { isOnline, markChatRead, showToast, useAppState } from '../store';
 import { MAX_FILE_SIZE, setActiveChat } from '../sync';
-import { formatLastSeen, uid } from '../utils';
-import { Avatar } from './Avatar';
+import { startCall } from '../calls';
+import { chatLook, formatLastSeen, plural, uid } from '../utils';
+import { ChatAvatar } from './Avatar';
+import { ChatInfo } from './ChatInfo';
 import { Composer, type Attachment } from './Composer';
 import { MessageList } from './MessageList';
 import { Lightbox } from './Lightbox';
-import { BackIcon, ImageIcon, WifiOffIcon } from './icons';
+import { BackIcon, ImageIcon, PhoneIcon, VideoIcon, WifiOffIcon } from './icons';
 
 const EMPTY: Message[] = [];
 
@@ -18,9 +20,12 @@ interface Props {
 }
 
 export function ChatView({ chatId, active, onBack }: Props) {
-  const contact = useAppState((s) => s.contacts.find((c) => c.id === chatId));
+  const chat = useAppState((s) => s.chats.find((c) => c.id === chatId));
+  const contacts = useAppState((s) => s.contacts);
   const messages = useAppState((s) => s.messages[chatId] ?? EMPTY);
-  const typing = useAppState((s) => !!s.typing[chatId]);
+  const typer = useAppState((s) => s.typing[chatId]);
+  const inCall = useAppState((s) => !!s.call && s.call.phase !== 'ended');
+  const [infoOpen, setInfoOpen] = useState(false);
   const online = useAppState(isOnline);
   const pending = useAppState((s) => (s.messages[chatId] ?? EMPTY).filter((m) => m.status === 'pending').length);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -80,9 +85,26 @@ export function ChatView({ chatId, active, onBack }: Props) {
     });
   }, []);
 
-  if (!contact) return null;
+  if (!chat) return null;
 
-  const status = typing ? 'печатает…' : !online ? 'ожидание сети…' : contact.online ? 'в сети' : formatLastSeen(contact);
+  const look = chatLook(chat, contacts);
+  const typing = !!typer;
+  let status: string;
+  let statusOnline = false;
+  if (chat.kind === 'group') {
+    const members = chat.memberIds.map((id) => contacts.find((c) => c.id === id)).filter(Boolean);
+    const onlineCount = members.filter((c) => c!.online).length;
+    const typerName = typer ? contacts.find((c) => c.id === typer)?.name.split(' ')[0] : undefined;
+    const count = members.length + 1; // + me
+    status = typerName
+      ? `${typerName} печатает…`
+      : `${count} ${plural(count, 'участник', 'участника', 'участников')}${online && onlineCount ? `, ${onlineCount} в сети` : ''}`;
+  } else {
+    const contact = look.contact;
+    statusOnline = !!contact?.online && online;
+    status = typing ? 'печатает…' : !online ? 'ожидание сети…' : contact?.online ? 'в сети' : contact ? formatLastSeen(contact) : '';
+  }
+  const call = (kind: 'audio' | 'video') => startCall(chatId, kind);
 
   return (
     <section
@@ -106,12 +128,22 @@ export function ChatView({ chatId, active, onBack }: Props) {
         <button className="icon-btn chat__back" onClick={onBack} aria-label="Назад к чатам">
           <BackIcon />
         </button>
-        <Avatar contact={contact} size={40} showStatus={online} />
-        <div className="chat__title">
-          <div className="chat__name">{contact.name}</div>
-          <div className={`chat__status ${typing ? 'is-typing' : contact.online && online ? 'is-online' : ''}`} key={status}>
-            {status}
-          </div>
+        <button className="chat__who" onClick={() => setInfoOpen(true)} aria-label="Информация о чате">
+          <ChatAvatar chat={chat} size={40} showStatus={online} />
+          <span className="chat__title">
+            <span className="chat__name">{look.name}</span>
+            <span className={`chat__status ${typing ? 'is-typing' : statusOnline ? 'is-online' : ''}`} key={status}>
+              {status}
+            </span>
+          </span>
+        </button>
+        <div className="chat__actions">
+          <button className="icon-btn icon-btn--accent" onClick={() => call('audio')} disabled={inCall} aria-label="Аудиозвонок" title={online ? 'Аудиозвонок' : 'Звонки доступны только онлайн'}>
+            <PhoneIcon width={22} height={22} />
+          </button>
+          <button className="icon-btn icon-btn--accent" onClick={() => call('video')} disabled={inCall} aria-label="Видеозвонок" title={online ? 'Видеозвонок' : 'Звонки доступны только онлайн'}>
+            <VideoIcon width={22} height={22} />
+          </button>
         </div>
       </header>
 
@@ -124,7 +156,7 @@ export function ChatView({ chatId, active, onBack }: Props) {
         </div>
       </div>
 
-      <MessageList key={chatId} messages={messages} typing={typing} onOpenImage={setViewing} />
+      <MessageList key={chatId} chat={chat} messages={messages} typer={typer} onOpenImage={setViewing} />
 
       <Composer chatId={chatId} attachments={attachments} onAddFiles={addFiles} onRemove={removeAttachment} onClear={clearAttachments} />
 
@@ -135,6 +167,7 @@ export function ChatView({ chatId, active, onBack }: Props) {
         </div>
       )}
       {viewing && <Lightbox media={viewing} onClose={() => setViewing(null)} />}
+      <ChatInfo chat={chat} open={infoOpen} onClose={() => setInfoOpen(false)} />
     </section>
   );
 }
