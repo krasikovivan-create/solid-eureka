@@ -1,7 +1,7 @@
 // Full-screen call UI: incoming call, calling, the conversation (1:1 or group grid),
 // and a minimized pill so you can keep chatting during a call.
 import { useEffect, useRef, useState } from 'react';
-import type { ActiveCall, Contact } from '../types';
+import type { ActiveCall, CallParticipant, Contact } from '../types';
 import { getChat, useAppState } from '../store';
 import { acceptCall, declineCall, hangUp, setMinimized, switchCamera, toggleCamera, toggleMute } from '../calls';
 import { chatLook, formatDuration } from '../utils';
@@ -12,8 +12,17 @@ import { CameraOffIcon, HangUpIcon, MicIcon, MicOffIcon, MinimizeIcon, PhoneIcon
 export function CallScreen() {
   const call = useAppState((s) => s.call);
   if (!call) return null;
-  return call.minimized && call.phase === 'connected' ? <CallPill call={call} /> : <CallView call={call} />;
+  return (
+    <>
+      {/* Real calls: the other people's voices keep playing even when the call is minimized. */}
+      {call.mode === 'real' && call.phase === 'connected' && call.participants.map((p) => p.stream && <RemoteAudio key={p.contactId} stream={p.stream} />)}
+      {call.minimized && call.phase === 'connected' ? <CallPill call={call} /> : <CallView call={call} />}
+    </>
+  );
 }
+
+/** Does this participant send live video right now? */
+const hasVideo = (p: CallParticipant) => p.cameraOn !== false && !!p.stream?.getVideoTracks().some((t) => t.readyState === 'live' && !t.muted);
 
 function useNow(active: boolean) {
   const [now, setNow] = useState(Date.now());
@@ -47,6 +56,7 @@ function CallView({ call }: { call: ActiveCall }) {
   let status = '';
   if (call.phase === 'incoming') status = call.kind === 'video' ? 'Входящий видеозвонок' : 'Входящий звонок';
   else if (call.phase === 'calling') status = single && !single.contact.online ? 'Ожидание ответа…' : isGroup ? 'Вызов участников…' : 'Вызов…';
+  else if (connected && call.mode === 'real' && single && !single.stream) status = 'Соединение…';
   else if (connected) status = formatDuration(((call.connectedAt ? now : Date.now()) - (call.connectedAt ?? Date.now())) / 1000);
   else status = call.endText ?? 'Звонок завершён';
 
@@ -60,11 +70,15 @@ function CallView({ call }: { call: ActiveCall }) {
       {connected && isGroup ? (
         <div className={`call__grid call__grid--${Math.min(people.length + 1, 4)}`}>
           {people.map((p) => (
-            <Tile key={p.contactId} contact={p.contact} state={p.state} video={call.kind === 'video'} />
+            <Tile key={p.contactId} participant={p} contact={p.contact} real={call.mode === 'real'} video={call.kind === 'video'} />
           ))}
           <SelfTile call={call} />
         </div>
-      ) : connected && single && call.kind === 'video' ? (
+      ) : connected && single && call.mode === 'real' && hasVideo(single) ? (
+        <div className="call__remote">
+          <RemoteVideo stream={single.stream!} />
+        </div>
+      ) : connected && single && call.mode === 'demo' && call.kind === 'video' ? (
         <div className="call__remote">
           <FakeVideo contact={single.contact} />
         </div>
@@ -86,16 +100,16 @@ function CallView({ call }: { call: ActiveCall }) {
         ) : (
           <span />
         )}
-        <span className="call__secure">🔒 Демо-звонок</span>
+        <span className="call__secure">{call.mode === 'real' ? '🔒 Звонок зашифрован' : '🔒 Демо-звонок'}</span>
         <span />
       </header>
 
       {/* Name, avatar and status in the middle (hidden when there is a video/grid) */}
-      {!(connected && (isGroup || call.kind === 'video')) && (
+      {!(connected && (isGroup || (call.mode === 'demo' ? call.kind === 'video' : !!single && hasVideo(single)))) && (
         <div className="call__center">
           <div className={`call__avatar ${call.phase === 'calling' || call.phase === 'incoming' ? 'is-ringing' : ''} ${connected ? 'is-talking' : ''}`}>
             <Avatar name={look.name} colors={look.colors} size={128} group={isGroup} />
-            {connected && single && <VoiceRing />}
+            {connected && single && <VoiceRing stream={call.mode === 'real' ? single.stream : undefined} />}
           </div>
           <div className="call__name">{look.name}</div>
           <div className="call__status" key={call.phase}>
@@ -113,7 +127,7 @@ function CallView({ call }: { call: ActiveCall }) {
         </div>
       )}
 
-      {connected && (isGroup || call.kind === 'video') && (
+      {connected && (isGroup || (call.mode === 'demo' ? call.kind === 'video' : !!single && hasVideo(single))) && (
         <div className="call__caption">
           <div className="call__name call__name--small">{look.name}</div>
           <div className="call__status">
@@ -212,20 +226,24 @@ function CallButton({ label, kind, active, onClick, children }: { label: string;
 
 // ---- tiles & video --------------------------------------------------------------------------------
 
-function Tile({ contact, state, video }: { contact: Contact; state: string; video: boolean }) {
+function Tile({ participant, contact, real, video }: { participant: CallParticipant; contact: Contact; real: boolean; video: boolean }) {
+  const state = participant.state;
   const live = state === 'connected';
   return (
     <div className={`tile ${live ? 'is-live' : ''}`}>
-      {live && video ? (
+      {live && real && hasVideo(participant) ? (
+        <RemoteVideo stream={participant.stream!} />
+      ) : live && !real && video ? (
         <FakeVideo contact={contact} />
       ) : (
         <div className="tile__avatar">
           <Avatar name={contact.name} colors={contact.colors} size={72} />
-          {live && <VoiceRing />}
+          {live && <VoiceRing stream={real ? participant.stream : undefined} />}
         </div>
       )}
       <div className="tile__label">
         {contact.name.split(' ')[0]}
+        {participant.muted && <MicOffIcon width={14} height={14} />}
         {!live && <em> · {personState(state, contact)}</em>}
       </div>
     </div>
@@ -259,10 +277,12 @@ function LocalVideo({ stream, mirrored }: { stream: MediaStream; mirrored: boole
   return <video ref={ref} className={`live-video ${mirrored ? 'is-mirrored' : ''}`} autoPlay playsInline muted />;
 }
 
-/** Pulsing ring that imitates the other person speaking. */
-function VoiceRing() {
+/** Ring around the avatar while the person speaks: real loudness for real calls, imitated in the demo. */
+function VoiceRing({ stream }: { stream?: MediaStream }) {
   const [level, setLevel] = useState(0);
   useEffect(() => {
+    if (stream?.getAudioTracks().length) return watchLevel(stream, setLevel);
+    if (stream) return;
     let t: number;
     const step = () => {
       setLevel(Math.random() < 0.55 ? 0.4 + Math.random() * 0.6 : 0);
@@ -270,8 +290,52 @@ function VoiceRing() {
     };
     step();
     return () => clearTimeout(t);
-  }, []);
+  }, [stream]);
   return <span className="voice-ring" style={{ transform: `scale(${1 + level * 0.18})`, opacity: level ? 0.9 : 0 }} />;
+}
+
+let levelCtx: AudioContext | null = null;
+function watchLevel(stream: MediaStream, set: (v: number) => void) {
+  try {
+    levelCtx ??= new AudioContext();
+    const src = levelCtx.createMediaStreamSource(new MediaStream(stream.getAudioTracks()));
+    const analyser = levelCtx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const t = window.setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let peak = 0;
+      for (const v of data) peak = Math.max(peak, Math.abs(v - 128));
+      set(peak > 6 ? Math.min(1, peak / 40) : 0);
+    }, 120);
+    return () => {
+      clearInterval(t);
+      src.disconnect();
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function RemoteVideo({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    if (ref.current && ref.current.srcObject !== stream) ref.current.srcObject = stream;
+  }, [stream]);
+  // Muted: the sound plays through RemoteAudio (so it continues when the call is minimized).
+  return <video ref={ref} className="live-video" autoPlay playsInline muted />;
+}
+
+function RemoteAudio({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (el.srcObject !== stream) el.srcObject = stream;
+    el.play().catch(() => {});
+  }, [stream]);
+  return <audio ref={ref} autoPlay />;
 }
 
 /**

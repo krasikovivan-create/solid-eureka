@@ -1,12 +1,13 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import type { Chat, Contact, Message } from '../types';
 import { isOnline, useAppState } from '../store';
-import { openDirectChat, resetDemo, setSimulatedOffline } from '../sync';
+import { openDirectChat, resetDemo, setShowDemo, setSimulatedOffline } from '../sync';
 import { demoIncomingCall, startCall } from '../calls';
 import { useUi } from '../ui';
 import { chatLook, formatLastSeen, formatListTime, formatPhone, messagePreview } from '../utils';
+import type { AppState } from '../types';
 import { ChatAvatar, ContactAvatar } from './Avatar';
-import { EditIcon, MoreIcon, PhoneIcon, RefreshIcon, SearchIcon, StatusIcon, UserPlusIcon, UsersIcon, VideoIcon, WifiOffIcon } from './icons';
+import { EditIcon, MoreIcon, PhoneIcon, ShareIcon, RefreshIcon, SearchIcon, StatusIcon, UserPlusIcon, UsersIcon, VideoIcon, WifiOffIcon } from './icons';
 
 interface Props {
   activeId: string | null;
@@ -16,11 +17,14 @@ type Tab = 'chats' | 'contacts';
 
 export function Sidebar({ activeId }: Props) {
   const { openSheet } = useUi();
-  const contacts = useAppState((s) => s.contacts);
+  const contacts = useVisibleContacts();
   const online = useAppState(isOnline);
+  const account = useAppState((s) => s.account);
+  const net = useAppState((s) => s.net);
   const [tab, setTab] = useState<Tab>('chats');
   const [query, setQuery] = useState('');
   const onlineCount = contacts.filter((c) => c.online).length;
+  const netText = { off: 'не подключено', connecting: 'подключение…', online: 'в сети', offline: 'нет связи с сервером', error: 'ошибка' }[net.status];
 
   return (
     <aside className="sidebar">
@@ -48,19 +52,47 @@ export function Sidebar({ activeId }: Props) {
         <SearchIcon width={18} height={18} />
         <input type="search" placeholder={tab === 'chats' ? 'Поиск по чатам' : 'Имя или номер'} value={query} onChange={(e) => setQuery(e.target.value)} />
       </label>
+      {account ? (
+        <button className={`account-line is-${net.status}`} onClick={() => openSheet({ type: 'profile' })}>
+          <span className="conn-pill__dot" />
+          {formatPhone(account.phone)} · {netText}
+        </button>
+      ) : (
+        <button className="connect-banner" onClick={() => openSheet({ type: 'profile' })}>
+          <span className="connect-banner__icon">
+            <PhoneIcon width={18} height={18} />
+          </span>
+          <span>
+            <b>Подключите свой номер</b>
+            <small>чтобы писать и звонить настоящим друзьям</small>
+          </span>
+        </button>
+      )}
       <div className="sidebar__sub">{online ? `В сети: ${onlineCount} из ${contacts.length}` : 'Статусы контактов обновятся после подключения'}</div>
       {tab === 'chats' ? <ChatList activeId={activeId} query={query} /> : <ContactList query={query} />}
     </aside>
   );
 }
 
+/** Contacts shown in lists: real ones always, demo ones unless hidden. */
+function useVisibleContacts() {
+  const all = useAppState((s: AppState) => s.contacts);
+  const showDemo = useAppState((s: AppState) => s.showDemo);
+  return useMemo(() => (showDemo ? all : all.filter((c) => c.real)), [all, showDemo]);
+}
+
 // ---- chats ---------------------------------------------------------------------------------------
 
 function ChatList({ activeId, query }: { activeId: string | null; query: string }) {
   const { openChat } = useUi();
-  const chats = useAppState((s) => s.chats);
+  const allChats = useAppState((s) => s.chats);
   const contacts = useAppState((s) => s.contacts);
+  const showDemo = useAppState((s) => s.showDemo);
   const messages = useAppState((s) => s.messages);
+  const chats = useMemo(
+    () => (showDemo ? allChats : allChats.filter((ch) => ch.memberIds.some((id) => contacts.find((c) => c.id === id)?.real))),
+    [allChats, contacts, showDemo]
+  );
   const drafts = useAppState((s) => s.drafts);
   const typing = useAppState((s) => s.typing);
   const online = useAppState(isOnline);
@@ -160,7 +192,7 @@ const ChatListItem = memo(function ChatListItem({ index, chat, name, last, sende
 
 function ContactList({ query }: { query: string }) {
   const { openChat, openSheet } = useUi();
-  const contacts = useAppState((s) => s.contacts);
+  const contacts = useVisibleContacts();
   const online = useAppState(isOnline);
 
   const list = useMemo(() => {
@@ -179,6 +211,14 @@ function ContactList({ query }: { query: string }) {
             <UserPlusIcon width={22} height={22} />
           </span>
           Добавить друга по номеру
+        </button>
+      </li>
+      <li>
+        <button className="list-action" onClick={() => openSheet({ type: 'import-contacts' })}>
+          <span className="list-action__icon">
+            <ShareIcon width={22} height={22} style={{ transform: 'rotate(180deg)' }} />
+          </span>
+          Найти друзей из контактов телефона
         </button>
       </li>
       <li>
@@ -255,8 +295,11 @@ function ConnectionPill() {
 }
 
 function Menu() {
+  const { openSheet } = useUi();
   const [open, setOpen] = useState(false);
   const simulatedOffline = useAppState((s) => s.connection.simulatedOffline);
+  const showDemo = useAppState((s) => s.showDemo);
+  const account = useAppState((s) => s.account);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -277,6 +320,42 @@ function Menu() {
         <MoreIcon />
       </button>
       <div className={`menu__panel ${open ? 'is-open' : ''}`} role="menu">
+        <button
+          className="menu__item"
+          role="menuitem"
+          onClick={() => {
+            setOpen(false);
+            openSheet({ type: 'profile' });
+          }}
+        >
+          <PhoneIcon width={20} height={20} />
+          <span className="menu__label">
+            Мой номер
+            <small>{account ? formatPhone(account.phone) : 'Подключиться к серверу'}</small>
+          </span>
+        </button>
+        <button
+          className="menu__item"
+          role="menuitem"
+          onClick={() => {
+            setOpen(false);
+            openSheet({ type: 'import-contacts' });
+          }}
+        >
+          <UsersIcon width={20} height={20} />
+          <span className="menu__label">
+            Контакты телефона
+            <small>Найти друзей, которые уже в «Связи»</small>
+          </span>
+        </button>
+        <label className="menu__item">
+          <EditIcon width={20} height={20} />
+          <span className="menu__label">
+            Демо-контакты
+            <small>Анна, Максим, группы — для примера</small>
+          </span>
+          <input type="checkbox" className="switch" checked={showDemo} onChange={(e) => setShowDemo(e.target.checked)} />
+        </label>
         <label className="menu__item">
           <WifiOffIcon width={20} height={20} />
           <span className="menu__label">
@@ -285,7 +364,7 @@ function Menu() {
           </span>
           <input type="checkbox" className="switch" checked={simulatedOffline} onChange={(e) => setSimulatedOffline(e.target.checked)} />
         </label>
-        <button
+        {showDemo && <button
           className="menu__item"
           role="menuitem"
           onClick={() => {
@@ -296,21 +375,21 @@ function Menu() {
           <PhoneIcon width={20} height={20} />
           <span className="menu__label">
             Демо: входящий звонок
-            <small>Кто-то из друзей в сети позвонит вам</small>
+            <small>Кто-то из демо-контактов позвонит вам</small>
           </span>
-        </button>
+        </button>}
         <button
           className="menu__item"
           role="menuitem"
           onClick={() => {
             setOpen(false);
-            if (confirm('Удалить все сообщения и файлы и вернуть демо-переписку?')) resetDemo();
+            if (confirm('Вернуть демо-переписку к исходной? Настоящие чаты и контакты не пострадают.')) resetDemo();
           }}
         >
           <RefreshIcon width={20} height={20} />
           <span className="menu__label">
             Сбросить демо-данные
-            <small>Очистить localStorage и IndexedDB</small>
+            <small>Настоящие чаты и контакты останутся</small>
           </span>
         </button>
       </div>

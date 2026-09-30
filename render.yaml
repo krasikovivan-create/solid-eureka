@@ -1,0 +1,24 @@
+# Render Blueprint for the «Связь» chat server (chat/server).
+# Render → New → Blueprint → pick this repository → Apply.
+services:
+  - type: web
+    name: svyaz-server
+    runtime: node
+    plan: free
+    rootDir: chat/server
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Only the published app may connect (add more origins separated by commas).
+      - key: ALLOWED_ORIGINS
+        value: https://krasikovivan-create.github.io
+      # Optional TURN relay for calls between networks that block direct connections.
+      - key: TURN_URLS
+        sync: false
+      - key: TURN_USERNAME
+        sync: false
+      - key: TURN_CREDENTIAL
+        sync: false

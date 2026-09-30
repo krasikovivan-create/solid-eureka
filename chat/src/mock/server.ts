@@ -46,6 +46,12 @@ export class MockServer {
   private callTimers = new Map<string, Set<number>>();
   private flushing = false;
   private inflight = new Set<(e: Error) => void>();
+  /** Demo contacts hidden: no spontaneous messages or calls. */
+  private quiet = false;
+
+  setQuiet(quiet: boolean) {
+    this.quiet = quiet;
+  }
 
   start(contacts: Contact[], chats: Chat[], messages: Record<string, Message[]>, handler: (e: ServerEvent) => void) {
     this.stop();
@@ -174,7 +180,7 @@ export class MockServer {
   /** Every 3–6 minutes someone online calls me. */
   private scheduleIncomingCall() {
     this.later(rand(180_000, 360_000), () => {
-      this.ringMe();
+      if (!this.quiet) this.ringMe();
       this.scheduleIncomingCall();
     });
   }
@@ -303,7 +309,7 @@ export class MockServer {
   private scheduleSpontaneous() {
     this.later(rand(40_000, 80_000), () => {
       const candidates = [...this.contacts.values()].filter((c) => c.online && !this.busy.has(c.id));
-      if (candidates.length) {
+      if (candidates.length && !this.quiet) {
         const contact = pick(candidates);
         const groups = [...this.chats.values()].filter((c) => c.kind === 'group' && c.memberIds.includes(contact.id));
         const inGroup = groups.length > 0 && Math.random() < 0.35;

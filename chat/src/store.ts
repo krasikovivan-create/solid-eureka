@@ -2,7 +2,7 @@
 // Every change to contacts/chats/messages/drafts is written to localStorage right away.
 import { useSyncExternalStore } from 'react';
 import type { ActiveCall, AppState, Chat, Contact, Message, Toast } from './types';
-import { loadSimulatedOffline, loadState, saveState } from './storage/local';
+import { loadAccount, loadServerUrl, loadShowDemo, loadSimulatedOffline, loadState, saveState } from './storage/local';
 import { createSeedState } from './mock/seed';
 import { pickGroupColors, uid } from './utils';
 
@@ -18,6 +18,9 @@ let state: AppState = {
   },
   toasts: [],
   call: null,
+  account: loadAccount(),
+  net: { url: loadServerUrl(), status: 'off' },
+  showDemo: loadShowDemo(),
 };
 
 const listeners = new Set<() => void>();
@@ -170,6 +173,46 @@ export function setConnection(patch: Partial<AppState['connection']>) {
   setState({ ...state, connection: { ...state.connection, ...patch } });
 }
 
+// ---- account & server ------------------------------------------------------------
+
+export function setAccountState(account: AppState['account']) {
+  setState({ ...state, account });
+}
+
+export function setNet(patch: Partial<AppState['net']>) {
+  setState({ ...state, net: { ...state.net, ...patch } });
+}
+
+export function setShowDemoState(showDemo: boolean) {
+  setState({ ...state, showDemo });
+}
+
+/** Is the chat backed by the real server (has at least one real member)? */
+export function isRealChat(chat: Chat | undefined) {
+  return !!chat?.memberIds.some((id) => getContact(id)?.real);
+}
+
+export function findMessageAnywhere(id: string): Message | undefined {
+  for (const list of Object.values(state.messages)) {
+    const m = list.find((x) => x.id === id);
+    if (m) return m;
+  }
+  return undefined;
+}
+
+/** Update a contact (e.g. name/presence from the server). */
+export function patchContact(id: string, patch: Partial<Contact>) {
+  if (!state.contacts.some((c) => c.id === id)) return;
+  setState({ ...state, contacts: state.contacts.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
+}
+
+/** Create or update a group chat that came from the server. */
+export function upsertChat(chat: Chat) {
+  const existing = getChat(chat.id);
+  if (existing && existing.title === chat.title && existing.memberIds.join() === chat.memberIds.join()) return;
+  setState({ ...state, chats: existing ? state.chats.map((c) => (c.id === chat.id ? { ...c, title: chat.title, memberIds: chat.memberIds } : c)) : [...state.chats, chat] });
+}
+
 // ---- call ---------------------------------------------------------------------------
 
 export function setCall(call: ActiveCall | null) {
@@ -198,4 +241,13 @@ export function dismissToast(id: string) {
 
 export function replaceData(data: Pick<AppState, 'contacts' | 'chats' | 'messages' | 'drafts'>) {
   setState({ ...state, ...data, typing: {}, toasts: [] });
+}
+
+/** Keep real contacts/chats/messages when the demo data is reset. */
+export function realData() {
+  const contacts = state.contacts.filter((c) => c.real);
+  const chats = state.chats.filter((ch) => ch.memberIds.some((id) => contacts.some((c) => c.id === id)));
+  const messages: AppState['messages'] = {};
+  for (const ch of chats) if (state.messages[ch.id]) messages[ch.id] = state.messages[ch.id];
+  return { contacts, chats, messages };
 }
