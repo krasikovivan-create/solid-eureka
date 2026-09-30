@@ -5,6 +5,7 @@ import { getChat, showToast, useAppState } from '../store';
 import { addMembers, lookupPhone, newGroup, openDirectChat, saveContact, type LookupResult } from '../sync';
 import { formatPhone, formatPhoneInput, normalizePhone, plural } from '../utils';
 import { useUi, type SheetState } from '../ui';
+import { ImportContactsSheet, ProfileSheet } from './AccountSheets';
 import { Avatar, ContactAvatar } from './Avatar';
 import { BackIcon, CheckIcon, CloseIcon, SearchIcon, ShareIcon, UserPlusIcon, UsersIcon, WifiOffIcon } from './icons';
 
@@ -21,6 +22,10 @@ export function Sheets({ sheet }: { sheet: SheetState }) {
       return <NewGroupSheet onClose={close} />;
     case 'add-members':
       return <AddMembersSheet chatId={sheet.chatId} onClose={close} />;
+    case 'profile':
+      return <ProfileSheet onClose={close} />;
+    case 'import-contacts':
+      return <ImportContactsSheet onClose={close} />;
   }
 }
 
@@ -68,7 +73,8 @@ export function Sheet({ title, onClose, onBack, children, footer }: SheetProps) 
 // ---- add a friend by number ----------------------------------------------------------------
 
 function AddContactSheet({ onClose }: { onClose: () => void }) {
-  const { openChat } = useUi();
+  const { openChat, openSheet } = useUi();
+  const account = useAppState((s) => s.account);
   const [phone, setPhone] = useState('+7 ');
   const [name, setName] = useState('');
   const [result, setResult] = useState<LookupResult | null>(null);
@@ -92,8 +98,8 @@ function AddContactSheet({ onClose }: { onClose: () => void }) {
 
   const add = (andOpen: boolean) => {
     if (result?.status !== 'found') return;
-    const contact = saveContact(result.profile, name);
-    showToast(`${contact.name} ${contact.gender === 'f' ? 'добавлена' : 'добавлен'} в контакты`, 'success');
+    const contact = saveContact(result, name);
+    showToast(`${contact.name} ${contact.gender === 'f' ? 'добавлена' : contact.gender === 'u' ? 'добавлен(а)' : 'добавлен'} в контакты`, 'success');
     onClose();
     if (andOpen) openChat(openDirectChat(contact.id));
   };
@@ -141,11 +147,27 @@ function AddContactSheet({ onClose }: { onClose: () => void }) {
           Найти
         </button>
       </form>
-      <p className="hint">Демо: попробуйте +7 916 123-45-67, +7 903 555-01-01 или любой другой номер.</p>
+      {account ? (
+        <p className="hint">Ищем среди тех, кто зарегистрирован в «Связи».</p>
+      ) : (
+        <div className="notice">
+          Сейчас это демо-поиск (попробуйте +7 916 123-45-67 или любой номер). Чтобы находить настоящих друзей,{' '}
+          <button className="link-btn link-btn--inline" onClick={() => openSheet({ type: 'profile' })}>
+            подключите свой номер
+          </button>
+          .
+        </div>
+      )}
+      <button className="sheet-action" onClick={() => openSheet({ type: 'import-contacts' })}>
+        <span className="sheet-action__icon">
+          <UsersIcon width={20} height={20} />
+        </span>
+        Найти друзей из контактов телефона
+      </button>
 
       {result?.status === 'found' && (
         <div className="found-card">
-          <Avatar name={result.profile.name} colors={result.profile.colors} size={64} />
+          <Avatar name={result.profile.name} colors={result.profile.colors} size={64} online={result.real ? result.user.online : undefined} />
           <div className="found-card__name">{result.profile.name}</div>
           <div className="found-card__sub">
             {formatPhone(result.profile.phone)} · {result.profile.about}
@@ -199,6 +221,12 @@ function AddContactSheet({ onClose }: { onClose: () => void }) {
           <div className="found-card__sub">Нет подключения. Найти человека по номеру можно только онлайн.</div>
         </div>
       )}
+      {result?.status === 'server-offline' && (
+        <div className="found-card found-card--empty">
+          <WifiOffIcon width={28} height={28} />
+          <div className="found-card__sub">Нет связи с сервером «Связи». Попробуйте чуть позже — бесплатный сервер может просыпаться до минуты.</div>
+        </div>
+      )}
       {result?.status === 'error' && (
         <div className="found-card found-card--empty">
           <div className="found-card__sub">Не удалось выполнить поиск. Попробуйте ещё раз.</div>
@@ -219,7 +247,9 @@ interface PickerProps {
 
 /** Contact list with search; multi-select (checkboxes) or single tap. */
 function ContactPicker({ exclude = [], selected, onToggle, onPick }: PickerProps) {
-  const contacts = useAppState((s) => s.contacts);
+  const all = useAppState((s) => s.contacts);
+  const showDemo = useAppState((s) => s.showDemo);
+  const contacts = useMemo(() => (showDemo ? all : all.filter((c) => c.real)), [all, showDemo]);
   const [query, setQuery] = useState('');
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();

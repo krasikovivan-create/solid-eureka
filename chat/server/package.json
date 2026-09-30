@@ -1,0 +1,17 @@
+{
+  "name": "svyaz-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Relay server for «Связь»: accounts by phone number, message store-and-forward, presence, media, WebRTC call signaling",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}

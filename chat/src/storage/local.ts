@@ -1,10 +1,13 @@
 // Messages, contacts, chats and drafts are kept in localStorage.
-import type { Chat, Contact, Message } from '../types';
+import type { Account, Chat, Contact, Message } from '../types';
 import { SEED_PHONES, seedGroupMessages, seedGroups } from '../mock/seed';
 
 const KEY = 'svyaz.state.v2';
 const KEY_V1 = 'svyaz.state.v1';
 const OFFLINE_KEY = 'svyaz.simulatedOffline';
+const ACCOUNT_KEY = 'svyaz.account';
+const SERVER_KEY = 'svyaz.serverUrl';
+const DEMO_KEY = 'svyaz.hideDemo';
 
 export interface PersistedState {
   contacts: Contact[];
@@ -80,6 +83,64 @@ export function saveSimulatedOffline(value: boolean) {
   try {
     if (value) localStorage.setItem(OFFLINE_KEY, '1');
     else localStorage.removeItem(OFFLINE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---- account & settings ------------------------------------------------------------------
+
+export function loadAccount(): Account | null {
+  try {
+    const a = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null') as Account | null;
+    return a && typeof a.phone === 'string' && typeof a.token === 'string' ? a : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAccount(account: Account | null) {
+  try {
+    if (account) localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
+    else localStorage.removeItem(ACCOUNT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Server address: the one entered in the profile, else the one built into the app. */
+export function loadServerUrl(): string {
+  try {
+    const own = localStorage.getItem(SERVER_KEY);
+    if (own !== null) return own;
+  } catch {
+    /* ignore */
+  }
+  return (import.meta.env.VITE_SERVER_URL as string | undefined)?.trim() ?? '';
+}
+
+export function saveServerUrl(url: string) {
+  try {
+    const builtIn = (import.meta.env.VITE_SERVER_URL as string | undefined)?.trim() ?? '';
+    if (url === builtIn) localStorage.removeItem(SERVER_KEY);
+    else localStorage.setItem(SERVER_KEY, url);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadShowDemo(): boolean {
+  try {
+    return localStorage.getItem(DEMO_KEY) !== '1';
+  } catch {
+    return true;
+  }
+}
+
+export function saveShowDemo(show: boolean) {
+  try {
+    if (show) localStorage.removeItem(DEMO_KEY);
+    else localStorage.setItem(DEMO_KEY, '1');
   } catch {
     /* ignore */
   }

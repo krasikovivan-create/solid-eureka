@@ -43,6 +43,18 @@ export function getMedia(id: string): Promise<Blob | undefined> {
   return run<Blob | undefined>('readonly', (s) => s.get(id));
 }
 
+/** Delete every stored file except `keep` (the real chats' photos/videos). */
+export async function clearMediaExcept(keep: Set<string>): Promise<void> {
+  const keys = await run<IDBValidKey[]>('readonly', (s) => s.getAllKeys());
+  const drop = keys.map(String).filter((k) => !keep.has(k));
+  await Promise.all(drop.map((k) => run('readwrite', (s) => s.delete(k))));
+  drop.forEach((k) => {
+    const url = urlCache.get(k);
+    if (url) URL.revokeObjectURL(url);
+    urlCache.delete(k);
+  });
+}
+
 export function clearMedia(): Promise<void> {
   urlCache.forEach((url) => URL.revokeObjectURL(url));
   urlCache.clear();

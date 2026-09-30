@@ -57,7 +57,8 @@ export function formatMoment(ts: number) {
 }
 
 export function formatLastSeen(contact: Contact, now = Date.now()) {
-  const was = contact.gender === 'f' ? 'была' : 'был';
+  const was = contact.gender === 'f' ? 'была' : contact.gender === 'u' ? 'был(а)' : 'был';
+  if (!contact.lastSeen) return 'не в сети';
   const diff = now - contact.lastSeen;
   if (diff < MIN) return `${was} в сети только что`;
   if (diff < 60 * MIN) return `${was} в сети ${Math.floor(diff / MIN)} мин назад`;

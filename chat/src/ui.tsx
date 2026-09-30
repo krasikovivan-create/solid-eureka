@@ -6,6 +6,8 @@ export type SheetState =
   | { type: 'add-contact' }
   | { type: 'new-group' }
   | { type: 'add-members'; chatId: string }
+  | { type: 'profile' }
+  | { type: 'import-contacts' }
   | null;
 
 export interface Ui {

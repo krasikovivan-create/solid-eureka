@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getState, setDraft } from '../store';
 import { sendMedia, sendText } from '../sync';
+import { notifyTyping } from '../real';
 import { formatSize } from '../utils';
 import { CloseIcon, PaperclipIcon, PlayIcon, SendIcon } from './icons';
 
@@ -106,7 +107,10 @@ export function Composer({ chatId, attachments, onAddFiles, onRemove, onClear }:
           rows={1}
           value={text}
           placeholder={attachments.length ? 'Добавить подпись…' : 'Сообщение'}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (e.target.value) notifyTyping(chatId);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && enterSends()) {
               e.preventDefault();

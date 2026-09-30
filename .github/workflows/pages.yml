@@ -30,6 +30,9 @@ jobs:
           cache-dependency-path: chat/package-lock.json
       - name: Build chat app
         working-directory: chat
+        env:
+          # Address of the deployed chat server (Settings → Secrets and variables → Actions → Variables).
+          VITE_SERVER_URL: ${{ vars.CHAT_SERVER_URL }}
         run: |
           npm ci
           npm run build

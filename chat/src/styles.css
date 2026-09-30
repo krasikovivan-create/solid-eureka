@@ -79,6 +79,8 @@ textarea {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  /* clip, not just hidden: the off-screen chat pane must never be scrolled into view by focus */
+  overflow: clip;
 }
 
 .pane {
@@ -2300,6 +2302,209 @@ button.members__item:hover {
 }
 .call-pill__btn--end {
   background: #ef4444;
+}
+
+/* ============ Account & import ============ */
+.connect-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eef3ff, #f3efff);
+  border: 1px solid #dfe6ff;
+  text-align: left;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.connect-banner:hover {
+  box-shadow: var(--shadow-sm);
+}
+.connect-banner:active {
+  transform: scale(0.98);
+}
+.connect-banner b {
+  display: block;
+  font-size: 14px;
+  color: var(--accent);
+}
+.connect-banner small {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.connect-banner__icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+}
+.account-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 20px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-align: left;
+}
+.account-line .conn-pill__dot,
+.account-card__status .conn-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9aa4b5;
+}
+.account-line.is-online .conn-pill__dot,
+.account-card.is-online .conn-pill__dot {
+  background: var(--online);
+}
+.account-line.is-connecting .conn-pill__dot,
+.account-card.is-connecting .conn-pill__dot {
+  background: var(--warning);
+  animation: pulse 1s infinite;
+}
+.account-line.is-error,
+.account-line.is-offline {
+  color: var(--danger);
+}
+.account-line.is-error .conn-pill__dot,
+.account-line.is-offline .conn-pill__dot,
+.account-card.is-error .conn-pill__dot,
+.account-card.is-offline .conn-pill__dot {
+  background: var(--danger);
+}
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: var(--bg-soft);
+}
+.account-card__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.account-card__name {
+  font-weight: 700;
+}
+.account-card__phone {
+  font-size: 14px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.account-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.sheet-lead {
+  margin: 4px 0 14px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff7e6;
+  color: #7a4a00;
+  font-size: 13px;
+}
+.notice--error {
+  background: #fdecec;
+  color: #b91c1c;
+}
+.link-btn {
+  align-self: flex-start;
+  padding: 2px 0;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+.link-btn--inline {
+  font-size: inherit;
+  padding: 0;
+}
+.btn--ghost-danger {
+  background: transparent;
+  color: var(--danger);
+}
+.btn--ghost-danger:hover {
+  background: #fdecec;
+}
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
+.howto {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  font-size: 13px;
+  color: var(--text-2);
+}
+.howto summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+}
+.howto p {
+  margin: 8px 0 0;
+}
+.invite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  font-size: 14px;
+  color: var(--text-2);
+}
+.spinner--accent {
+  border-color: rgba(59, 108, 246, 0.25);
+  border-top-color: var(--accent);
+}
+.picker__item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.sheet-action + .picker,
+.hint + .sheet-action,
+.notice + .sheet-action {
+  margin-top: 6px;
 }
 
 /* ============ Animations ============ */

@@ -16,21 +16,27 @@ import {
   getContact,
   getState,
   isOnline,
+  isRealChat,
+  markChatRead,
   pendingMessages,
+  realData,
   replaceData,
   setCall,
   setConnection,
   setPresence,
+  setShowDemoState,
   setTyping,
   showToast,
   subscribe,
   updateMessage,
 } from './store';
 import { server, type Profile, type ServerEvent } from './mock/server';
-import { handleCallEvent, onConnectionLost } from './calls';
+import { handleCallEvent, handleRealCall, handleRtc, onConnectionLost } from './calls';
+import { addRealContact, lookupPhones, net, sendReadReceipts, sendRealMessage, setRealHooks, startReal } from './real';
+import type { RemoteUser } from './net/client';
 import { createSeedState, ensureSeedMedia } from './mock/seed';
-import { clearMedia, putMedia, rememberMediaUrl } from './storage/media';
-import { clearState, saveSimulatedOffline } from './storage/local';
+import { clearMediaExcept, putMedia, rememberMediaUrl } from './storage/media';
+import { clearState, saveShowDemo, saveSimulatedOffline } from './storage/local';
 import { chatLook, messagePreview, plural, uid } from './utils';
 
 /** Chat the user is looking at; incoming messages there don't raise a toast. */
@@ -124,12 +130,16 @@ export async function flushOutbox() {
       if (findMessage(message.chatId, message.id)?.status !== 'pending') continue;
       const chat = getChat(message.chatId);
       if (!chat) continue;
+      const real = isRealChat(chat);
+      // Real chats wait for the server; demo chats for the (simulated) network.
+      if (real && !net.isOnline()) continue;
       try {
-        const sentAt = await server.send(message, chat);
+        const sentAt = real ? await sendRealMessage(message, chat) : await server.send(message, chat);
         updateMessage(message.chatId, message.id, { status: 'sent', sentAt });
         sent++;
         setConnection({ syncing: Math.max(0, queue.length - sent) });
       } catch {
+        if (real) continue; // the server dropped; demo messages can still go
         break; // connection dropped mid-way; the rest stays pending
       }
     }
@@ -139,7 +149,9 @@ export async function flushOutbox() {
   }
   if (sent && wasBacklog) showToast(`Синхронизация завершена: отправлено ${sent} ${plural(sent, 'сообщение', 'сообщения', 'сообщений')}`, 'success');
   // Anything written while we were busy, or left after a failure, gets another go.
-  if (pendingMessages().length) retryTimer = window.setTimeout(flushOutbox, isOnline() ? 300 : 3000);
+  // (Real chats are retried when the server connection comes back.)
+  const left = pendingMessages().filter((m) => !isRealChat(getChat(m.chatId)) || net.isOnline());
+  if (left.length) retryTimer = window.setTimeout(flushOutbox, isOnline() ? 1000 : 3000);
 }
 
 // ---- receiving -----------------------------------------------------------------------
@@ -166,13 +178,7 @@ function applyEvent(event: ServerEvent) {
       const chat = getChat(m.chatId);
       if (!chat) break;
       addMessage(m);
-      const sender = m.senderId ? getContact(m.senderId) : undefined;
-      const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
-      if (m.chatId !== activeChat || hidden) {
-        const { name } = chatLook(chat, getState().contacts);
-        const who = chat.kind === 'group' && sender ? `${name} · ${sender.name.split(' ')[0]}` : name;
-        showToast(`${who}: ${messagePreview(m)}`, 'message', chat.id, sender?.id);
-      }
+      notifyIncoming(m);
       break;
     }
     case 'presence':
@@ -184,6 +190,27 @@ function applyEvent(event: ServerEvent) {
     default:
       handleCallEvent(event);
   }
+}
+
+/** Toast for a new message unless I'm looking at that chat. */
+function notifyIncoming(m: Message) {
+  const chat = getChat(m.chatId);
+  if (!chat) return;
+  const sender = m.senderId ? getContact(m.senderId) : undefined;
+  const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+  if (m.chatId !== activeChat || hidden) {
+    const { name } = chatLook(chat, getState().contacts);
+    const who = chat.kind === 'group' && sender ? `${name} · ${sender.name.split(' ')[0]}` : name;
+    showToast(`${who}: ${messagePreview(m)}`, 'message', chat.id, sender?.id);
+  }
+}
+
+/** Mark the chat read, and tell real senders that I've read their messages. */
+export function readChat(chatId: string) {
+  const unread = (getState().messages[chatId] ?? []).filter((m) => m.author === 'them' && m.status !== 'read');
+  if (!unread.length) return;
+  markChatRead(chatId);
+  sendReadReceipts(unread);
 }
 
 // ---- connection ------------------------------------------------------------------------
@@ -219,6 +246,15 @@ export function startSync() {
 
   const s = getState();
   server.start(s.contacts, s.chats, s.messages, applyEvent);
+  server.setQuiet(!s.showDemo);
+  setRealHooks({
+    onOnline: () => flushOutbox(),
+    onIncoming: notifyIncoming,
+    onCall: (m) => handleRealCall(m as never),
+    onRtc: (m) => handleRtc(m as never),
+    onLost: () => onConnectionLost(true),
+  });
+  startReal();
   onConnectionChange();
   ensureSeedMedia();
 
@@ -231,9 +267,12 @@ export async function resetDemo() {
   setCall(null);
   server.stop();
   clearState();
-  await clearMedia().catch(() => {});
+  // My real contacts and chats stay — only the demo part is reset.
+  const real = realData();
+  const keep = new Set(Object.values(real.messages).flat().flatMap((m) => (m.media ? [m.media.id] : [])));
+  await clearMediaExcept(keep).catch(() => {});
   const seed = createSeedState();
-  replaceData(seed);
+  replaceData({ ...seed, contacts: [...seed.contacts, ...real.contacts], chats: [...seed.chats, ...real.chats], messages: { ...seed.messages, ...real.messages } });
   server.start(seed.contacts, seed.chats, seed.messages, applyEvent);
   server.setClientOnline(isOnline());
   await ensureSeedMedia();
@@ -243,27 +282,45 @@ export async function resetDemo() {
 // ---- contacts & groups -----------------------------------------------------------------
 
 export type LookupResult =
-  | { status: 'found'; profile: Profile }
+  | { status: 'found'; profile: Profile; real: false }
+  | { status: 'found'; profile: Profile; real: true; user: RemoteUser }
   | { status: 'existing'; contact: Contact }
   | { status: 'not-found' }
   | { status: 'offline' }
+  | { status: 'server-offline' }
   | { status: 'error' };
 
-/** Ask the server who uses this number. */
+/**
+ * Who uses this number: the real server when I'm registered, the demo directory otherwise.
+ */
 export async function lookupPhone(phone: string): Promise<LookupResult> {
-  const existing = findContactByPhone(phone);
+  const s = getState();
+  const existing = s.contacts.find((c) => c.phone === phone && (c.real || !s.account));
   if (existing) return { status: 'existing', contact: existing };
   if (!isOnline()) return { status: 'offline' };
+  if (s.account) {
+    if (!net.isOnline()) return { status: 'server-offline' };
+    try {
+      const [user] = await lookupPhones([phone]);
+      if (!user) return { status: 'not-found' };
+      const profile: Profile = { name: user.name, phone: user.phone, gender: 'u', about: user.about ?? '', colors: user.colors ?? ['#a1c4fd', '#c2e9fb'] };
+      return { status: 'found', profile, real: true, user };
+    } catch {
+      return net.isOnline() ? { status: 'error' } : { status: 'server-offline' };
+    }
+  }
   try {
     const profile = await server.lookup(phone);
-    return profile ? { status: 'found', profile } : { status: 'not-found' };
+    return profile ? { status: 'found', profile, real: false } : { status: 'not-found' };
   } catch {
     return isOnline() ? { status: 'error' } : { status: 'offline' };
   }
 }
 
-/** Save a found person to my contacts (under the name I chose) and open a chat with them. */
-export function saveContact(profile: Profile, name: string): Contact {
+/** Save a found person to my contacts (under the name I chose). */
+export function saveContact(found: Extract<LookupResult, { status: 'found' }>, name: string): Contact {
+  if (found.real) return addRealContact(found.user, name);
+  const profile = found.profile;
   const existing = findContactByPhone(profile.phone);
   if (existing) return existing;
   const contact: Contact = {
@@ -277,6 +334,20 @@ export function saveContact(profile: Profile, name: string): Contact {
   server.registerContact(contact);
   server.registerChat(ensureDirectChat(contact.id));
   return contact;
+}
+
+/** Phone book import: which of these numbers are on the server. */
+export async function findRegistered(phones: string[]): Promise<RemoteUser[]> {
+  const me = getState().account?.phone;
+  const users = await lookupPhones(phones.filter((p) => p !== me));
+  return users.filter((u) => u.phone !== me);
+}
+
+/** Show/hide the demo contacts and pause their simulated activity. */
+export function setShowDemo(show: boolean) {
+  saveShowDemo(show);
+  setShowDemoState(show);
+  server.setQuiet(!show);
 }
 
 export function openDirectChat(contactId: string) {

@@ -53,12 +53,15 @@ export interface Contact {
   name: string;
   /** Digits only, with country code: "79991234567". */
   phone: string;
-  gender: 'm' | 'f';
+  /** 'u' — unknown (real people): "был(а) в сети". */
+  gender: 'm' | 'f' | 'u';
   about: string;
   /** Two colors of the avatar gradient. */
   colors: [string, string];
   online: boolean;
   lastSeen: number;
+  /** A real person registered on the server (not a demo contact). */
+  real?: boolean;
 }
 
 export interface Chat {
@@ -94,10 +97,16 @@ export interface Connection {
 export interface CallParticipant {
   contactId: string;
   state: 'ringing' | 'connected' | 'declined' | 'unavailable' | 'left';
+  /** Real calls: what we receive from this person over WebRTC. */
+  stream?: MediaStream;
+  cameraOn?: boolean;
+  muted?: boolean;
 }
 
 export interface ActiveCall {
   id: string;
+  /** demo — the other side is simulated; real — WebRTC through the server. */
+  mode: 'demo' | 'real';
   chatId: string;
   kind: CallKind;
   direction: 'out' | 'in';
@@ -118,6 +127,21 @@ export interface ActiveCall {
   minimized: boolean;
 }
 
+/** My registration on the server. The token is a secret that proves this device owns the number. */
+export interface Account {
+  phone: string;
+  name: string;
+  token: string;
+}
+
+export interface NetState {
+  /** Server address (https://…); empty = not configured. */
+  url: string;
+  status: 'off' | 'connecting' | 'online' | 'offline' | 'error';
+  /** Human-readable problem, e.g. "номер занят на другом устройстве". */
+  error?: string;
+}
+
 export interface AppState {
   contacts: Contact[];
   chats: Chat[];
@@ -129,4 +153,8 @@ export interface AppState {
   connection: Connection;
   toasts: Toast[];
   call: ActiveCall | null;
+  account: Account | null;
+  net: NetState;
+  /** Show the demo contacts, chats and their simulated activity. */
+  showDemo: boolean;
 }

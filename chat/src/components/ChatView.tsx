@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { MediaRef, Message } from '../types';
-import { isOnline, markChatRead, showToast, useAppState } from '../store';
-import { MAX_FILE_SIZE, setActiveChat } from '../sync';
+import { isOnline, showToast, useAppState } from '../store';
+import { MAX_FILE_SIZE, readChat, setActiveChat } from '../sync';
 import { startCall } from '../calls';
 import { chatLook, formatLastSeen, plural, uid } from '../utils';
 import { ChatAvatar } from './Avatar';
@@ -42,7 +42,7 @@ export function ChatView({ chatId, active, onBack }: Props) {
   // Reading: whatever arrives while the chat is open and visible counts as read.
   useEffect(() => {
     if (!active) return;
-    const read = () => document.visibilityState === 'visible' && markChatRead(chatId);
+    const read = () => document.visibilityState === 'visible' && readChat(chatId);
     read();
     document.addEventListener('visibilitychange', read);
     return () => document.removeEventListener('visibilitychange', read);
