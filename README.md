@@ -59,3 +59,13 @@
 `https://<пользователь>.github.io/solid-eureka/ai-academy/` и ставится на экран «Домой».
 
 Подробности — в [ai-academy/README.md](ai-academy/README.md).
+
+---
+
+# 💬 Связь (папка `chat/`)
+
+Мессенджер на React + TypeScript, который работает и без интернета: сообщения хранятся в localStorage,
+фото и видео — в IndexedDB, неотправленное уходит само при появлении связи. Сервер — демо-заглушка в браузере.
+Открывается по адресу `https://<пользователь>.github.io/solid-eureka/chat/`.
+
+Подробности — в [chat/README.md](chat/README.md).

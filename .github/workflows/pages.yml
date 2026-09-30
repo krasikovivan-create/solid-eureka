@@ -23,10 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: chat/package-lock.json
+      - name: Build chat app
+        working-directory: chat
+        run: |
+          npm ci
+          npm run build
       - name: Collect site files
         run: |
           mkdir _site
           cp -r index.html manifest.webmanifest sw.js icons .nojekyll ai-academy _site/
+          cp -r chat/dist _site/chat
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
