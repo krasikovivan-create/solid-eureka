@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # --- База данных ---
     database_url: str = "sqlite+aiosqlite:///./shop.db"
     db_echo: bool = False
+    # Хранилище FSM: без REDIS_URL — в памяти (состояния диалогов сбрасываются при перезапуске).
+    redis_url: str = ""
 
     # --- Оплата ---
     # fake — тестовая кнопка «Оплатить» без провайдера;

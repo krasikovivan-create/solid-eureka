@@ -45,7 +45,13 @@ class StockService:
 
     async def check(self, order: Order) -> dict[int, int]:
         """Возвращает нехватку по вариантам (пусто — всё в наличии)."""
-        needs = self._needs(order)
+        return await self.check_needs(self._needs(order))
+
+    async def check_needs(self, needs: dict[int, int]) -> dict[int, int]:
+        """Проверяет потребность {variant_id: qty}.
+
+        Строки вариантов блокируются (SELECT … FOR UPDATE) до конца транзакции.
+        """
         variants = await self._lock_variants(list(needs))
         shortages = {}
         for variant_id, qty in needs.items():

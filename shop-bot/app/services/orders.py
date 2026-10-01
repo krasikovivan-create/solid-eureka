@@ -31,7 +31,7 @@ from app.services.cart import CartService, CartSummary, NotEnoughStock, VariantU
 from app.services.delivery import DeliveryCalculator, DeliveryProvider, DeliveryQuote
 from app.services.notifications import Notifier
 from app.services.promo import PromoService
-from app.services.stock import OutOfStock, StockService
+from app.services.stock import StockService
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +144,12 @@ class OrderService:
         summary = await cart.summary(user)
         if summary.is_empty or summary.has_problems or summary.promo_error is not None:
             raise CartChanged
+        needs: dict[int, int] = {}
+        for line in summary.lines:
+            needs[line.variant_id] = needs.get(line.variant_id, 0) + line.qty
+        # Блокируем варианты и проверяем остатки до любых изменений в БД.
+        if await self.stock.check_needs(needs):
+            raise CartChanged
         quote = await self.quote(data, summary.items_total - summary.discount)
         totals = calc_totals(summary, quote, user, data.use_bonus, self.bonus_share_percent)
 
@@ -183,14 +189,7 @@ class OrderService:
 
         if payment_method == PaymentMethod.COD:
             # Оплата при получении: резервируем товар сразу, иначе его могут купить.
-            try:
-                await self.stock.deduct(order)
-            except OutOfStock as exc:
-                await self.session.rollback()
-                raise CartChanged from exc
-        elif await self.stock.check(order):
-            await self.session.rollback()
-            raise CartChanged
+            await self.stock.deduct(order)
 
         if summary.promo:
             await PromoService(self.session).register_usage(summary.promo, user.id, order.id)
