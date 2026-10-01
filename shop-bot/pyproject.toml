@@ -1,0 +1,53 @@
+[project]
+name = "shop-bot"
+version = "1.0.0"
+description = "Telegram-бот интернет-магазина одежды: каталог, корзина, заказы, оплата, доставка, ИИ-стилист"
+requires-python = ">=3.11"
+dependencies = [
+    "aiogram>=3.13,<4",
+    "sqlalchemy[asyncio]>=2.0.30,<3",
+    "aiosqlite>=0.20",
+    "asyncpg>=0.29",
+    "alembic>=1.13",
+    "apscheduler>=3.10,<4",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3",
+    "anthropic>=1.0,<2",
+    "aiohttp>=3.9",
+    "redis>=5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "ASYNC", "RUF"]
+ignore = [
+    "RUF001",  # кириллица в строках — это нормально
+    "RUF002",
+    "RUF003",
+    "B008",
+    "SIM108",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Тексты бота — длинные строки естественны.
+"app/texts/*" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
