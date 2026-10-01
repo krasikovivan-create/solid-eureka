@@ -22,13 +22,13 @@ ESRGAN_BLEND = 0.85       # доля Real-ESRGAN в апскейле (остал
 MAX_PIXELS = 1080 * 1920  # предел рабочего разрешения (H.264 level 4.x — открывается на любом телефоне)
 
 # Камера. Человек всегда неподвижен и не деформируется; двигается только фон.
-ZOOM = 0.10               # сила «наезда»: ближние к камере части фона приближаются, дальние слегка уходят
-PARALLAX = 0.020          # сила бокового параллакса по глубине (доля ширины кадра)
+ZOOM = 0.08               # сила «наезда»: ближние к камере части фона приближаются, дальние слегка уходят
+PARALLAX = 0.016          # сила бокового параллакса по глубине (доля ширины кадра)
 SWAY_Y = 0.35             # вертикальная составляющая покачивания (доля от горизонтальной)
 PERSON_FOLLOW_ZOOM = 0.0  # 0 = человек полностью неподвижен; 1 = масштабируется вместе с «камерой»
 
 # Эффекты (0 = выключить)
-LIGHT_PULSE = 0.45        # пульсация розово-фиолетового пятна у надписи
+LIGHT_PULSE = 0.35        # пульсация розово-фиолетового пятна у надписи
 CAUSTICS = 0.18           # водные блики на полу
 CAUSTIC_SCALE = 2.5       # мельче/крупнее узор бликов (больше = мельче)
 WATER_SHIMMER = 0.45      # мерцание воды в окне-аквариуме
@@ -38,8 +38,8 @@ DUST_BRIGHTNESS = 0.85    # яркость пылинок
 # Маска человека: пробуются все модели, берётся та, чей контур лучше совпадает со скачком глубины
 MASK_MODELS = ("isnet-general-use", "u2net_human_seg", "birefnet-portrait")
 MASK_FEATHER = 2.0        # мягкость края маски, px (в рабочем разрешении)
-PERSON_RING = 3           # px исходного фона вокруг человека, которые едут вместе с ним (прячет шов)
-HOLE_EXTRA = 10           # насколько шире маски заливается фон за человеком, px
+PERSON_RING = 1           # px исходного фона вокруг человека в его слое (прячет шов)
+HOLE_EXTRA = 10           # с какого отступа от маски берутся пиксели для заливки фона, px
 
 GIF_WIDTH = 240           # ширина превью-GIF
 GIF_FPS = 12
@@ -408,36 +408,64 @@ def detect_light_spot(img01, exclude, w, h):
     color = color / (color.max() + 1e-6)
     glow = cv2.GaussianBlur(soft, (0, 0), sig * 1.2)
     glow /= glow.max() + 1e-6
+    # яркое ядро почти не трогаем (иначе пересвет), «дышит» ореол вокруг него
+    room = (0.25 + 0.75 * np.clip(1 - img01.max(2), 0, 1) / 0.6).clip(0, 1).astype(np.float32)
     x, y, bw, bh = st[0], st[1], st[2], st[3]
     log(f"световое пятно: x={x}..{x + bw}, y={y}..{y + bh}, цвет={np.round(color, 2)}")
-    return {"soft": soft, "glow": glow, "color": color.astype(np.float32)}
+    return {"soft": soft, "glow": glow, "room": room, "color": color.astype(np.float32)}
 
 
-def detect_aquarium(img01, exclude, w, h):
+def detect_aquarium(img01, exclude, person, w, h):
     hsv = cv2.cvtColor((img01 * 255).astype(np.uint8), cv2.COLOR_RGB2HSV)
     H, S, V = [hsv[..., i].astype(np.float32) for i in range(3)]
     local = cv2.GaussianBlur(V, (0, 0), 0.08 * w)
-    cand = (H >= 75) & (H <= 112) & (S >= 60) & (V >= 90) & (V > local + 20) & (exclude == 0)
-    cand = cv2.morphologyEx(cand.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
-    n, lab, st, _ = cv2.connectedComponentsWithStats(cand, 8)
+    free = exclude == 0
+    seed = (H >= 75) & (H <= 112) & (S >= 60) & (V >= 90) & (V > local + 20) & free
+    seed = cv2.morphologyEx(seed.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(seed, 8)
     best, best_score = None, 0.0
     for i in range(1, n):
         x, y, bw, bh, area = st[i]
         if not (0.001 * w * h < area < 0.2 * w * h):
             continue
         comp = (lab == i).astype(np.uint8)
-        hull = cv2.convexHull(cv2.findNonZero(comp))
-        fill = area / max(cv2.contourArea(hull), 1)
+        fill = area / max(cv2.contourArea(cv2.convexHull(cv2.findNonZero(comp))), 1)
         sc = area * fill * V[comp > 0].mean()
         if fill > 0.45 and sc > best_score:
-            best, best_score = (hull, (x, y, bw, bh)), sc
+            best, best_score = comp, sc
     if best is None:
         return None
+    # окно часто разрезано человеком: присоединяем куски по другую сторону от него,
+    # если промежуток между ними закрыт человеком (окно продолжается за ним)
+    broad = (H >= 75) & (H <= 125) & (S >= 40) & (V >= 110) & (V > local + 15) & free
+    broad = cv2.morphologyEx(broad.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(broad, 8)
+    occl = dilate(person, int(0.02 * w)) > 0
+    union = best.copy()
+    for _ in range(3):
+        ux, uy, uw, uh = cv2.boundingRect(cv2.findNonZero(union))
+        grown = False
+        for i in range(1, n):
+            x, y, bw, bh, area = st[i]
+            if area < 0.0005 * w * h or (union[lab == i] > 0).all():
+                continue
+            ov = min(y + bh, uy + uh) - max(y, uy)
+            if ov < 0.5 * min(bh, uh) or abs(y - uy) > 0.03 * h:
+                continue
+            g0, g1 = (ux + uw, x) if x >= ux + uw else ((x + bw, ux) if x + bw <= ux else (0, 0))
+            rows = slice(max(y, uy), min(y + bh, uy + uh))
+            cover = occl[rows, g0:g1].mean() if g1 > g0 else 1.0
+            if cover >= 0.6:
+                union |= (lab == i).astype(np.uint8)
+                grown = True
+        if not grown:
+            break
     m = np.zeros((h, w), np.uint8)
-    cv2.fillPoly(m, [best[0]], 1)
-    m = cv2.erode(m, np.ones((3, 3), np.uint8), iterations=2)
-    soft = cv2.GaussianBlur(m.astype(np.float32), (0, 0), 2.5)
-    x, y, bw, bh = best[1]
+    cv2.fillPoly(m, [cv2.convexHull(cv2.findNonZero(union))], 1)
+    # отступаем внутрь от рамы окна, чтобы рябь не «гнула» её
+    m = cv2.erode(m, np.ones((3, 3), np.uint8), iterations=max(2, int(0.018 * w)))
+    soft = cv2.GaussianBlur(m.astype(np.float32), (0, 0), 0.006 * w + 1)
+    x, y, bw, bh = cv2.boundingRect(cv2.findNonZero(m))
     log(f"окно-аквариум: x={x}..{x + bw}, y={y}..{y + bh}")
     return {"soft": soft, "bbox": (x, y, bw, bh)}
 
@@ -466,7 +494,7 @@ class Effects:
         floor_b = (self.floor > 0.3).astype(np.uint8) if self.floor is not None else np.zeros((h, w), np.uint8)
         self.spot = detect_light_spot(plate, excl | floor_b, w, h) if LIGHT_PULSE > 0 else None
         spot_b = (self.spot["soft"] > 0.25).astype(np.uint8) if self.spot else np.zeros((h, w), np.uint8)
-        self.aqua = detect_aquarium(plate, excl | floor_b | spot_b, w, h) if WATER_SHIMMER > 0 else None
+        self.aqua = detect_aquarium(plate, excl | floor_b | spot_b, person_hole, w, h) if WATER_SHIMMER > 0 else None
         if self.spot is None and LIGHT_PULSE > 0:
             log("световое пятно не найдено — эффект пропущен")
         if self.aqua is None and WATER_SHIMMER > 0:
@@ -504,14 +532,15 @@ class Effects:
     def apply(self, ph):
         out = self.plate.copy()
         if self.spot is not None:
-            wave = 0.5 + 0.5 * (0.65 * np.sin(2 * ph) + 0.35 * np.sin(3 * ph + 0.9))
-            gain = 1 + LIGHT_PULSE * (wave - 0.3) * self.spot["soft"]
-            out = out * gain[..., None] + (LIGHT_PULSE * 0.35 * wave) * self.spot["glow"][..., None] * self.spot["color"]
+            wave = 0.65 * np.sin(2 * ph) + 0.35 * np.sin(3 * ph + 0.9)  # -1..1, среднее 0
+            k = LIGHT_PULSE * wave * self.spot["soft"] * self.spot["room"]
+            out = out * (1 + k)[..., None] + (LIGHT_PULSE * 0.12 * max(wave, 0.0)) * \
+                (self.spot["glow"] * self.spot["room"])[..., None] * self.spot["color"]
         if self.aqua is not None:
             ax, ay = self.agrid
             sc = max(self.w, self.h) / 1000.0
-            dx = 1.6 * sc * (0.6 * np.sin(ay / (9 * sc) + 2 * ph) + 0.4 * np.sin((ax + ay) / (14 * sc) - 3 * ph))
-            dy = 1.2 * sc * (0.6 * np.cos(ax / (11 * sc) - 2 * ph) + 0.4 * np.sin((ax - ay) / (17 * sc) + ph))
+            dx = 0.8 * sc * (0.6 * np.sin(ay / (9 * sc) + 2 * ph) + 0.4 * np.sin((ax + ay) / (14 * sc) - 3 * ph))
+            dy = 0.6 * sc * (0.6 * np.cos(ax / (11 * sc) - 2 * ph) + 0.4 * np.sin((ax - ay) / (17 * sc) + ph))
             reg = cv2.remap(self.plate, ax + dx, ay + dy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
             rip = caustic_pattern((ax - ax.mean()) / (40 * sc), (ay - ay.mean()) / (40 * sc), ph)
             rays = 0.5 + 0.5 * np.sin((ax * 0.5 + ay) / (22 * sc) - ph * 2)
@@ -750,7 +779,12 @@ def main():
     hole = dilate(person, ring + int(3 * feather) + int(HOLE_EXTRA * sc)) if person.any() else person
     save_debug("02_person_alpha.png", alpha)
 
-    plate = inpaint_background(img, hole) if person.any() else img.copy()
+    plate = img.copy()
+    if person.any():
+        # заливка берёт цвета снаружи широкой зоны (без «ореола» человека),
+        # но в кадр идёт только под самим человеком — вокруг остаётся исходный фон
+        under = cv2.GaussianBlur(dilate(person, ring + 2).astype(np.float32), (0, 0), feather)[..., None]
+        plate = img * (1 - under) + inpaint_background(img, hole) * under
     save_debug("03_background_plate.png", plate)
 
     d_ref = float(np.median(depth[cv2.erode(person, np.ones((9, 9), np.uint8)) > 0])) if person.sum() > 100 \
