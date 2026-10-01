@@ -616,6 +616,11 @@ class StylistService:
             ],
             "tools": TOOLS,
             "messages": messages,
+            # Автоматическая точка кэша на последнем блоке диалога: в цикле tool use каждая
+            # следующая итерация читает из кэша всё, что было отправлено в предыдущей.
+            # Нужна и потому, что у Haiku 4.5 минимальный кэшируемый префикс — 4096 токенов,
+            # а системный промт с инструментами короче.
+            "cache_control": {"type": "ephemeral"},
         }
         if self.settings.stylist_model.startswith(FALLBACK_MODELS):
             return await self.client.beta.messages.create(

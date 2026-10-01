@@ -4,7 +4,7 @@ import os
 from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 os.environ.setdefault("BOT_TOKEN", "123456:TEST")
 
@@ -18,6 +18,7 @@ from app.db.models import (
     ProductVariant,
     User,
 )
+from app.db.session import create_engine
 from app.services.delivery import build_providers
 
 
@@ -48,11 +49,23 @@ class FakeNotifier:
         return [name for name, _ in self.calls]
 
 
+# По умолчанию тесты идут на SQLite в памяти. Для проверки на PostgreSQL:
+# TEST_DATABASE_URL=postgresql://user@host:5432/test_db pytest
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "")
+
+
+async def make_test_engine(fallback_url: str = "sqlite+aiosqlite://"):
+    # create_engine для SQLite включает PRAGMA foreign_keys — ошибки FK ловятся и без PostgreSQL.
+    engine = create_engine(TEST_DATABASE_URL or fallback_url)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    return engine
+
+
 @pytest.fixture
 async def session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    engine = create_async_engine("sqlite+aiosqlite://")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    engine = await make_test_engine()
     yield async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
     await engine.dispose()
 

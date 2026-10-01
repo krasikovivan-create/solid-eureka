@@ -150,6 +150,7 @@ async def test_tool_calls_and_looks(session, user, catalog):
     first = client.messages.calls[0]
     assert first["system"][0]["cache_control"] == {"type": "ephemeral"}
     assert first["tools"][-1]["cache_control"] == {"type": "ephemeral"}
+    assert first["cache_control"] == {"type": "ephemeral"}
     assert first["model"] == "claude-haiku-4-5-20251001"
 
     request = await session.scalar(select(StylistRequest))
@@ -308,6 +309,7 @@ async def test_disabled_without_client(session, user):
 async def test_user_history_never_leaks_other_users(session, user, catalog):
     stranger = User(id=5555, full_name="Чужой")
     session.add(stranger)
+    await session.flush()
     session.add(Favorite(user_id=stranger.id, product_id=catalog["hoodie"].id, last_price=1))
     session.add(Favorite(user_id=user.id, product_id=catalog["tee"].id, last_price=1))
     await session.commit()

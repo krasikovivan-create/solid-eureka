@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -26,7 +26,10 @@ class Settings(BaseSettings):
     privacy_policy_url: str = "https://example.com/privacy"
 
     # --- Режим запуска: polling (по умолчанию) или webhook ---
-    webhook_url: str = ""
+    # На Render адрес сервиса подставляется сам из RENDER_EXTERNAL_URL.
+    webhook_url: str = Field(
+        default="", validation_alias=AliasChoices("WEBHOOK_URL", "RENDER_EXTERNAL_URL")
+    )
     webhook_path: str = "/webhook"
     webhook_secret: SecretStr = SecretStr("")
     host: str = "0.0.0.0"

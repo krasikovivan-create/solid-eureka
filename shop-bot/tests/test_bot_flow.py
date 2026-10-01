@@ -7,6 +7,8 @@ import itertools
 from datetime import datetime
 from typing import Any
 
+import anthropic
+import httpx2
 import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
@@ -27,7 +29,18 @@ from app.bot import build_app
 from app.config import Settings
 from app.constants import OrderStatus
 from app.db.base import Base
-from app.db.models import Order, ProductVariant, SupportMessage
+from app.db.models import (
+    Broadcast,
+    CartItem,
+    Category,
+    DeliveryTariff,
+    Order,
+    Product,
+    ProductVariant,
+    PromoCode,
+    StylistLook,
+    SupportMessage,
+)
 from app.keyboards.callbacks import (
     AdminCB,
     CartCB,
@@ -37,7 +50,10 @@ from app.keyboards.callbacks import (
     OrderCB,
     ProdCB,
 )
+from app.repositories.catalog import CatalogRepository
 from scripts.seed import seed
+from tests.conftest import TEST_DATABASE_URL
+from tests.test_stylist import FakeClient, response, tool_use
 
 USER_ID = 777
 ADMIN_ID = 1
@@ -154,7 +170,7 @@ async def harness(tmp_path):
         _env_file=None,
         bot_token="42:TEST",
         admin_ids=str(ADMIN_ID),
-        database_url=f"sqlite+aiosqlite:///{tmp_path / 'bot.db'}",
+        database_url=TEST_DATABASE_URL or f"sqlite+aiosqlite:///{tmp_path / 'bot.db'}",
         throttle_rate=0,
         stylist_enabled=False,
         payments_mode="fake",
@@ -162,6 +178,7 @@ async def harness(tmp_path):
     fake = FakeSession()
     app = build_app(settings, bot_session=fake)
     async with app.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     async with app.session_factory() as s:
         await seed(s)
@@ -342,3 +359,147 @@ async def test_support_message_and_reply(harness: Harness):
     assert any(
         r.chat_id == USER_ID and "Заказ уже в пути" in r.text for r in fake.sent("SendMessage")
     )
+
+
+async def test_stylist_dialog_through_bot(harness: Harness):
+    h, fake = harness, harness.session
+    settings = h.app.dp.workflow_data["settings"]
+    stylist_settings = settings.model_copy(
+        update={"stylist_enabled": True, "anthropic_api_key": "key"}
+    )
+    async with h.app.session_factory() as s:
+        variant = await s.scalar(
+            select(ProductVariant).where(ProductVariant.stock >= 1).order_by(ProductVariant.id)
+        )
+    client = FakeClient(
+        [
+            response(tool_use("get_product", {"product_id": variant.product_id}, "t1")),
+            response(
+                tool_use(
+                    "present_looks",
+                    {
+                        "intro": "Держите образ",
+                        "looks": [
+                            {
+                                "title": "Город",
+                                "explanation": "Просто и удобно.",
+                                "items": [
+                                    {
+                                        "product_id": variant.product_id,
+                                        "size": variant.size,
+                                        "color": variant.color,
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                    "t2",
+                )
+            ),
+        ]
+    )
+    h.app.dp.workflow_data.update(settings=stylist_settings, anthropic_client=client)
+
+    await h.message("/start")
+    await h.click(MenuCB(a="stylist"))
+    assert "ИИ-стилист" in fake.texts()[-1]
+    await h.message("Образ на прогулку, размер M")
+    assert fake.sent("SendChatAction"), "индикатор «печатает…»"
+    look_text = fake.texts()[-1]
+    assert "Город" in look_text and "Сумма образа" in look_text
+    look_button = next(c for c in buttons(fake.last_markup()) if c.startswith("s:look_cart"))
+    await h.click(look_button)
+    async with h.app.session_factory() as s:
+        item = await s.scalar(select(CartItem))
+        assert item.variant_id == variant.id and item.stylist_look_id
+        look = await s.get(StylistLook, item.stylist_look_id)
+        assert look.added_to_cart_at is not None
+
+    # API недоступно → понятное сообщение и кнопка каталога.
+    client.messages.responses.append(
+        anthropic.APIConnectionError(request=httpx2.Request("POST", "https://api.anthropic.com"))
+    )
+    await h.message("ещё образ")
+    assert "недоступен" in fake.texts()[-1]
+    assert "m:catalog" in buttons(fake.last_markup())
+
+
+async def test_admin_crud_flows(harness: Harness):
+    h, fake = harness, harness.session
+    a = {"user_id": ADMIN_ID}
+
+    # Категория
+    await h.click(AdminCB(s="cat", a="new"), **a)
+    await h.message("🧦 Носки", **a)
+    async with h.app.session_factory() as s:
+        category = await s.scalar(select(Category).where(Category.title == "Носки"))
+        assert category.emoji == "🧦" and category.slug == "noski"
+
+    # Товар: категория → поля → фото → варианты
+    await h.click(AdminCB(s="prod", a="newcat", id=category.id), **a)
+    await h.message("Носки высокие", **a)
+    await h.message("Хлопковые носки", **a)
+    await h.message("80% хлопок", **a)
+    await h.click(AdminCB(s="prod", a="gender", v="unisex"), **a)
+    await h.click(AdminCB(s="prod", a="style", v="casual"), **a)
+    await h.message("abc", **a)
+    assert "Некорректное" in fake.texts()[-1]
+    await h.message("590", **a)
+    await h.message("-", **a)
+    await h.message(
+        photo=[PhotoSize(file_id="photo1", file_unique_id="u1", width=10, height=10)], **a
+    )
+    await h.click(AdminCB(s="prod", a="photos_done"), **a)
+    await h.message("M чёрный 10\nL белый 0", **a)
+    async with h.app.session_factory() as s:
+        product = await s.scalar(select(Product).where(Product.title == "Носки высокие"))
+        assert product.price == 590
+    await h.click(AdminCB(s="prod", a="edit", id=product.id, v="price"), **a)
+    await h.message("490", **a)
+    async with h.app.session_factory() as s:
+        product = await CatalogRepository(s).get_product(product.id)
+        assert product.price == 490
+        assert product.photos[0].file_id == "photo1"
+        assert sorted((v.size, v.color, v.stock) for v in product.variants) == [
+            ("L", "белый", 0),
+            ("M", "чёрный", 10),
+        ]
+        assert "носки" in product.search_text
+
+    # Промокод
+    await h.click(AdminCB(s="promo", a="new"), **a)
+    await h.message("autumn25", **a)
+    await h.click(AdminCB(s="promo", a="kind", v="percent"), **a)
+    await h.message("25", **a)
+    await h.message("3000", **a)
+    await h.message("31.12.2099", **a)
+    await h.message("-", **a)
+    async with h.app.session_factory() as s:
+        promo = await s.scalar(select(PromoCode).where(PromoCode.code == "AUTUMN25"))
+        assert promo.value == 25 and promo.min_total == 3000 and promo.max_uses is None
+
+    # Тариф доставки
+    async with h.app.session_factory() as s:
+        tariff = await s.scalar(select(DeliveryTariff).where(DeliveryTariff.method == "courier"))
+    await h.click(AdminCB(s="zone", a="tariff", id=tariff.zone_id, v="courier"), **a)
+    await h.message("500 8000 1 3", **a)
+    async with h.app.session_factory() as s:
+        tariff = await s.get(DeliveryTariff, tariff.id)
+        assert (tariff.price, tariff.free_from, tariff.days_max) == (500, 8000, 3)
+
+    # Рассылка с предпросмотром и отложенной отправкой
+    await h.click(AdminCB(s="bc"), **a)
+    await h.click(AdminCB(s="bc", a="seg", v="all"), **a)
+    await h.message("<b>Скидки</b> недели!", **a)
+    await h.message(str(product.id), **a)
+    assert "Получателей" in fake.texts()[-1]
+    await h.click(AdminCB(s="bc", a="schedule"), **a)
+    await h.message("01.01.2099 10:00", **a)
+    async with h.app.session_factory() as s:
+        broadcast = await s.scalar(select(Broadcast))
+        assert broadcast.status == "scheduled" and broadcast.product_id == product.id
+
+    # Удаление товара
+    await h.click(AdminCB(s="prod", a="delete_yes", id=product.id), **a)
+    async with h.app.session_factory() as s:
+        assert await s.get(Product, product.id) is None

@@ -183,6 +183,7 @@ async def test_user_cancel_paid_order_requests_refund(session, user, catalog, no
 async def test_referral_bonus_after_first_paid_order(session, user, catalog, notifier, providers):
     friend = User(id=2002, full_name="Друг")
     session.add(friend)
+    await session.flush()
     user.referrer_id = friend.id
     await session.commit()
     await CartService(session).add(user.id, catalog["tee_s_black"].id)
