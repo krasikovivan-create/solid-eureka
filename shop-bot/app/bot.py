@@ -21,6 +21,7 @@ from app.middlewares.db import DbSessionMiddleware
 from app.middlewares.throttling import ThrottlingMiddleware
 from app.middlewares.user import UserMiddleware
 from app.scheduler import setup_scheduler
+from app.services.admins import AdminRegistry
 from app.services.delivery import build_providers
 from app.services.jobs import Jobs
 from app.services.notifications import BotNotifier
@@ -35,6 +36,7 @@ class App:
     session_factory: async_sessionmaker[AsyncSession]
     scheduler: AsyncIOScheduler
     anthropic_client: anthropic.AsyncAnthropic | None
+    admins: AdminRegistry
 
 
 def build_storage(settings: Settings) -> BaseStorage:
@@ -55,7 +57,8 @@ def build_app(settings: Settings, bot_session: BaseSession | None = None) -> App
     engine = create_engine(settings.database_url, echo=settings.db_echo)
     session_factory = create_sessionmaker(engine)
     providers = build_providers(autoadvance=settings.mock_tracking_autoadvance)
-    notifier = BotNotifier(bot, settings.admin_ids, settings.pickup_address)
+    admins = AdminRegistry(settings.admin_ids)
+    notifier = BotNotifier(bot, admins, settings.pickup_address)
     anthropic_client = build_client(settings)
     jobs = Jobs(bot, session_factory, settings, notifier, providers)
 
@@ -73,6 +76,9 @@ def build_app(settings: Settings, bot_session: BaseSession | None = None) -> App
         session_factory=session_factory,
         anthropic_client=anthropic_client,
         jobs=jobs,
+        admins=admins,
     )
-    scheduler = setup_scheduler(jobs, settings.timezone)
-    return App(bot, dp, engine, session_factory, scheduler, anthropic_client)
+    scheduler = setup_scheduler(
+        jobs, settings.timezone, keep_awake=settings.keep_awake and settings.is_webhook
+    )
+    return App(bot, dp, engine, session_factory, scheduler, anthropic_client, admins)

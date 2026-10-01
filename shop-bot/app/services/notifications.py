@@ -10,6 +10,7 @@ from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
 from aiogram.types import InlineKeyboardMarkup
 
 from app.db.models import Order
+from app.services.admins import AdminRegistry
 from app.texts import t
 from app.utils.formatting import (
     delivery_label,
@@ -47,9 +48,9 @@ def order_address(order: Order, pickup_address: str = "") -> str:
 
 
 class BotNotifier:
-    def __init__(self, bot: Bot, admin_ids: list[int], pickup_address: str = "") -> None:
+    def __init__(self, bot: Bot, admins: AdminRegistry, pickup_address: str = "") -> None:
         self.bot = bot
-        self.admin_ids = admin_ids
+        self.admins = admins
         self.pickup_address = pickup_address
 
     async def send(
@@ -65,7 +66,7 @@ class BotNotifier:
         return False
 
     async def _to_admins(self, text: str) -> None:
-        for admin_id in self.admin_ids:
+        for admin_id in self.admins.ids:
             await self.send(admin_id, text)
 
     async def order_status_changed(self, order: Order) -> None:

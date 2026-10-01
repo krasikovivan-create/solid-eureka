@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
+import aiohttp
 from aiogram import Bot
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -141,6 +142,20 @@ class Jobs:
         async with self.session_factory() as session:
             service = build_order_service(session, self.notifier, self.providers, self.settings)
             return await service.cancel_stale_unpaid(self.settings.unpaid_order_ttl_hours)
+
+    async def keep_awake(self) -> bool:
+        """Запрос к собственному /health через публичный адрес — хостинг видит трафик
+        и не усыпляет сервис."""
+        url = self.settings.webhook_url.rstrip("/") + "/health"
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as http,
+                http.get(url) as response,
+            ):
+                return response.status == 200
+        except (aiohttp.ClientError, TimeoutError):
+            logger.warning("Keep-awake: %s недоступен", url)
+            return False
 
     async def broadcasts(self) -> int:
         runner = BroadcastRunner(

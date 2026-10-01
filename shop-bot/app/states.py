@@ -70,3 +70,7 @@ class AdminBroadcastStates(StatesGroup):
     content = State()
     product = State()
     schedule = State()
+
+
+class AdminTeamStates(StatesGroup):
+    add = State()

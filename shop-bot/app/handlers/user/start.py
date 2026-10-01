@@ -7,7 +7,7 @@ import re
 
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramAPIError
-from aiogram.filters import CommandObject, CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,9 +15,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings
 from app.constants import UserEvent
 from app.db.models import SupportMessage, User
+from app.filters import IsAdmin
+from app.keyboards.admin import admin_menu_kb
 from app.keyboards.callbacks import HelpCB, MenuCB
 from app.keyboards.user import cancel_kb, help_back_kb, help_kb, main_menu, menu_row
 from app.repositories.users import UserRepository
+from app.services.admins import AdminRegistry
 from app.services.cart import CartService
 from app.states import SupportStates
 from app.texts import t
@@ -30,15 +33,19 @@ router = Router(name="start")
 UTM_RE = re.compile(r"^[A-Za-z0-9_\-]{1,64}$")
 
 
-async def menu_markup(session: AsyncSession, user: User, settings: Settings):
+async def menu_markup(session: AsyncSession, user: User, settings: Settings, admins: AdminRegistry):
     count = await CartService(session).count(user.id)
-    return main_menu(count, settings.stylist_available, settings.is_admin(user.id))
+    return main_menu(count, settings.stylist_available, admins.is_admin(user.id))
 
 
 async def show_main_menu(
-    event: Message | CallbackQuery, session: AsyncSession, user: User, settings: Settings
+    event: Message | CallbackQuery,
+    session: AsyncSession,
+    user: User,
+    settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
-    await render(event, t("menu.title"), await menu_markup(session, user, settings))
+    await render(event, t("menu.title"), await menu_markup(session, user, settings, admins))
 
 
 @router.message(CommandStart())
@@ -50,6 +57,7 @@ async def cmd_start(
     user: User,
     user_created: bool,
     settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     had_state = await state.get_state() is not None
     await state.clear()
@@ -69,7 +77,7 @@ async def cmd_start(
         await users.log_event(user.id, UserEvent.START)
 
     caption = t("start.welcome", name=h(message.from_user.first_name), shop=h(settings.shop_name))
-    markup = await menu_markup(session, user, settings)
+    markup = await menu_markup(session, user, settings, admins)
     if had_state:
         # Убираем reply-клавиатуру, оставшуюся от прерванного оформления.
         await message.answer(t("common.cancelled"), reply_markup=ReplyKeyboardRemove())
@@ -89,9 +97,10 @@ async def cb_main(
     session: AsyncSession,
     user: User,
     settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     await state.set_state(None)
-    await show_main_menu(callback, session, user, settings)
+    await show_main_menu(callback, session, user, settings, admins)
     await callback.answer()
 
 
@@ -133,8 +142,10 @@ async def cb_help_topic(callback: CallbackQuery, callback_data: HelpCB) -> None:
 
 
 @router.callback_query(HelpCB.filter(F.a == "manager"))
-async def cb_help_manager(callback: CallbackQuery, state: FSMContext, settings: Settings) -> None:
-    if not settings.admin_ids:
+async def cb_help_manager(
+    callback: CallbackQuery, state: FSMContext, admins: AdminRegistry
+) -> None:
+    if admins.empty:
         await callback.answer(t("help.no_admins"), show_alert=True)
         return
     await state.set_state(SupportStates.message)
@@ -150,6 +161,7 @@ async def support_message(
     session: AsyncSession,
     user: User,
     settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     header = t(
         "admin.support_message",
@@ -158,7 +170,7 @@ async def support_message(
         user_id=user.id,
     )
     delivered = False
-    for admin_id in settings.admin_ids:
+    for admin_id in admins.ids:
         try:
             head = await bot.send_message(admin_id, header)
             copy = await message.copy_to(admin_id)
@@ -172,4 +184,23 @@ async def support_message(
             )
     await state.set_state(None)
     text = t("help.sent") if delivered else t("help.no_admins")
-    await message.answer(text, reply_markup=await menu_markup(session, user, settings))
+    await message.answer(text, reply_markup=await menu_markup(session, user, settings, admins))
+
+
+# ---------- Свой ID и первый вход в админку ----------
+@router.message(Command("myid"))
+async def cmd_myid(message: Message) -> None:
+    await message.answer(t("start.my_id", user_id=message.from_user.id))
+
+
+@router.message(Command("admin"), ~IsAdmin())
+async def cmd_admin_not_allowed(
+    message: Message, state: FSMContext, session: AsyncSession, admins: AdminRegistry
+) -> None:
+    """Если админов ещё нет, первый отправивший /admin становится владельцем магазина."""
+    if await admins.claim(session, message.from_user.id):
+        await state.set_state(None)
+        await message.answer(t("adm.claimed"))
+        await message.answer(t("adm.title"), reply_markup=admin_menu_kb())
+        return
+    await message.answer(t("adm.no_access_id", user_id=message.from_user.id))
