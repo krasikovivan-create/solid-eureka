@@ -1,0 +1,10 @@
+aiogram>=3.13,<4
+sqlalchemy[asyncio]>=2.0.30,<3
+aiosqlite>=0.20
+asyncpg>=0.29
+alembic>=1.13
+apscheduler>=3.10,<4
+pydantic>=2.7,<3
+pydantic-settings>=2.3
+anthropic>=1.0,<2
+aiohttp>=3.9
