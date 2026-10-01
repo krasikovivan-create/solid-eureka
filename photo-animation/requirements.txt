@@ -1,0 +1,9 @@
+opencv-python
+numpy
+pillow
+rembg
+onnxruntime
+torch
+transformers
+imageio
+imageio-ffmpeg
