@@ -71,3 +71,13 @@
 Открывается по адресу `https://<пользователь>.github.io/solid-eureka/chat/`.
 
 Подробности — в [chat/README.md](chat/README.md).
+
+---
+
+# 🤖 Бот-помощник для Telegram (папка `telegram-bot/`)
+
+Telegram-бот с меню: заметки, напоминания («через 20 минут…», «завтра в 9…») с кнопкой «отложить»
+и ответы на частые вопросы. Чистый Node.js без библиотек; запускается командой `npm start`
+на своём компьютере или на Render по `render.yaml`.
+
+Подробности и пошаговый запуск — в [telegram-bot/README.md](telegram-bot/README.md).
