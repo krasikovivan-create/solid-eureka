@@ -45,8 +45,11 @@ async def on_startup(app: App) -> None:
     )
     if settings.payments_mode == "fake":
         logger.warning("PAYMENTS_MODE=fake: оплата работает в тестовом режиме без списания денег")
-    if not settings.admin_ids:
-        logger.warning("ADMIN_IDS не задан: уведомления о заказах никому не придут")
+    await app.admins.load(app.session_factory)
+    if app.admins.empty:
+        logger.warning(
+            "Админов пока нет: первый, кто отправит боту /admin, станет владельцем магазина"
+        )
     app.scheduler.start()
     me = await app.bot.me()
     logger.info("Бот @%s запущен", me.username)

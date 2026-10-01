@@ -38,3 +38,12 @@ class UserEventLog(TimestampMixin, Base):
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     event: Mapped[str] = mapped_column(String(32), index=True)
+
+
+class Admin(TimestampMixin, Base):
+    """Админы, добавленные через бота (в дополнение к ADMIN_IDS из окружения)."""
+
+    __tablename__ = "admins"
+
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+    added_by: Mapped[int | None] = mapped_column(BigInteger)

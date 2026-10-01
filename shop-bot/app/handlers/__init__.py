@@ -15,8 +15,10 @@ from app.handlers.admin import menu as admin_menu
 from app.handlers.admin import orders as admin_orders
 from app.handlers.admin import products as admin_products
 from app.handlers.admin import settings as admin_settings
+from app.handlers.admin import team as admin_team
 from app.handlers.user import cart, catalog, checkout, orders, start, stylist
 from app.handlers.user.start import menu_markup
+from app.services.admins import AdminRegistry
 from app.texts import t
 
 logger = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ def build_admin_router() -> Router:
             admin_settings.router,
             admin_orders.router,
             admin_marketing.router,
+            admin_team.router,
         )
     )
     return router
@@ -56,14 +59,19 @@ async def unknown_callback(callback: CallbackQuery) -> None:
 
 @fallback_router.message(F.chat.type == "private")
 async def unknown_message(
-    message: Message, state: FSMContext, session: AsyncSession, user: User, settings: Settings
+    message: Message,
+    state: FSMContext,
+    session: AsyncSession,
+    user: User,
+    settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     if await state.get_state() is not None:
         # Пользователь в сценарии, но прислал не то (например, стикер вместо текста).
         await message.answer(t("common.unknown"))
         return
     await message.answer(
-        t("common.unknown"), reply_markup=await menu_markup(session, user, settings)
+        t("common.unknown"), reply_markup=await menu_markup(session, user, settings, admins)
     )
 
 

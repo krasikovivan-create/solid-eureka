@@ -52,7 +52,8 @@ services:
       - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
 
-  # Clothing shop bot (shop-bot/). Fill BOT_TOKEN and ADMIN_IDS after Apply; see shop-bot/README.md.
+  # Clothing shop bot (shop-bot/). Fill BOT_TOKEN after Apply, then send /admin to the bot:
+  # the first person to do so becomes the shop owner. See shop-bot/README.md.
   # The webhook URL is taken from RENDER_EXTERNAL_URL automatically.
   - type: web
     name: shop-bot
@@ -64,6 +65,7 @@ services:
     envVars:
       - key: BOT_TOKEN
         sync: false
+      # Optional: admins are normally added inside the bot (/admin, then «👥 Админы»).
       - key: ADMIN_IDS
         sync: false
       - key: DATABASE_URL

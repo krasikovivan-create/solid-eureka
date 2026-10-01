@@ -28,6 +28,7 @@ from app.keyboards.user import (
     test_pay_kb,
 )
 from app.repositories.users import UserRepository
+from app.services.admins import AdminRegistry
 from app.services.cart import CartService
 from app.services.delivery import DeliveryCalculator, DeliveryProvider, NoTariff
 from app.services.notifications import Notifier
@@ -100,10 +101,11 @@ async def cb_checkout_cancel(
     session: AsyncSession,
     user: User,
     settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     await _finish(state)
     key = "checkout.declined" if callback_data.a == "decline" else "common.cancelled"
-    await render(callback, t(key), await menu_markup(session, user, settings))
+    await render(callback, t(key), await menu_markup(session, user, settings, admins))
     await callback.answer()
 
 
@@ -112,11 +114,18 @@ async def cb_checkout_cancel(
 @router.message(CheckoutStates.city, F.text == t("common.cancel"))
 @router.message(CheckoutStates.address, F.text == t("common.cancel"))
 async def msg_cancel(
-    message: Message, state: FSMContext, session: AsyncSession, user: User, settings: Settings
+    message: Message,
+    state: FSMContext,
+    session: AsyncSession,
+    user: User,
+    settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     await _finish(state)
     await message.answer(t("common.cancelled"), reply_markup=ReplyKeyboardRemove())
-    await message.answer(t("menu.title"), reply_markup=await menu_markup(session, user, settings))
+    await message.answer(
+        t("menu.title"), reply_markup=await menu_markup(session, user, settings, admins)
+    )
 
 
 # ---------- Имя и телефон ----------
@@ -341,6 +350,7 @@ async def cb_pay(
     notifier: Notifier,
     providers: dict[str, DeliveryProvider],
     settings: Settings,
+    admins: AdminRegistry,
 ) -> None:
     payments = PaymentService(bot, settings)
     method = PaymentMethod(callback_data.v) if callback_data.v in {"card", "cod"} else None
@@ -367,7 +377,7 @@ async def cb_pay(
             callback, t("checkout.created_cod", order_id=order.id, total=money(order.total)), None
         )
         await callback.message.answer(
-            t("menu.title"), reply_markup=await menu_markup(session, user, settings)
+            t("menu.title"), reply_markup=await menu_markup(session, user, settings, admins)
         )
     elif payments.test_mode:
         await render(

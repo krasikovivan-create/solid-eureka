@@ -18,9 +18,10 @@ from app.db.models.shop import (
     PromoUsage,
 )
 from app.db.models.stylist import StylistLook, StylistMessage, StylistRequest, StylistSession
-from app.db.models.user import User, UserEventLog
+from app.db.models.user import Admin, User, UserEventLog
 
 __all__ = [
+    "Admin",
     "Broadcast",
     "CartItem",
     "Category",

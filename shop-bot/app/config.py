@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     )
     webhook_path: str = "/webhook"
     webhook_secret: SecretStr = SecretStr("")
+    # Бесплатный Render усыпляет сервис через 15 минут без запросов, и фоновые задачи
+    # (напоминания, отложенные рассылки) встают. KEEP_AWAKE=true — бот сам пингует свой
+    # /health каждые 10 минут (нужен WEBHOOK_URL / RENDER_EXTERNAL_URL).
+    keep_awake: bool = False
     host: str = "0.0.0.0"
     port: int = 8080
 
@@ -95,9 +99,6 @@ class Settings(BaseSettings):
     @property
     def stylist_available(self) -> bool:
         return self.stylist_enabled and bool(self.anthropic_api_key.get_secret_value())
-
-    def is_admin(self, user_id: int) -> bool:
-        return user_id in self.admin_ids
 
 
 @lru_cache

@@ -20,7 +20,9 @@ from aiogram.types import (
     Message,
     MessageId,
     PhotoSize,
+    SharedUser,
     Update,
+    UsersShared,
 )
 from aiogram.types import User as TgUser
 from sqlalchemy import select
@@ -51,6 +53,7 @@ from app.keyboards.callbacks import (
     ProdCB,
 )
 from app.repositories.catalog import CatalogRepository
+from app.services.admins import AdminRegistry
 from scripts.seed import seed
 from tests.conftest import TEST_DATABASE_URL
 from tests.test_stylist import FakeClient, response, tool_use
@@ -164,26 +167,32 @@ class Harness:
         )
 
 
-@pytest.fixture
-async def harness(tmp_path):
-    settings = Settings(
-        _env_file=None,
-        bot_token="42:TEST",
-        admin_ids=str(ADMIN_ID),
-        database_url=TEST_DATABASE_URL or f"sqlite+aiosqlite:///{tmp_path / 'bot.db'}",
-        throttle_rate=0,
-        stylist_enabled=False,
-        payments_mode="fake",
-    )
+async def make_harness(tmp_path, **overrides) -> Harness:
+    params = {
+        "bot_token": "42:TEST",
+        "admin_ids": str(ADMIN_ID),
+        "database_url": TEST_DATABASE_URL or f"sqlite+aiosqlite:///{tmp_path / 'bot.db'}",
+        "throttle_rate": 0,
+        "stylist_enabled": False,
+        "payments_mode": "fake",
+    }
+    params.update(overrides)
     fake = FakeSession()
-    app = build_app(settings, bot_session=fake)
+    app = build_app(Settings(_env_file=None, **params), bot_session=fake)
     async with app.engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     async with app.session_factory() as s:
         await seed(s)
-    yield Harness(app, fake)
-    await app.engine.dispose()
+    await app.admins.load(app.session_factory)
+    return Harness(app, fake)
+
+
+@pytest.fixture
+async def harness(tmp_path):
+    h = await make_harness(tmp_path)
+    yield h
+    await h.app.engine.dispose()
 
 
 def buttons(markup) -> list[str]:
@@ -327,7 +336,8 @@ async def test_search_filters_and_favorites(harness: Harness):
 async def test_admin_panel_requires_admin(harness: Harness):
     h, fake = harness, harness.session
     await h.message("/admin")
-    assert "Админ-панель" not in (fake.texts()[-1] if fake.texts() else "")
+    assert "только администраторам" in fake.texts()[-1]
+    assert str(USER_ID) in fake.texts()[-1]
     await h.message("/admin", user_id=ADMIN_ID)
     assert "Админ-панель" in fake.texts()[-1]
     await h.click(AdminCB(s="stats", a="p", v="week"), user_id=ADMIN_ID)
@@ -503,3 +513,46 @@ async def test_admin_crud_flows(harness: Harness):
     await h.click(AdminCB(s="prod", a="delete_yes", id=product.id), **a)
     async with h.app.session_factory() as s:
         assert await s.get(Product, product.id) is None
+
+
+async def test_owner_claims_bot_and_manages_admins_from_phone(tmp_path):
+    """Без ADMIN_IDS: первый /admin делает владельцем, админы добавляются прямо в боте."""
+    h = await make_harness(tmp_path, admin_ids="")
+    fake = h.session
+    try:
+        await h.message("/myid", user_id=USER_ID)
+        assert str(USER_ID) in fake.texts()[-1]
+
+        await h.message("/admin", user_id=USER_ID)
+        assert "владелец" in fake.texts()[-2]
+        assert h.app.admins.is_admin(USER_ID)
+
+        # Второй желающий владельцем уже не станет.
+        await h.message("/admin", user_id=555)
+        assert "только администраторам" in fake.texts()[-1]
+        assert not h.app.admins.is_admin(555)
+
+        # Добавление через «Выбрать из контактов» (users_shared).
+        await h.click(AdminCB(s="team", a="add"), user_id=USER_ID)
+        await h.message(
+            user_id=USER_ID,
+            users_shared=UsersShared(request_id=1, users=[SharedUser(user_id=555)]),
+        )
+        assert h.app.admins.is_admin(555)
+        assert "добавлен" in fake.texts()[-2]
+
+        # Добавление по числовому ID и некорректный ввод.
+        await h.click(AdminCB(s="team", a="add"), user_id=555)
+        await h.message("abc", user_id=555)
+        assert "Не удалось определить" in fake.texts()[-1]
+        await h.message("123456789", user_id=555)
+        assert h.app.admins.is_admin(123456789)
+
+        # Удаление и сохранение в БД между перезапусками.
+        await h.click(AdminCB(s="team", a="del_yes", id=123456789), user_id=USER_ID)
+        assert not h.app.admins.is_admin(123456789)
+        fresh = AdminRegistry([])
+        await fresh.load(h.app.session_factory)
+        assert fresh.ids == sorted([USER_ID, 555])
+    finally:
+        await h.app.engine.dispose()

@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    KeyboardButtonRequestUsers,
+    ReplyKeyboardMarkup,
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.constants import ORDER_TRANSITIONS, DeliveryMethod, Gender, OrderStatus, Style
@@ -27,6 +32,7 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
         ],
         [btn(t("adm.btn_tariffs"), AdminCB(s="zone")), btn(t("adm.btn_stats"), AdminCB(s="stats"))],
         [btn(t("adm.btn_broadcast"), AdminCB(s="bc")), btn(t("adm.btn_stylist"), AdminCB(s="sty"))],
+        [btn(t("adm.btn_team"), AdminCB(s="team"))],
         menu_row(),
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -329,4 +335,32 @@ def bc_confirm_kb() -> InlineKeyboardMarkup:
             [btn(t("adm.btn_bc_schedule"), AdminCB(s="bc", a="schedule"))],
             [btn(t("common.cancel"), AdminCB(s="menu"))],
         ]
+    )
+
+
+# ---------- Администраторы ----------
+def team_kb(removable: Sequence[int]) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for user_id in removable:
+        kb.row(btn(f"🗑 {user_id}", AdminCB(s="team", a="del", id=user_id)))
+    kb.row(btn(t("adm.btn_add_admin"), AdminCB(s="team", a="add")))
+    kb.row(btn(t("common.back"), AdminCB(s="menu")))
+    return kb.as_markup()
+
+
+def pick_user_kb() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(
+                    text=t("adm.btn_pick_user"),
+                    request_users=KeyboardButtonRequestUsers(
+                        request_id=1, user_is_bot=False, max_quantity=1
+                    ),
+                )
+            ],
+            [KeyboardButton(text=t("common.cancel"))],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True,
     )

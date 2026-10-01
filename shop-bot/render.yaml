@@ -1,0 +1,41 @@
+# Render Blueprint только для бота магазина (без других сервисов репозитория).
+# С телефона: render.com → New → Blueprint → репозиторий → Blueprint Path: shop-bot/render.yaml
+# После Apply заполните BOT_TOKEN, дождитесь деплоя и отправьте боту /admin —
+# первый, кто это сделает, станет владельцем магазина.
+services:
+  - type: web
+    name: shop-bot
+    runtime: docker
+    plan: free
+    rootDir: shop-bot
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Токен от @BotFather.
+      - key: BOT_TOKEN
+        sync: false
+      # Необязательно: админов можно добавлять прямо в боте.
+      - key: ADMIN_IDS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shop-bot-db
+          property: connectionString
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: SEED_DEMO
+        value: "true"
+      - key: PAYMENTS_MODE
+        value: fake
+      - key: PAYMENT_PROVIDER_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: STYLIST_MODEL
+        value: claude-haiku-4-5-20251001
+
+databases:
+  - name: shop-bot-db
+    plan: free
+    databaseName: shop
+    user: shop
