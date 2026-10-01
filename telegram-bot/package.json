@@ -1,0 +1,15 @@
+{
+  "name": "telegram-helper-bot",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Telegram helper bot with a menu: notes, reminders, FAQ",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/index.js",
+    "test": "node --test"
+  }
+}

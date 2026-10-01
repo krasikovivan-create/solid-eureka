@@ -1,4 +1,4 @@
-# Render Blueprint for the «Связь» chat server (chat/server).
+# Render Blueprint: the «Связь» chat server (chat/server) and the Telegram bot (telegram-bot).
 # Render → New → Blueprint → pick this repository → Apply.
 services:
   - type: web
@@ -21,4 +21,32 @@ services:
       - key: TURN_USERNAME
         sync: false
       - key: TURN_CREDENTIAL
+        sync: false
+
+  # Telegram helper bot (telegram-bot/). Fill BOT_TOKEN after Apply; see telegram-bot/README.md.
+  - type: web
+    name: telegram-helper-bot
+    runtime: node
+    plan: free
+    rootDir: telegram-bot
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Token from @BotFather.
+      - key: BOT_TOKEN
+        sync: false
+      - key: BOT_TZ
+        value: Europe/Moscow
+      # Your Telegram id (from @userinfobot) — unlocks /stats.
+      - key: ADMIN_IDS
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      # The free plan has no disk: without Upstash, notes and reminders vanish on every restart.
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
         sync: false
