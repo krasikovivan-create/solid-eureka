@@ -6,6 +6,7 @@ import asyncio
 import logging
 import sys
 
+from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError
 from aiohttp import web
 
 from app.bot import BOT_COMMANDS, Application, build_health_app, create_application
@@ -23,6 +24,27 @@ def setup_logging(level: str) -> None:
     logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
 
+async def connect_telegram(application: Application, attempts: int = 6):
+    """Проверяет токен и снимает webhook. Сетевые сбои — повтор с паузой."""
+    log = logging.getLogger("app")
+    delay = 2.0
+    for attempt in range(1, attempts + 1):
+        try:
+            me = await application.bot.get_me()
+            await application.bot.delete_webhook(drop_pending_updates=False)
+            return me
+        except TelegramUnauthorizedError:
+            log.error("Telegram отклонил токен. Проверьте переменную TELEGRAM_BOT_TOKEN.")
+            raise SystemExit(1) from None
+        except TelegramNetworkError as exc:
+            if attempt == attempts:
+                raise
+            log.warning("Нет связи с Telegram (%s), повтор через %.0f с", exc, delay)
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 30)
+    raise RuntimeError("unreachable")
+
+
 async def run(application: Application) -> None:
     log = logging.getLogger("app")
     runner = web.AppRunner(build_health_app(application))
@@ -32,13 +54,12 @@ async def run(application: Application) -> None:
     log.info("Health-check слушает порт %s (/health)", application.settings.port)
 
     try:
+        me = await connect_telegram(application)
         await application.scheduler.start()
         try:
             await application.bot.set_my_commands(BOT_COMMANDS)
         except Exception:
             log.warning("Не удалось установить список команд", exc_info=True)
-        await application.bot.delete_webhook(drop_pending_updates=False)
-        me = await application.bot.get_me()
         log.info("Бот @%s запущен", me.username)
         await application.dp.start_polling(application.bot, handle_signals=True)
     finally:

@@ -68,7 +68,7 @@ class LLM:
         self.settings = settings
         self.sf = sf
         self.client = client or anthropic.AsyncAnthropic(
-            api_key=settings.anthropic_api_key or None, max_retries=3, timeout=180.0
+            api_key=settings.anthropic_api_key or None, max_retries=3, timeout=300.0
         )
 
     @property

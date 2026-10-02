@@ -70,3 +70,29 @@ def test_main_exits_with_clear_message_without_env(tmp_path):
 def test_app_imports():
     import app.__main__
     import app.bot  # noqa: F401
+
+
+async def test_bad_token_exits_with_clear_message(settings, session, caplog):
+    import pytest
+    from aiogram.exceptions import TelegramUnauthorizedError
+    from aiogram.methods import GetMe
+
+    from app.__main__ import connect_telegram
+
+    original = session.make_request
+
+    async def make_request(bot, method, timeout=None):
+        if isinstance(method, GetMe):
+            raise TelegramUnauthorizedError(method=method, message="Unauthorized")
+        return await original(bot, method, timeout)
+
+    session.make_request = make_request
+    application = await create_application(
+        settings, bot=Bot(TOKEN, session=session), llm_client=FakeAnthropic()
+    )
+    try:
+        with pytest.raises(SystemExit):
+            await connect_telegram(application)
+        assert "TELEGRAM_BOT_TOKEN" in caplog.text
+    finally:
+        await application.engine.dispose()
