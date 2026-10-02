@@ -92,3 +92,15 @@ Telegram-бот магазина на Python (aiogram 3, SQLAlchemy, PostgreSQL)
 Запускается локально, в Docker или на Railway/Render.
 
 Подробности и пошаговый запуск — в [shop-bot/README.md](shop-bot/README.md).
+
+---
+
+# 🧑‍💼 Виртуальный сотрудник (папка `ai-employee/`)
+
+ИИ-ассистент компании в Telegram на Claude: задачи и напоминания, клиенты и воронка,
+аудит процессов клиента, коммерческие предложения в DOCX, база знаний по документам,
+тексты в стиле компании, утренний план и вечерние итоги. Python, aiogram 3, SQLite,
+деплой на Railway.
+
+Запуск с телефона — [ai-employee/SETUP.md](ai-employee/SETUP.md), возможности —
+[ai-employee/README.md](ai-employee/README.md).
