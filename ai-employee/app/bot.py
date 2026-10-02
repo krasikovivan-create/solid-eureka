@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -57,13 +57,22 @@ class Application:
     scheduler: BotScheduler
 
 
+def _detach(router: Router) -> None:
+    """Роутеры модулей — синглтоны; при повторной сборке диспетчера (тесты,
+    перезапуск в том же процессе) отцепляем их от прежнего родителя."""
+    parent = router.parent_router
+    if parent is not None:
+        parent.sub_routers.remove(router)
+        router._parent_router = None
+
+
 def build_dispatcher(app: AppContext, agent: Agent) -> Dispatcher:
     dp = Dispatcher(storage=MemoryStorage())
     middleware = AppMiddleware(app, agent)
     dp.message.outer_middleware(middleware)
     dp.callback_query.outer_middleware(middleware)
     # Порядок важен: команды и состояния — раньше свободного чата.
-    dp.include_routers(
+    routers = (
         start.router,
         settings.router,
         audit.router,
@@ -73,6 +82,9 @@ def build_dispatcher(app: AppContext, agent: Agent) -> Dispatcher:
         documents.router,
         chat.router,
     )
+    for router in routers:
+        _detach(router)
+    dp.include_routers(*routers)
 
     @dp.errors()
     async def on_error(event: ErrorEvent) -> bool:
