@@ -53,3 +53,34 @@ async def test_keep_awake_pings_health(session_factory, notifier, providers, unu
         assert hits == [1]
     finally:
         await runner.cleanup()
+
+
+def test_media_input_resolves_assets_safely():
+    import pytest
+    from aiogram.types import FSInputFile
+
+    from app.utils.media import media_input
+
+    assert media_input("AgADfileid") == "AgADfileid"
+    assert media_input("https://example.com/a.png") == "https://example.com/a.png"
+    assert isinstance(media_input("asset:banner.png"), FSInputFile)
+    for bad in ("asset:../app/config.py", "asset:products/nope.png"):
+        with pytest.raises(FileNotFoundError):
+            media_input(bad)
+
+
+def test_all_seed_photos_exist():
+    from app.utils.media import ASSETS_DIR
+    from scripts.seed import PRODUCTS, asset_photo, product_colors
+
+    for index, row in enumerate(PRODUCTS):
+        for n in range(len(product_colors(row[8]))):
+            assert (ASSETS_DIR / asset_photo(index, n).removeprefix("asset:")).is_file()
+
+
+def test_privacy_page_html():
+    from app.services.privacy import privacy_policy_html
+    from app.services.shop_config import ShopConfig
+
+    html = privacy_policy_html(ShopConfig(Settings(_env_file=None, shop_name="Тест <b>")))
+    assert html.startswith("<!doctype html>") and "Тест &lt;b&gt;" in html and "152-ФЗ" in html

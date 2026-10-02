@@ -99,7 +99,7 @@ class PaymentService:
     def card_enabled(self) -> bool:
         return self.test_mode or bool(self.settings.payment_provider_token.get_secret_value())
 
-    async def send_invoice(self, order: Order) -> None:
+    async def send_invoice(self, order: Order, shop_name: str) -> None:
         provider_data = None
         if self.settings.send_receipt:
             provider_data = json.dumps(
@@ -108,9 +108,7 @@ class PaymentService:
         await self.bot.send_invoice(
             chat_id=order.user_id,
             title=t("checkout.invoice_title", order_id=order.id),
-            description=t(
-                "checkout.invoice_description", order_id=order.id, shop=self.settings.shop_name
-            ),
+            description=t("checkout.invoice_description", order_id=order.id, shop=shop_name),
             payload=make_payload(order.id),
             provider_token=self.settings.payment_provider_token.get_secret_value(),
             currency=self.settings.currency,

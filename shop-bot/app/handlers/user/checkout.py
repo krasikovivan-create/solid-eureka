@@ -11,7 +11,7 @@ from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
-from app.constants import PaymentMethod, UserEvent
+from app.constants import DeliveryMethod, PaymentMethod, UserEvent
 from app.db.base import utcnow
 from app.db.models import User
 from app.handlers.user.cart import show_cart
@@ -34,6 +34,8 @@ from app.services.delivery import DeliveryCalculator, DeliveryProvider, NoTariff
 from app.services.notifications import Notifier
 from app.services.orders import CartChanged, CheckoutData, calc_totals, max_bonus
 from app.services.payments import PaymentService, build_order_service
+from app.services.privacy import privacy_policy_text
+from app.services.shop_config import ShopConfig
 from app.services.validation import (
     normalize_phone,
     validate_address,
@@ -68,7 +70,7 @@ async def cb_checkout(
     state: FSMContext,
     session: AsyncSession,
     user: User,
-    settings: Settings,
+    shop: ShopConfig,
 ) -> None:
     summary = await CartService(session).summary(user)
     if summary.is_empty or summary.has_problems:
@@ -78,9 +80,20 @@ async def cb_checkout(
     await UserRepository(session).log_event(user.id, UserEvent.CHECKOUT_START)
     if user.pd_consent_at is None:
         await state.set_state(CheckoutStates.consent)
-        await render(callback, t("checkout.consent", url=settings.privacy_policy_url), consent_kb())
+        await render(callback, consent_text(shop), consent_kb(with_policy=not shop.privacy_url))
     else:
         await _ask_name(callback.message, state, user)
+    await callback.answer()
+
+
+def consent_text(shop: ShopConfig) -> str:
+    where = shop.privacy_url or t("checkout.policy_below")
+    return t("checkout.consent", url=h(where))
+
+
+@router.callback_query(CheckoutCB.filter(F.a == "policy"))
+async def cb_policy(callback: CallbackQuery, shop: ShopConfig) -> None:
+    await callback.message.answer(privacy_policy_text(shop))
     await callback.answer()
 
 
@@ -193,6 +206,7 @@ async def cb_method(
     user: User,
     providers: dict[str, DeliveryProvider],
     settings: Settings,
+    shop: ShopConfig,
 ) -> None:
     provider = providers.get(callback_data.v)
     if provider is None:
@@ -203,8 +217,9 @@ async def cb_method(
         await state.set_state(CheckoutStates.address)
         await render(callback, t("checkout.ask_address"), None)
     else:
-        await state.update_data(co_address="")
-        await render(callback, t("checkout.pickup_info", address=h(settings.pickup_address)), None)
+        # Адрес пункта самовывоза сохраняется в заказе — так он не «уедет» при смене настроек.
+        await state.update_data(co_address=shop.pickup_address)
+        await render(callback, t("checkout.pickup_info", address=h(shop.pickup_address)), None)
         await _show_summary(callback.message, state, session, user, providers, settings)
     await callback.answer()
 
@@ -276,11 +291,10 @@ async def _show_summary(
         f" = {money(line.subtotal)}"
         for line in summary.lines
     )
-    address = (
-        h(f"{checkout.city}, {checkout.address}")
-        if checkout.address
-        else h(settings.pickup_address)
-    )
+    if checkout.method == DeliveryMethod.PICKUP:
+        address = h(checkout.address)
+    else:
+        address = h(f"{checkout.city}, {checkout.address}")
     text = t(
         "checkout.summary",
         items=items,
@@ -351,6 +365,7 @@ async def cb_pay(
     providers: dict[str, DeliveryProvider],
     settings: Settings,
     admins: AdminRegistry,
+    shop: ShopConfig,
 ) -> None:
     payments = PaymentService(bot, settings)
     method = PaymentMethod(callback_data.v) if callback_data.v in {"card", "cod"} else None
@@ -387,5 +402,5 @@ async def cb_pay(
         )
     else:
         await render(callback, t("checkout.created_card", order_id=order.id), None)
-        await payments.send_invoice(order)
+        await payments.send_invoice(order, shop.shop_name)
     await callback.answer()

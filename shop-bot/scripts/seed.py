@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 from datetime import timedelta
-from urllib.parse import quote_plus
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -432,10 +431,13 @@ ZONES = [
 ]
 
 
-def placeholder(label: str, color: str, n: int) -> str:
-    bg, fg = COLOR_HEX.get(color, ("cccccc", "333333"))
-    text = quote_plus(f"{label}\n{n}")
-    return f"https://placehold.co/800x1000/{bg}/{fg}/png?text={text}"
+def product_colors(colors: list[str]) -> list[str]:
+    """Цвета, для которых есть картинки в assets/products (не больше трёх)."""
+    return colors[:3]
+
+
+def asset_photo(index: int, color_index: int) -> str:
+    return f"asset:products/{index:02d}-{color_index}.png"
 
 
 def stock_for(index: int, color_index: int, size_index: int) -> int:
@@ -469,7 +471,7 @@ async def seed(session: AsyncSession, reset: bool = False) -> bool:
 
     now = utcnow()
     for index, row in enumerate(PRODUCTS):
-        slug, title, en, gender, style, price, old, composition, colors, sizes, description = row
+        slug, title, _en, gender, style, price, old, composition, colors, sizes, description = row
         category = categories[slug]
         product = Product(
             category_id=category.id,
@@ -481,10 +483,11 @@ async def seed(session: AsyncSession, reset: bool = False) -> bool:
             price=price,
             old_price=old,
             created_at=now - timedelta(days=len(PRODUCTS) - index),
+            is_demo=True,
         )
         product.photos = [
-            ProductPhoto(url=placeholder(en, color, n + 1), sort=n)
-            for n, color in enumerate((colors * 2)[:3] if len(colors) < 3 else colors[:3])
+            ProductPhoto(url=asset_photo(index, n), sort=n)
+            for n in range(len(product_colors(colors)))
         ]
         product.variants = [
             ProductVariant(size=size, color=color, stock=stock_for(index, ci, si))

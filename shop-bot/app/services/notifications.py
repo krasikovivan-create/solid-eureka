@@ -41,17 +41,17 @@ def order_items_text(order: Order) -> str:
     )
 
 
-def order_address(order: Order, pickup_address: str = "") -> str:
-    if order.address:
-        return h(f"{order.city}, {order.address}" if order.city else order.address)
-    return h(pickup_address or order.city)
+def order_address(order: Order) -> str:
+    """Адрес заказа. Для самовывоза в заказе хранится адрес пункта на момент оформления."""
+    if order.delivery_method == "pickup" or not order.city:
+        return h(order.address or order.city)
+    return h(f"{order.city}, {order.address}" if order.address else order.city)
 
 
 class BotNotifier:
-    def __init__(self, bot: Bot, admins: AdminRegistry, pickup_address: str = "") -> None:
+    def __init__(self, bot: Bot, admins: AdminRegistry) -> None:
         self.bot = bot
         self.admins = admins
-        self.pickup_address = pickup_address
 
     async def send(
         self, chat_id: int, text: str, reply_markup: InlineKeyboardMarkup | None = None
@@ -87,7 +87,7 @@ class BotNotifier:
                 phone=h(order.phone),
                 user_id=order.user_id,
                 method=delivery_label(order.delivery_method),
-                address=order_address(order, self.pickup_address),
+                address=order_address(order),
                 payment=payment_label(order.payment_method),
                 items=order_items_text(order),
                 total=money(order.total),

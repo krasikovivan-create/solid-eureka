@@ -74,3 +74,8 @@ class AdminBroadcastStates(StatesGroup):
 
 class AdminTeamStates(StatesGroup):
     add = State()
+
+
+class AdminShopStates(StatesGroup):
+    value = State()
+    banner = State()

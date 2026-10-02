@@ -17,6 +17,7 @@ from aiohttp import web
 
 from app.bot import App, build_app
 from app.config import get_settings
+from app.services.privacy import privacy_policy_html
 
 logger = logging.getLogger("app")
 
@@ -46,6 +47,7 @@ async def on_startup(app: App) -> None:
     if settings.payments_mode == "fake":
         logger.warning("PAYMENTS_MODE=fake: оплата работает в тестовом режиме без списания денег")
     await app.admins.load(app.session_factory)
+    await app.shop.load(app.session_factory)
     if app.admins.empty:
         logger.warning(
             "Админов пока нет: первый, кто отправит боту /admin, станет владельцем магазина"
@@ -73,6 +75,11 @@ async def run() -> None:
     web_app = web.Application()
     web_app.router.add_get("/health", health)
     web_app.router.add_get("/", health)
+
+    async def privacy(_: web.Request) -> web.Response:
+        return web.Response(text=privacy_policy_html(app.shop), content_type="text/html")
+
+    web_app.router.add_get("/privacy", privacy)
 
     if settings.is_webhook:
         secret = settings.webhook_secret.get_secret_value() or None

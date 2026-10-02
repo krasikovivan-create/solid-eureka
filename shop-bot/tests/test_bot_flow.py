@@ -17,6 +17,7 @@ from aiogram.types import (
     CallbackQuery,
     Chat,
     Contact,
+    FSInputFile,
     Message,
     MessageId,
     PhotoSize,
@@ -54,6 +55,8 @@ from app.keyboards.callbacks import (
 )
 from app.repositories.catalog import CatalogRepository
 from app.services.admins import AdminRegistry
+from app.services.notifications import order_address
+from app.services.shop_config import ShopConfig
 from scripts.seed import seed
 from tests.conftest import TEST_DATABASE_URL
 from tests.test_stylist import FakeClient, response, tool_use
@@ -556,3 +559,88 @@ async def test_owner_claims_bot_and_manages_admins_from_phone(tmp_path):
         assert fresh.ids == sorted([USER_ID, 555])
     finally:
         await h.app.engine.dispose()
+
+
+async def test_shop_ready_out_of_the_box_and_configurable(harness: Harness):
+    """Сразу после запуска: баннер и фото товаров из assets/, политика внутри бота;
+    владелец настраивает магазин и убирает демо-товары прямо в Telegram."""
+    h, fake = harness, harness.session
+    a = {"user_id": ADMIN_ID}
+
+    await h.message("/start")
+    banner = fake.sent("SendPhoto")[-1]
+    assert isinstance(banner.photo, FSInputFile)  # локальный баннер, без внешних сервисов
+    await h.message("/start")
+    assert isinstance(fake.sent("SendPhoto")[-1].photo, str)  # второй раз — по file_id
+
+    async with h.app.session_factory() as s:
+        variant = await s.scalar(select(ProductVariant).where(ProductVariant.stock >= 1))
+    await h.click(ProdCB(a="view", pid=variant.product_id))
+    album = (fake.sent("SendMediaGroup") or fake.sent("SendPhoto"))[-1]
+    media = album.media[0].media if hasattr(album, "media") else album.photo
+    assert isinstance(media, FSInputFile)
+
+    # Политика конфиденциальности: команда и кнопка на экране согласия.
+    await h.message("/privacy")
+    assert "152-ФЗ" in fake.texts()[-1]
+    await h.click(ProdCB(a="add", pid=variant.product_id, vid=variant.id))
+    await h.click(CartCB(a="checkout"))
+    assert "o:policy:" in buttons(fake.last_markup())
+    await h.click(CheckoutCB(a="policy"))
+    assert "Оператор" in fake.texts()[-1]
+
+    # Владелец меняет название и приветствие — покупатели сразу видят новое.
+    await h.click(AdminCB(s="shop"), **a)
+    assert "Демо-товаров в каталоге: 25" in fake.texts()[-1]
+    await h.click(AdminCB(s="shop", a="edit", v="shop_name"), **a)
+    await h.message("Мой Шоурум", **a)
+    await h.click(AdminCB(s="shop", a="edit", v="welcome"), **a)
+    await h.message("Привет, {name}! Добро пожаловать.", **a)
+    await h.click(AdminCB(s="shop", a="edit", v="operator"), **a)
+    await h.message("ИП Петров П.П., ИНН 770000000000", **a)
+    await h.click(AdminCB(s="shop", a="banner"), **a)
+    await h.message(
+        photo=[PhotoSize(file_id="banner1", file_unique_id="b", width=9, height=9)], **a
+    )
+    await h.message("/start")
+    assert fake.sent("SendPhoto")[-1].photo == "banner1"
+    assert fake.sent("SendPhoto")[-1].caption.startswith("Привет, Иван!")
+    await h.message("/privacy")
+    assert "ИП Петров" in fake.texts()[-1] and "Мой Шоурум" in fake.texts()[-1]
+
+    # Настройки переживают перезапуск.
+    fresh = ShopConfig(h.app.dp.workflow_data["settings"])
+    await fresh.load(h.app.session_factory)
+    assert fresh.shop_name == "Мой Шоурум" and fresh.banner == "banner1"
+
+    # Удаление демо-товаров не трогает товары владельца.
+    async with h.app.session_factory() as s:
+        cat = await s.scalar(select(Category))
+        s.add(Product(category_id=cat.id, title="Свой товар", price=100))
+        await s.commit()
+    await h.click(AdminCB(s="shop", a="demo_yes"), **a)
+    async with h.app.session_factory() as s:
+        titles = (await s.scalars(select(Product.title))).all()
+    assert titles == ["Свой товар"]
+
+
+async def test_pickup_address_is_saved_in_order(harness: Harness):
+    h, fake = harness, harness.session
+    async with h.app.session_factory() as s:
+        variant = await s.scalar(select(ProductVariant).where(ProductVariant.stock >= 1))
+    await h.click(AdminCB(s="shop", a="edit", v="pickup_address"), user_id=ADMIN_ID)
+    await h.message("Москва, Арбат 1, 10:00–20:00", user_id=ADMIN_ID)
+    await h.click(ProdCB(a="add", pid=variant.product_id, vid=variant.id))
+    await h.click(CartCB(a="checkout"))
+    await h.click(CheckoutCB(a="agree"))
+    await h.message("Иван")
+    await h.message("+79123456789")
+    await h.message("Москва")
+    await h.click(CheckoutCB(a="method", v="pickup"))
+    assert "Арбат 1" in fake.texts()[-1]
+    await h.click(CheckoutCB(a="confirm"))
+    await h.click(CheckoutCB(a="pay", v="cod"))
+    async with h.app.session_factory() as s:
+        order = await s.scalar(select(Order))
+    assert order.address == "Москва, Арбат 1, 10:00–20:00"
+    assert order_address(order) == "Москва, Арбат 1, 10:00–20:00"

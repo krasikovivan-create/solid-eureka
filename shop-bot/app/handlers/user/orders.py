@@ -17,6 +17,7 @@ from app.services.delivery import DeliveryProvider
 from app.services.notifications import Notifier, order_address, order_items_text
 from app.services.orders import InvalidTransition, OrderError
 from app.services.payments import PaymentService, build_order_service, parse_payload
+from app.services.shop_config import ShopConfig
 from app.texts import t
 from app.utils.formatting import (
     delivery_label,
@@ -44,7 +45,7 @@ def order_text(order: Order, settings: Settings) -> str:
         status=status_label(order.status),
         items=order_items_text(order),
         method=delivery_label(order.delivery_method),
-        address=order_address(order, settings.pickup_address),
+        address=order_address(order),
         payment=payment_label(order.payment_method),
         paid=t("orders.paid_mark") if order.is_paid else t("orders.unpaid_mark"),
         track=t("orders.track", track=h(order.track_number)) if order.track_number else "",
@@ -213,6 +214,7 @@ async def cb_pay_order(
     notifier: Notifier,
     providers: dict[str, DeliveryProvider],
     settings: Settings,
+    shop: ShopConfig,
 ) -> None:
     service = build_order_service(session, notifier, providers, settings)
     payments = PaymentService(bot, settings)
@@ -227,7 +229,7 @@ async def cb_pay_order(
         await payments.pay_test(service, order.id)
         await render(callback, t("checkout.paid", order_id=order.id), orders_kb([order]))
     elif payments.card_enabled:
-        await payments.send_invoice(order)
+        await payments.send_invoice(order, shop.shop_name)
     else:
         await callback.answer(t("checkout.payment_not_available"), show_alert=True)
         return

@@ -22,9 +22,12 @@ from app.keyboards.user import cancel_kb, help_back_kb, help_kb, main_menu, menu
 from app.repositories.users import UserRepository
 from app.services.admins import AdminRegistry
 from app.services.cart import CartService
+from app.services.privacy import privacy_policy_text
+from app.services.shop_config import ShopConfig
 from app.states import SupportStates
 from app.texts import t
 from app.utils.formatting import h, money
+from app.utils.media import is_asset, media_input
 from app.utils.telegram import render
 
 logger = logging.getLogger(__name__)
@@ -58,6 +61,7 @@ async def cmd_start(
     user_created: bool,
     settings: Settings,
     admins: AdminRegistry,
+    shop: ShopConfig,
 ) -> None:
     had_state = await state.get_state() is not None
     await state.clear()
@@ -76,18 +80,40 @@ async def cmd_start(
     if user_created:
         await users.log_event(user.id, UserEvent.START)
 
-    caption = t("start.welcome", name=h(message.from_user.first_name), shop=h(settings.shop_name))
+    caption = welcome_text(shop, message.from_user.first_name) + referral_note
     markup = await menu_markup(session, user, settings, admins)
     if had_state:
         # Убираем reply-клавиатуру, оставшуюся от прерванного оформления.
         await message.answer(t("common.cancelled"), reply_markup=ReplyKeyboardRemove())
-    try:
-        await message.answer_photo(
-            settings.banner_url, caption=caption + referral_note, reply_markup=markup
-        )
-    except TelegramAPIError:
-        logger.warning("Не удалось отправить баннер %s", settings.banner_url)
-        await message.answer(caption + referral_note, reply_markup=markup)
+    await send_banner(message, shop, caption, markup)
+
+
+def welcome_text(shop: ShopConfig, first_name: str) -> str:
+    if shop.welcome:
+        return h(shop.welcome.replace("{name}", first_name))
+    return t("start.welcome", name=h(first_name), shop=h(shop.shop_name))
+
+
+async def send_banner(message: Message, shop: ShopConfig, caption: str, markup) -> None:
+    """Баннер с подписью; локальный файл загружается в Telegram один раз, дальше — по file_id."""
+    banner = shop.banner
+    if len(caption) > 1024:
+        banner = ""  # подпись к фото ограничена 1024 символами
+    if banner:
+        try:
+            media = shop.file_ids.get(banner) or media_input(banner)
+            sent = await message.answer_photo(media, caption=caption, reply_markup=markup)
+            if is_asset(banner) and sent.photo:
+                shop.file_ids[banner] = sent.photo[-1].file_id
+            return
+        except (TelegramAPIError, FileNotFoundError):
+            logger.warning("Не удалось отправить баннер %s", banner)
+    await message.answer(caption, reply_markup=markup)
+
+
+@router.message(Command("privacy"))
+async def cmd_privacy(message: Message, shop: ShopConfig) -> None:
+    await message.answer(privacy_policy_text(shop))
 
 
 @router.callback_query(MenuCB.filter(F.a == "main"))
@@ -200,7 +226,7 @@ async def cmd_admin_not_allowed(
     """Если админов ещё нет, первый отправивший /admin становится владельцем магазина."""
     if await admins.claim(session, message.from_user.id):
         await state.set_state(None)
-        await message.answer(t("adm.claimed"))
+        await message.answer(t("adm.owner_welcome"))
         await message.answer(t("adm.title"), reply_markup=admin_menu_kb())
         return
     await message.answer(t("adm.no_access_id", user_id=message.from_user.id))

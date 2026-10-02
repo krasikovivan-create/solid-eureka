@@ -18,7 +18,7 @@ from app.db.models.shop import (
     PromoUsage,
 )
 from app.db.models.stylist import StylistLook, StylistMessage, StylistRequest, StylistSession
-from app.db.models.user import Admin, User, UserEventLog
+from app.db.models.user import Admin, ShopSetting, User, UserEventLog
 
 __all__ = [
     "Admin",
@@ -37,6 +37,7 @@ __all__ = [
     "ProductView",
     "PromoCode",
     "PromoUsage",
+    "ShopSetting",
     "StylistLook",
     "StylistMessage",
     "StylistRequest",
