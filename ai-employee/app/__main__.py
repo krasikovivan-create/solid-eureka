@@ -63,7 +63,7 @@ async def run(application: Application) -> None:
         log.info("Бот @%s запущен", me.username)
         await application.dp.start_polling(application.bot, handle_signals=True)
     finally:
-        application.scheduler.shutdown()
+        await application.scheduler.stop()
         await application.bot.session.close()
         await runner.cleanup()
         await application.engine.dispose()

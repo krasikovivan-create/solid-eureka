@@ -79,7 +79,7 @@ async def test_restore_after_restart(onboarded):
             await asyncio.sleep(0.1)
         assert any("Пропущенное" in text for _, text, _ in sent)
     finally:
-        fresh.shutdown()
+        await fresh.stop()
 
 
 async def test_sweep_catches_unscheduled(onboarded):

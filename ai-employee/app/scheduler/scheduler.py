@@ -72,6 +72,13 @@ class BotScheduler:
         if self.scheduler.running:
             self.scheduler.shutdown(wait=False)
 
+    async def stop(self) -> None:
+        """Останавливает планировщик и дожидается заданий, которые уже выполняются
+        (они держат ``_lock``), чтобы не закрыть БД у них из-под ног."""
+        self.shutdown()
+        async with self._lock:
+            pass
+
     async def restore_reminders(self) -> int:
         tasks = await task_service.pending_reminders(self.app.sf)
         for task in tasks:
@@ -188,6 +195,10 @@ class BotScheduler:
         return await self._broadcast(reports.evening_report)
 
     async def _broadcast(self, builder) -> int:
+        async with self._lock:
+            return await self._broadcast_locked(builder)
+
+    async def _broadcast_locked(self, builder) -> int:
         profile = await get_profile(self.app.sf)
         if not profile.onboarded:
             return 0

@@ -201,7 +201,7 @@ async def app(settings: Settings, fake_llm: FakeAnthropic) -> AsyncGenerator[App
     ctx.extra["sent"] = sent
     ctx.extra["fake_llm"] = fake_llm
     yield ctx
-    ctx.scheduler.shutdown()
+    await ctx.scheduler.stop()
     await engine.dispose()
 
 

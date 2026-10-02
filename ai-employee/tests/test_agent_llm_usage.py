@@ -1,5 +1,5 @@
 import anthropic
-import httpx
+import httpx2 as httpx
 import pytest
 
 from app.agent.agent import Agent, choose_model
