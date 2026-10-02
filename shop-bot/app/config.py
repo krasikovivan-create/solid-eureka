@@ -21,9 +21,11 @@ class Settings(BaseSettings):
     bot_token: SecretStr = SecretStr("")
     admin_ids: Annotated[list[int], NoDecode] = Field(default_factory=list)
     shop_name: str = "Fashion Store"
-    banner_url: str = "https://placehold.co/1200x600/png?text=Fashion+Store"
+    # URL, file_id Telegram или asset:<путь> — файл из папки assets/.
+    banner_url: str = "asset:banner.png"
     manager_username: str = ""
-    privacy_policy_url: str = "https://example.com/privacy"
+    # Пусто — бот показывает встроенную политику конфиденциальности (152-ФЗ).
+    privacy_policy_url: str = ""
 
     # --- Режим запуска: polling (по умолчанию) или webhook ---
     # На Render адрес сервиса подставляется сам из RENDER_EXTERNAL_URL.

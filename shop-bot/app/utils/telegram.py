@@ -16,6 +16,7 @@ from aiogram.types import (
 
 from app.db.models import Product
 from app.repositories.catalog import CatalogRepository
+from app.utils.media import media_input
 
 logger = logging.getLogger(__name__)
 
@@ -69,12 +70,12 @@ async def send_product_photos(
         return []
     try:
         if len(photos) == 1:
-            sent = [await bot.send_photo(chat_id, photos[0].media)]
+            sent = [await bot.send_photo(chat_id, media_input(photos[0].media))]
         else:
             sent = await bot.send_media_group(
-                chat_id, media=[InputMediaPhoto(media=p.media) for p in photos]
+                chat_id, media=[InputMediaPhoto(media=media_input(p.media)) for p in photos]
             )
-    except TelegramAPIError:
+    except (TelegramAPIError, FileNotFoundError):
         logger.warning("Не удалось отправить фото товара %s", product.id, exc_info=True)
         return []
     for photo, message in zip(photos, sent, strict=False):

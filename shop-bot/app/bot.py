@@ -25,6 +25,7 @@ from app.services.admins import AdminRegistry
 from app.services.delivery import build_providers
 from app.services.jobs import Jobs
 from app.services.notifications import BotNotifier
+from app.services.shop_config import ShopConfig
 from app.services.stylist import build_client
 
 
@@ -37,6 +38,7 @@ class App:
     scheduler: AsyncIOScheduler
     anthropic_client: anthropic.AsyncAnthropic | None
     admins: AdminRegistry
+    shop: ShopConfig
 
 
 def build_storage(settings: Settings) -> BaseStorage:
@@ -58,7 +60,8 @@ def build_app(settings: Settings, bot_session: BaseSession | None = None) -> App
     session_factory = create_sessionmaker(engine)
     providers = build_providers(autoadvance=settings.mock_tracking_autoadvance)
     admins = AdminRegistry(settings.admin_ids)
-    notifier = BotNotifier(bot, admins, settings.pickup_address)
+    shop = ShopConfig(settings)
+    notifier = BotNotifier(bot, admins)
     anthropic_client = build_client(settings)
     jobs = Jobs(bot, session_factory, settings, notifier, providers)
 
@@ -77,8 +80,9 @@ def build_app(settings: Settings, bot_session: BaseSession | None = None) -> App
         anthropic_client=anthropic_client,
         jobs=jobs,
         admins=admins,
+        shop=shop,
     )
     scheduler = setup_scheduler(
         jobs, settings.timezone, keep_awake=settings.keep_awake and settings.is_webhook
     )
-    return App(bot, dp, engine, session_factory, scheduler, anthropic_client, admins)
+    return App(bot, dp, engine, session_factory, scheduler, anthropic_client, admins, shop)

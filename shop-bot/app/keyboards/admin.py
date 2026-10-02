@@ -32,7 +32,7 @@ def admin_menu_kb() -> InlineKeyboardMarkup:
         ],
         [btn(t("adm.btn_tariffs"), AdminCB(s="zone")), btn(t("adm.btn_stats"), AdminCB(s="stats"))],
         [btn(t("adm.btn_broadcast"), AdminCB(s="bc")), btn(t("adm.btn_stylist"), AdminCB(s="sty"))],
-        [btn(t("adm.btn_team"), AdminCB(s="team"))],
+        [btn(t("adm.btn_shop"), AdminCB(s="shop")), btn(t("adm.btn_team"), AdminCB(s="team"))],
         menu_row(),
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -364,3 +364,24 @@ def pick_user_kb() -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         one_time_keyboard=True,
     )
+
+
+# ---------- Настройки магазина ----------
+def shop_kb(demo_count: int) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.row(
+        btn(t("adm.btn_shop_name"), AdminCB(s="shop", a="edit", v="shop_name")),
+        btn(t("adm.btn_shop_welcome"), AdminCB(s="shop", a="edit", v="welcome")),
+    )
+    kb.row(
+        btn(t("adm.btn_shop_banner"), AdminCB(s="shop", a="banner")),
+        btn(t("adm.btn_shop_pickup"), AdminCB(s="shop", a="edit", v="pickup_address")),
+    )
+    kb.row(
+        btn(t("adm.btn_shop_operator"), AdminCB(s="shop", a="edit", v="operator")),
+        btn(t("adm.btn_shop_policy"), AdminCB(s="shop", a="policy")),
+    )
+    if demo_count:
+        kb.row(btn(t("adm.btn_delete_demo"), AdminCB(s="shop", a="demo")))
+    kb.row(btn(t("common.back"), AdminCB(s="menu")))
+    return kb.as_markup()

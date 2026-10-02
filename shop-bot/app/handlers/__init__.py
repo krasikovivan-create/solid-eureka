@@ -15,6 +15,7 @@ from app.handlers.admin import menu as admin_menu
 from app.handlers.admin import orders as admin_orders
 from app.handlers.admin import products as admin_products
 from app.handlers.admin import settings as admin_settings
+from app.handlers.admin import shop as admin_shop
 from app.handlers.admin import team as admin_team
 from app.handlers.user import cart, catalog, checkout, orders, start, stylist
 from app.handlers.user.start import menu_markup
@@ -44,6 +45,7 @@ def build_admin_router() -> Router:
             admin_orders.router,
             admin_marketing.router,
             admin_team.router,
+            admin_shop.router,
         )
     )
     return router

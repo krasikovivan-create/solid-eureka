@@ -49,6 +49,8 @@ class Product(TimestampMixin, Base):
     price: Mapped[int] = mapped_column(Integer, index=True)
     old_price: Mapped[int | None] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Товар из демо-каталога: админ может удалить все такие одной кнопкой.
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     # Нижний регистр названия, цветов и категории: регистронезависимый поиск по кириллице
     # одинаково работает в SQLite и PostgreSQL.
     search_text: Mapped[str] = mapped_column(Text, default="")

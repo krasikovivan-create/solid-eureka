@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, utcnow
@@ -47,3 +47,12 @@ class Admin(TimestampMixin, Base):
 
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
     added_by: Mapped[int | None] = mapped_column(BigInteger)
+
+
+class ShopSetting(Base):
+    """Настройки магазина, которые админ меняет прямо в боте (название, баннер и т.п.)."""
+
+    __tablename__ = "shop_settings"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, default="")

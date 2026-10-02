@@ -233,13 +233,14 @@ def cancel_kb(back=None) -> InlineKeyboardMarkup:
 
 
 # ---------- Оформление ----------
-def consent_kb() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [btn(t("checkout.btn_agree"), CheckoutCB(a="agree"))],
-            [btn(t("checkout.btn_decline"), CheckoutCB(a="decline"))],
-        ]
-    )
+def consent_kb(with_policy: bool = True) -> InlineKeyboardMarkup:
+    rows = [
+        [btn(t("checkout.btn_agree"), CheckoutCB(a="agree"))],
+        [btn(t("checkout.btn_decline"), CheckoutCB(a="decline"))],
+    ]
+    if with_policy:
+        rows.insert(0, [btn(t("checkout.btn_policy"), CheckoutCB(a="policy"))])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def name_kb(suggested: str) -> ReplyKeyboardMarkup:
