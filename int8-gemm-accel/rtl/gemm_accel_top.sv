@@ -116,37 +116,21 @@ module gemm_accel_top #(
     .done(dma_done), .done_buf(dma_done_buf), .done_slot(dma_done_slot)
   );
 
-  // Read ports are registered: the sequencer's issue logic does not drive the
+  // The operand buffers register their read (and write) ports internally, with
+  // one copy per byte lane, so the sequencer's issue logic never drives the
   // high-fanout block-RAM address/enable nets combinationally. A slot released
   // by the sequencer is therefore read one cycle after the release; the DMA
   // needs many more cycles before it can write into a freed slot.
-  logic             a_re_q, a_rslot_q, b_re_q, b_rslot_q;
-  logic [AAW-1:0]   a_raddr_q;
-  logic [BAW-1:0]   b_raddr_q;
-  always_ff @(posedge clk) begin
-    if (!rst_n) begin
-      a_re_q <= 1'b0;
-      b_re_q <= 1'b0;
-    end else begin
-      a_re_q <= a_re;
-      b_re_q <= b_re;
-    end
-    a_rslot_q <= a_rslot;
-    a_raddr_q <= a_raddr;
-    b_rslot_q <= b_rslot;
-    b_raddr_q <= b_raddr;
-  end
-
-  operand_buffer #(.W(BUS * 8), .SLOT_DEPTH(MT * KMAX / P)) u_abuf (
+  operand_buffer #(.W(BUS * 8), .SLOT_DEPTH(MT * KMAX / P), .LANES(P)) u_abuf (
     .clk,
     .we(bw_en && !bw_buf), .wslot(bw_slot), .waddr(bw_addr), .wdata(bw_data),
-    .re(a_re_q), .rslot(a_rslot_q), .raddr(a_raddr_q), .rdata(a_rdata)
+    .re(a_re), .rslot(a_rslot), .raddr(a_raddr), .rdata(a_rdata)
   );
 
-  operand_buffer #(.W(BUS * 8), .SLOT_DEPTH(KMAX)) u_bbuf (
+  operand_buffer #(.W(BUS * 8), .SLOT_DEPTH(KMAX), .LANES(P)) u_bbuf (
     .clk,
     .we(bw_en && bw_buf), .wslot(bw_slot), .waddr(bw_addr[BAW-1:0]), .wdata(bw_data),
-    .re(b_re_q), .rslot(b_rslot_q), .raddr(b_raddr_q), .rdata(b_rdata)
+    .re(b_re), .rslot(b_rslot), .raddr(b_raddr), .rdata(b_rdata)
   );
 
   sequencer #(.P(P), .MT(MT), .KMAX(KMAX), .AW(AW)) u_seq (

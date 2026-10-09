@@ -105,55 +105,81 @@ module dma_rd #(
   end
 
   // ---------------- response side ----------------
-  logic [7:0]        r_beat;
-  logic [15:0]       r_row;
+  // The parameters of the panel at the FIFO head are loaded into registers
+  // (h_*) when it becomes the head; "last beat of row" / "last row" are kept
+  // as precomputed flags, so the per-beat logic is a few LUT levels deep.
+  logic              h_loaded, h_buf, h_slot, h_last_beat, h_last_row;
+  logic [7:0]        h_beats, h_beat_left;
+  logic [15:0]       h_rows_left;
+  logic [MW-1:0]     h_mask;
   logic [BUF_AW-1:0] r_waddr;
-  logic              last_in_row, last_in_panel;
   logic [BUS*8-1:0]  masked;
-  logic [MW-1:0]     cur_mask;
+  logic              next_avail, load_next;
 
-  assign last_in_row   = (r_beat == f_beats[f_rp] - 8'd1);
-  assign last_in_panel = last_in_row && (r_row == f_rows[f_rp] - 16'd1);
-  assign pop           = rsp_valid && last_in_panel;
-  assign cur_mask      = f_mask[f_rp];
+  assign pop        = rsp_valid && h_last_beat && h_last_row;
+  // after a pop the next panel is loaded at once if it is already in the FIFO
+  assign next_avail = pop ? (f_count == 2'd2) : (f_count != 2'd0);
+  assign load_next  = (!h_loaded || pop) && next_avail;
 
   always_comb begin
     masked = rsp_data;
-    if (last_in_row && (cur_mask != '0)) begin
+    if (h_last_beat && (h_mask != '0)) begin
       for (int b = 0; b < BUS; b = b + 1) begin
-        if (b >= cur_mask) masked[b*8 +: 8] = 8'd0;
+        if (b >= h_mask) masked[b*8 +: 8] = 8'd0;
       end
     end
   end
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      r_beat  <= '0;
-      r_row   <= '0;
-      r_waddr <= '0;
-      wr_en   <= 1'b0;
-      done    <= 1'b0;
+      h_loaded <= 1'b0;
+      r_waddr  <= '0;
+      wr_en    <= 1'b0;
+      done     <= 1'b0;
     end else begin
       wr_en <= rsp_valid;
       done  <= pop;
-      if (rsp_valid) begin
-        if (last_in_row) begin
-          r_beat <= '0;
-          r_row  <= last_in_panel ? 16'd0 : r_row + 16'd1;
+      if (load_next) begin
+        // f_rp has not advanced yet in the pop cycle: the next entry is at ~f_rp
+        h_loaded    <= 1'b1;
+        h_buf       <= pop ? f_buf[~f_rp]   : f_buf[f_rp];
+        h_slot      <= pop ? f_slot[~f_rp]  : f_slot[f_rp];
+        h_beats     <= pop ? f_beats[~f_rp] : f_beats[f_rp];
+        h_beat_left <= pop ? f_beats[~f_rp] : f_beats[f_rp];
+        h_last_beat <= pop ? (f_beats[~f_rp] == 8'd1) : (f_beats[f_rp] == 8'd1);
+        h_rows_left <= pop ? f_rows[~f_rp]  : f_rows[f_rp];
+        h_last_row  <= pop ? (f_rows[~f_rp] == 16'd1) : (f_rows[f_rp] == 16'd1);
+        h_mask      <= pop ? f_mask[~f_rp]  : f_mask[f_rp];
+      end else if (pop) begin
+        h_loaded <= 1'b0;
+      end else if (rsp_valid) begin
+        if (h_last_beat) begin
+          h_beat_left <= h_beats;
+          h_last_beat <= (h_beats == 8'd1);
+          h_rows_left <= h_rows_left - 16'd1;
+          h_last_row  <= (h_rows_left == 16'd2);
         end else begin
-          r_beat <= r_beat + 8'd1;
+          h_beat_left <= h_beat_left - 8'd1;
+          h_last_beat <= (h_beat_left == 8'd2);
         end
-        r_waddr <= last_in_panel ? '0 : r_waddr + 1'b1;
       end
+      if (rsp_valid) r_waddr <= pop ? '0 : r_waddr + 1'b1;
     end
   end
 
   always_ff @(posedge clk) begin
-    wr_buf    <= f_buf[f_rp];
-    wr_slot   <= f_slot[f_rp];
+    wr_buf    <= h_buf;
+    wr_slot   <= h_slot;
     wr_addr   <= r_waddr;
     wr_data   <= masked;
-    done_buf  <= f_buf[f_rp];
-    done_slot <= f_slot[f_rp];
+    done_buf  <= h_buf;
+    done_slot <= h_slot;
   end
+
+`ifndef SYNTHESIS
+  always @(posedge clk) begin
+    if (rst_n && rsp_valid && !h_loaded)
+      $error("dma_rd: response beat without an active panel descriptor");
+  end
+`endif
 endmodule
