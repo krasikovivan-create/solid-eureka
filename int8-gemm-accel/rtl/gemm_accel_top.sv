@@ -116,16 +116,37 @@ module gemm_accel_top #(
     .done(dma_done), .done_buf(dma_done_buf), .done_slot(dma_done_slot)
   );
 
+  // Read ports are registered: the sequencer's issue logic does not drive the
+  // high-fanout block-RAM address/enable nets combinationally. A slot released
+  // by the sequencer is therefore read one cycle after the release; the DMA
+  // needs many more cycles before it can write into a freed slot.
+  logic             a_re_q, a_rslot_q, b_re_q, b_rslot_q;
+  logic [AAW-1:0]   a_raddr_q;
+  logic [BAW-1:0]   b_raddr_q;
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      a_re_q <= 1'b0;
+      b_re_q <= 1'b0;
+    end else begin
+      a_re_q <= a_re;
+      b_re_q <= b_re;
+    end
+    a_rslot_q <= a_rslot;
+    a_raddr_q <= a_raddr;
+    b_rslot_q <= b_rslot;
+    b_raddr_q <= b_raddr;
+  end
+
   operand_buffer #(.W(BUS * 8), .SLOT_DEPTH(MT * KMAX / P)) u_abuf (
     .clk,
     .we(bw_en && !bw_buf), .wslot(bw_slot), .waddr(bw_addr), .wdata(bw_data),
-    .re(a_re), .rslot(a_rslot), .raddr(a_raddr), .rdata(a_rdata)
+    .re(a_re_q), .rslot(a_rslot_q), .raddr(a_raddr_q), .rdata(a_rdata)
   );
 
   operand_buffer #(.W(BUS * 8), .SLOT_DEPTH(KMAX)) u_bbuf (
     .clk,
     .we(bw_en && bw_buf), .wslot(bw_slot), .waddr(bw_addr[BAW-1:0]), .wdata(bw_data),
-    .re(b_re), .rslot(b_rslot), .raddr(b_raddr), .rdata(b_rdata)
+    .re(b_re_q), .rslot(b_rslot_q), .raddr(b_raddr_q), .rdata(b_rdata)
   );
 
   sequencer #(.P(P), .MT(MT), .KMAX(KMAX), .AW(AW)) u_seq (
@@ -140,27 +161,39 @@ module gemm_accel_top #(
     .stall_acc(seq_stall_acc), .stall_pipe(seq_stall_pipe)
   );
 
-  // Pipeline register between the (cascaded) block RAMs and the array; the
-  // control that travels with the data is delayed by the same cycle, so all
-  // timing relations of the sequencer are unchanged.
+  // Pipeline register between the (cascaded) block RAMs and the array. The
+  // control that travels with the data is delayed by the same number of cycles
+  // as the data (registered read port + RAM + output register), so all timing
+  // relations of the sequencer are unchanged.
   logic [BUS*8-1:0] a_rdata_q, b_rdata_q;
+  logic             in_valid_d, in_bank_d, w_we_d, w_bank_d;
+  logic [TW-1:0]    in_tok_d;
+  logic [PL-1:0]    w_row_d;
   logic             in_valid_q, in_bank_q, w_we_q, w_bank_q;
   logic [TW-1:0]    in_tok_q;
   logic [PL-1:0]    w_row_q;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
+      in_valid_d <= 1'b0;
+      w_we_d     <= 1'b0;
       in_valid_q <= 1'b0;
       w_we_q     <= 1'b0;
     end else begin
-      in_valid_q <= arr_in_valid;
-      w_we_q     <= arr_w_we;
+      in_valid_d <= arr_in_valid;
+      w_we_d     <= arr_w_we;
+      in_valid_q <= in_valid_d;
+      w_we_q     <= w_we_d;
     end
+    in_bank_d <= arr_in_bank;
+    in_tok_d  <= arr_in_tok;
+    w_row_d   <= arr_w_row;
+    w_bank_d  <= arr_w_bank;
     a_rdata_q <= a_rdata;
     b_rdata_q <= b_rdata;
-    in_bank_q <= arr_in_bank;
-    in_tok_q  <= arr_in_tok;
-    w_row_q   <= arr_w_row;
-    w_bank_q  <= arr_w_bank;
+    in_bank_q <= in_bank_d;
+    in_tok_q  <= in_tok_d;
+    w_row_q   <= w_row_d;
+    w_bank_q  <= w_bank_d;
   end
 
   systolic_array #(.P(P), .TW(TW), .N_DSP(N_DSP)) u_array (
