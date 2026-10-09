@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MUTS = [
  ("rtl/pe.sv", "assign s3 = pp6 - pp7;", "assign s3 = pp6 + pp7;", "LUT multiplier sign"),
- ("rtl/dma_rd.sv", "if (b >= cur_mask) masked", "if (b > cur_mask) masked", "K-tail mask off-by-one"),
+ ("rtl/dma_rd.sv", "if (b >= h_mask) masked", "if (b > h_mask) masked", "K-tail mask off-by-one"),
  ("rtl/dma_wr.sv", "if (i >= last_bytes) wr_strb[i] = 1'b0;", "wr_strb[i] = 1'b1;", "write strobe ignores N tail"),
  ("rtl/acc_buffer.sv", "assign wdata[c*32 +: 32] = s2_first ?", "assign wdata[c*32 +: 32] = 1'b0 ?", "accumulator ignores 'first'"),
  ("rtl/sequencer.sv", "(st_since >= (PL+1)'(P - 1))", "(st_since >= (PL+1)'(P - 2))", "WL starts 1 cycle earlier (P-2, predicted SAFE)"),
