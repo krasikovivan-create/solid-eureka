@@ -173,3 +173,12 @@ def test_small_icarus_fuzz():
 def test_main_large():
     a, b = rand_mats(512, 512, 512, seed=42)
     check(MAIN, a, b)
+
+
+# ---------------- те же 16x16 с другим разбиением умножителей DSP/LUT (варианты для ПЛИС) ----------------
+@pytest.mark.parametrize("n_dsp", [0, 64, 256])
+def test_main_dsp_split_variants(n_dsp):
+    cfg = HwConfig(P=16, MT=128, KMAX=1024, N_DSP=n_dsp)
+    for i, (m, n, k) in enumerate([(37, 45, 77), (130, 33, 300)]):
+        a, b = rand_mats(m, n, k, seed=50 + i)
+        check(cfg, a, b)
