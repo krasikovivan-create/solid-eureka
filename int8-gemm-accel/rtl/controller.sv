@@ -85,7 +85,8 @@ module controller #(
   output logic [$clog2(P):0]      wb_tile_cols,
   input  logic                    wb_tile_done,
   input  logic                    wb_tile_done_slot,
-  // memory statistics
+  // memory interface
+  input  logic                    mem_wr_busy,  // a write beat is still waiting in mem_if
   input  logic [31:0]             rd_beats,
   input  logic [31:0]             wr_beats
 );
@@ -270,7 +271,8 @@ module controller #(
 
   // ---------------- status, done, counters ----------------
   logic all_idle;
-  assign all_idle = run_q && !go_d && !seq_busy && !ld_active
+  // done only after the shared memory accepted the last write beat
+  assign all_idle = run_q && !go_d && !seq_busy && !ld_active && !mem_wr_busy
                  && (acc_st == {A_FREE, A_FREE});
 
   always_ff @(posedge clk) begin

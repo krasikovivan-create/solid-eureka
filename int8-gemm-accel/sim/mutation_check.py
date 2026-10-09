@@ -15,6 +15,7 @@ MUTS = [
  ("rtl/sequencer.sv", "(st_since >= (PL+1)'(P - 1))", "(st_since >= (PL+1)'(P - 2))", "WL starts 1 cycle earlier (P-2, predicted SAFE)"),
  ("rtl/sequencer.sv", "(st_since >= (PL+1)'(P - 1))", "(st_since >= (PL+1)'(P - 3))", "WL starts 2 cycles earlier (P-3, predicted UNSAFE)"),
  ("rtl/systolic_array.sv", "localparam int LAT = 2 * P - 1;", "localparam int LAT = 2 * P;", "token delay off by one"),
+ ("rtl/controller.sv", "&& !ld_active && !mem_wr_busy", "&& !ld_active", "done before memory accepted last write"),
 ]
 sel = "test_pe or main_random or small_fuzz or main_extremes or main_memory or job_sequence"
 for f, old, new, desc in MUTS:

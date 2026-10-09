@@ -104,7 +104,7 @@ def test_main_job_sequence_stale_buffers():
         check_result(MAIN, a, b, res)
 
 
-@pytest.mark.parametrize("lat,bw", [(1, (1, 1)), (200, (1, 1)), (64, (1, 4)), (16, (3, 5))])
+@pytest.mark.parametrize("lat,bw", [(1, (1, 1)), (200, (1, 1)), (64, (1, 4)), (16, (3, 5)), (32, (1, 8)), (8, (1, 13))])
 def test_main_memory_timing(lat, bw):
     a, b = rand_mats(140, 70, 96, seed=lat + bw[1])
     res = check(MAIN, a, b, lat=lat, bw=bw)
@@ -134,7 +134,7 @@ def test_small_fuzz(seed):
     k = int(rng.integers(1, SMALL.KMAX + 1))
     a, b = rand_mats(m, n, k, seed=seed)
     lat = int(rng.integers(1, 80))
-    bw = [(1, 1), (1, 2), (2, 3), (1, 5)][seed % 4]
+    bw = [(1, 1), (1, 2), (2, 3), (1, 5), (1, 8), (1, 11)][seed % 6]
     pad = tuple(int(x) for x in rng.integers(0, 3, 3))
     check(SMALL, a, b, lat=lat, bw=bw, pad_rows=pad)
 

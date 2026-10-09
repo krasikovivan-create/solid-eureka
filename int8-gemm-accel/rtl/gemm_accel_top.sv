@@ -103,7 +103,7 @@ module gemm_accel_top #(
     .acc_tile_done, .acc_tile_done_slot,
     .wb_tile_valid, .wb_tile_ready, .wb_tile_slot, .wb_tile_base, .wb_tile_rows, .wb_tile_cols,
     .wb_tile_done, .wb_tile_done_slot,
-    .rd_beats, .wr_beats
+    .mem_wr_busy(mem_wr_valid), .rd_beats, .wr_beats
   );
 
   dma_rd #(.BUS(BUS), .AW(AW), .BUF_AW(AAW)) u_dma_rd (
