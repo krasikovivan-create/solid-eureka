@@ -105,65 +105,84 @@ def build(cfg: HwConfig, simulator: str = "verilator") -> list[str]:
     return cmd
 
 
-def run_gemm(a: np.ndarray, b: np.ndarray, cfg: HwConfig = HwConfig(), simulator: str = "verilator",
-             lat: int = 32, bw: tuple[int, int] = (1, 1), pad_rows: tuple[int, int, int] = (0, 0, 0),
-             garbage: bool = True, repeat: int = 1, seed: int = 0,
-             overrides: dict[str, int] | None = None, timeout_cycles: int = 50_000_000) -> SimResult:
-    """Прогоняет C = A @ B в RTL-симуляции и возвращает результат и счётчики.
+def run_jobs(jobs: list[tuple[np.ndarray, np.ndarray]], cfg: HwConfig = HwConfig(),
+             simulator: str = "verilator", lat: int = 32, bw: tuple[int, int] = (1, 1),
+             pad_rows: tuple[int, int, int] = (0, 0, 0), garbage: bool = True, seed: int = 0,
+             overrides: dict[str, int] | None = None,
+             timeout_cycles: int = 50_000_000) -> list[SimResult]:
+    """Прогоняет несколько заданий C_i = A_i @ B_i подряд в одной симуляции (без сброса между ними).
 
     pad_rows: дополнительные слова шины в конце строк A, B, C (проверка lda/ldb/ldc > минимума).
-    overrides: прямые значения регистров (например, для проверки ошибок конфигурации).
+    overrides: прямые значения регистров для всех заданий (например, для проверки ошибок конфигурации).
     """
-    assert a.dtype == np.int8 and b.dtype == np.int8
-    m, k = a.shape
-    k2, n = b.shape
-    assert k == k2
     bus = cfg.bus
-    lda = round_up(max(k, 1), bus) + pad_rows[0] * bus
-    ldb = round_up(max(n, 1), bus) + pad_rows[1] * bus
-    ldc = round_up(max(4 * n, 1), bus) + pad_rows[2] * bus
-    addr_a = 0
-    addr_b = round_up(addr_a + m * lda, 256)
-    addr_c = round_up(addr_b + k * ldb, 256)
-    end = round_up(addr_c + m * ldc, bus)
+    rng = np.random.default_rng(seed)
+    layouts, cursor = [], 0
+    for a, b in jobs:
+        assert a.dtype == np.int8 and b.dtype == np.int8 and a.shape[1] == b.shape[0]
+        m, k = a.shape
+        n = b.shape[1]
+        lda = round_up(max(k, 1), bus) + pad_rows[0] * bus
+        ldb = round_up(max(n, 1), bus) + pad_rows[1] * bus
+        ldc = round_up(max(4 * n, 1), bus) + pad_rows[2] * bus
+        addr_a = round_up(cursor, 256)
+        addr_b = round_up(addr_a + m * lda, 256)
+        addr_c = round_up(addr_b + k * ldb, 256)
+        cursor = addr_c + m * ldc
+        layouts.append({"M": m, "N": n, "K": k, "ADDR_A": addr_a, "ADDR_B": addr_b, "ADDR_C": addr_c,
+                        "LDA": lda, "LDB": ldb, "LDC": ldc})
+    end = round_up(cursor, bus)
     if end > cfg.WORDS * bus:
         raise ValueError(f"memory image {end} B exceeds model size {cfg.WORDS * bus} B")
 
-    rng = np.random.default_rng(seed)
     image = rng.integers(0, 256, end, dtype=np.uint8) if garbage else np.zeros(end, dtype=np.uint8)
-    for i in range(m):
-        image[addr_a + i * lda: addr_a + i * lda + k] = a[i].view(np.uint8)
-    for t in range(k):
-        image[addr_b + t * ldb: addr_b + t * ldb + n] = b[t].view(np.uint8)
+    for (a, b), r in zip(jobs, layouts):
+        m, k = a.shape
+        n = b.shape[1]
+        for i in range(m):
+            o = r["ADDR_A"] + i * r["LDA"]
+            image[o: o + k] = a[i].view(np.uint8)
+        for t in range(k):
+            o = r["ADDR_B"] + t * r["LDB"]
+            image[o: o + n] = b[t].view(np.uint8)
 
-    regs = {"M": m, "N": n, "K": k, "ADDR_A": addr_a, "ADDR_B": addr_b, "ADDR_C": addr_c,
-            "LDA": lda, "LDB": ldb, "LDC": ldc}
-    if overrides:
-        regs.update(overrides)
-
+    order = ["M", "N", "K", "ADDR_A", "ADDR_B", "ADDR_C", "LDA", "LDB", "LDC"]
     cmd = build(cfg, simulator)
     with tempfile.TemporaryDirectory(prefix="gemmsim_") as tmp:
         memfile = Path(tmp) / "mem.hex"
         outfile = Path(tmp) / "c_out.hex"
+        jobfile = Path(tmp) / "jobs.txt"
         memfile.write_text("\n".join(to_hex_lines(image.tobytes(), bus)) + "\n")
-        plus = [f"+MEMFILE={memfile}", f"+OUTFILE={outfile}", f"+LAT={lat}",
-                f"+BWNUM={bw[0]}", f"+BWDEN={bw[1]}", f"+REPEAT={repeat}", f"+TIMEOUT={timeout_cycles}"]
-        plus += [f"+{key}={val}" for key, val in regs.items()]
+        regs = [{**r, **(overrides or {})} for r in layouts]   # значения, записываемые в CSR
+        jobfile.write_text("".join(" ".join(str(r[key]) for key in order) + "\n" for r in regs))
+        plus = [f"+MEMFILE={memfile}", f"+OUTFILE={outfile}", f"+JOBS={jobfile}", f"+LAT={lat}",
+                f"+BWNUM={bw[0]}", f"+BWDEN={bw[1]}", f"+TIMEOUT={timeout_cycles}"]
         proc = subprocess.run(cmd + plus, capture_output=True, text=True, cwd=tmp)
         stdout = proc.stdout + proc.stderr
         if proc.returncode != 0:
             raise RuntimeError(f"simulation failed (rc={proc.returncode}):\n{stdout[-4000:]}")
-        mres = re.search(r"RESULT\s+(\w+)", stdout)
-        status = mres.group(1) if mres else "NORESULT"
-        perf = {name: int(val) for name, val in re.findall(r"PERF (\w+) (\d+)", stdout)}
-        res = SimResult(status=status, perf=perf, stdout=stdout,
-                        layout={"lda": lda, "ldb": ldb, "ldc": ldc,
-                                "addr_a": addr_a, "addr_b": addr_b, "addr_c": addr_c})
-        if status == "OK":
-            region = np.frombuffer(from_hex_lines(outfile.read_text().splitlines(), bus), dtype=np.uint8)
-            assert region.size == m * ldc, (region.size, m * ldc)
-            rows = region.reshape(m, ldc)
-            res.c = rows[:, :4 * n].copy().view("<i4").astype(np.int32)
-            orig = image[addr_c: addr_c + m * ldc].reshape(m, ldc)
-            res.c_padding_intact = bool(np.array_equal(rows[:, 4 * n:], orig[:, 4 * n:]))
-        return res
+        status = dict(re.findall(r"JOB (\d+) RESULT\s+(\w+)", stdout))
+        results = []
+        for idx, ((a, b), r) in enumerate(zip(jobs, layouts)):
+            m, n = a.shape[0], b.shape[1]
+            perf = {name: int(val) for j, name, val in re.findall(r"PERF (\d+) (\w+) (\d+)", stdout)
+                    if int(j) == idx}
+            res = SimResult(status=status.get(str(idx), "NORESULT"), perf=perf, stdout=stdout,
+                            layout={key.lower(): r[key] for key in order})
+            if res.status == "OK":
+                ldc, addr_c = r["LDC"], r["ADDR_C"]
+                lines = Path(f"{outfile}.{idx}").read_text().splitlines()
+                region = np.frombuffer(from_hex_lines(lines, bus), dtype=np.uint8)
+                assert region.size == m * ldc, (region.size, m * ldc)
+                rows = region.reshape(m, ldc)
+                res.c = rows[:, :4 * n].copy().view("<i4").astype(np.int32)
+                orig = image[addr_c: addr_c + m * ldc].reshape(m, ldc)
+                res.c_padding_intact = bool(np.array_equal(rows[:, 4 * n:], orig[:, 4 * n:]))
+            results.append(res)
+        return results
+
+
+def run_gemm(a: np.ndarray, b: np.ndarray, cfg: HwConfig = HwConfig(), simulator: str = "verilator",
+             repeat: int = 1, **kwargs) -> SimResult:
+    """Одно задание C = A @ B (repeat > 1 — то же задание несколько раз подряд; возвращается последнее)."""
+    return run_jobs([(a, b)] * repeat, cfg, simulator, **kwargs)[-1]

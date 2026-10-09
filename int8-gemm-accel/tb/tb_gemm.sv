@@ -1,9 +1,11 @@
 // Top-level testbench: loads a memory image, programs the accelerator through
 // its CSRs, waits for completion, prints the performance counters and dumps
-// the C region. Driven by sim/runner.py.
+// the C region. Driven by sim/accel_sim.py.
 //
-// Plusargs: +MEMFILE= +OUTFILE= +M= +N= +K= +ADDR_A= +ADDR_B= +ADDR_C=
-//           +LDA= +LDB= +LDC= +REPEAT= +TIMEOUT= (+LAT= +BWNUM= +BWDEN= for mem_model)
+// Plusargs: +MEMFILE= +OUTFILE= +TIMEOUT= and either +JOBS=<file> (several jobs
+// run back to back, one per line: M N K ADDR_A ADDR_B ADDR_C LDA LDB LDC) or a
+// single job given by +M= +N= +K= +ADDR_A= +ADDR_B= +ADDR_C= +LDA= +LDB= +LDC=.
+// Memory knobs for mem_model: +LAT= +BWNUM= +BWDEN=. C of job i -> OUTFILE.i
 `timescale 1ns/1ps
 module tb_gemm;
   parameter int P     = 16;
@@ -65,24 +67,48 @@ module tb_gemm;
     #1 d = csr_rdata;
   endtask
 
-  string  memfile, outfile;
-  integer m, n, k, addr_a, addr_b, addr_c, lda, ldb, ldc, repeat_n, timeout;
-  integer polls, rep;
+  string  memfile, outfile, jobfile;
+  integer m, n, k, addr_a, addr_b, addr_c, lda, ldb, ldc, timeout;
+  integer polls, job, fd, nread;
   logic [31:0] status, val;
+
+  // Runs one job: program the CSRs, start, wait for done, report, dump C.
+  task automatic run_job(input integer idx);
+    csr_wr(8'h08, m);
+    csr_wr(8'h0C, n);
+    csr_wr(8'h10, k);
+    csr_wr(8'h14, addr_a);
+    csr_wr(8'h18, addr_b);
+    csr_wr(8'h1C, addr_c);
+    csr_wr(8'h20, lda);
+    csr_wr(8'h24, ldb);
+    csr_wr(8'h28, ldc);
+    csr_wr(8'h00, 32'd1);
+    polls = 0;
+    do begin
+      csr_rd(8'h04, status);
+      polls = polls + 1;
+    end while (!status[1] && polls < timeout);
+    if (!status[1]) begin
+      $display("JOB %0d RESULT TIMEOUT after %0d cycles", idx, polls);
+      $finish;
+    end
+    $display("JOB %0d RESULT %s", idx, status[2] ? "ERROR" : "OK");
+    csr_rd(8'h30, val); $display("PERF %0d cycles %0d", idx, val);
+    csr_rd(8'h34, val); $display("PERF %0d busy %0d", idx, val);
+    csr_rd(8'h38, val); $display("PERF %0d stall_mem %0d", idx, val);
+    csr_rd(8'h3C, val); $display("PERF %0d stall_acc %0d", idx, val);
+    csr_rd(8'h40, val); $display("PERF %0d stall_pipe %0d", idx, val);
+    csr_rd(8'h44, val); $display("PERF %0d tail %0d", idx, val);
+    csr_rd(8'h48, val); $display("PERF %0d rd_beats %0d", idx, val);
+    csr_rd(8'h4C, val); $display("PERF %0d wr_beats %0d", idx, val);
+    if (!status[2])
+      $writememh($sformatf("%s.%0d", outfile, idx), mem.mem, addr_c / BUS, (addr_c + m * ldc) / BUS - 1);
+  endtask
 
   initial begin
     if (!$value$plusargs("MEMFILE=%s", memfile)) memfile = "mem.hex";
     if (!$value$plusargs("OUTFILE=%s", outfile)) outfile = "c_out.hex";
-    if (!$value$plusargs("M=%d", m)) m = 16;
-    if (!$value$plusargs("N=%d", n)) n = 16;
-    if (!$value$plusargs("K=%d", k)) k = 16;
-    if (!$value$plusargs("ADDR_A=%d", addr_a)) addr_a = 0;
-    if (!$value$plusargs("ADDR_B=%d", addr_b)) addr_b = 0;
-    if (!$value$plusargs("ADDR_C=%d", addr_c)) addr_c = 0;
-    if (!$value$plusargs("LDA=%d", lda)) lda = k;
-    if (!$value$plusargs("LDB=%d", ldb)) ldb = n;
-    if (!$value$plusargs("LDC=%d", ldc)) ldc = 4 * n;
-    if (!$value$plusargs("REPEAT=%d", repeat_n)) repeat_n = 1;
     if (!$value$plusargs("TIMEOUT=%d", timeout)) timeout = 50000000;
 
     $readmemh(memfile, mem.mem);
@@ -93,39 +119,30 @@ module tb_gemm;
     csr_rd(8'h50, val);
     $display("HWCFG P=%0d BUS=%0d log2MT=%0d log2KMAX=%0d", val[7:0], val[15:8], val[23:16], val[31:24]);
 
-    for (rep = 0; rep < repeat_n; rep = rep + 1) begin
-      csr_wr(8'h08, m);
-      csr_wr(8'h0C, n);
-      csr_wr(8'h10, k);
-      csr_wr(8'h14, addr_a);
-      csr_wr(8'h18, addr_b);
-      csr_wr(8'h1C, addr_c);
-      csr_wr(8'h20, lda);
-      csr_wr(8'h24, ldb);
-      csr_wr(8'h28, ldc);
-      csr_wr(8'h00, 32'd1);
-      polls = 0;
-      do begin
-        csr_rd(8'h04, status);
-        polls = polls + 1;
-      end while (!status[1] && polls < timeout);
-      if (!status[1]) begin
-        $display("RESULT TIMEOUT after %0d cycles", polls);
-        $finish;
+    if ($value$plusargs("JOBS=%s", jobfile)) begin
+      // one job per line: M N K ADDR_A ADDR_B ADDR_C LDA LDB LDC
+      fd = $fopen(jobfile, "r");
+      if (fd == 0) $fatal(1, "cannot open %s", jobfile);
+      job = 0;
+      nread = $fscanf(fd, "%d %d %d %d %d %d %d %d %d", m, n, k, addr_a, addr_b, addr_c, lda, ldb, ldc);
+      while (nread == 9) begin
+        run_job(job);
+        job = job + 1;
+        nread = $fscanf(fd, "%d %d %d %d %d %d %d %d %d", m, n, k, addr_a, addr_b, addr_c, lda, ldb, ldc);
       end
+      $fclose(fd);
+    end else begin
+      if (!$value$plusargs("M=%d", m)) m = 16;
+      if (!$value$plusargs("N=%d", n)) n = 16;
+      if (!$value$plusargs("K=%d", k)) k = 16;
+      if (!$value$plusargs("ADDR_A=%d", addr_a)) addr_a = 0;
+      if (!$value$plusargs("ADDR_B=%d", addr_b)) addr_b = 0;
+      if (!$value$plusargs("ADDR_C=%d", addr_c)) addr_c = 0;
+      if (!$value$plusargs("LDA=%d", lda)) lda = k;
+      if (!$value$plusargs("LDB=%d", ldb)) ldb = n;
+      if (!$value$plusargs("LDC=%d", ldc)) ldc = 4 * n;
+      run_job(0);
     end
-
-    $display("RESULT %s", status[2] ? "ERROR" : "OK");
-    csr_rd(8'h30, val); $display("PERF cycles %0d", val);
-    csr_rd(8'h34, val); $display("PERF busy %0d", val);
-    csr_rd(8'h38, val); $display("PERF stall_mem %0d", val);
-    csr_rd(8'h3C, val); $display("PERF stall_acc %0d", val);
-    csr_rd(8'h40, val); $display("PERF stall_pipe %0d", val);
-    csr_rd(8'h44, val); $display("PERF tail %0d", val);
-    csr_rd(8'h48, val); $display("PERF rd_beats %0d", val);
-    csr_rd(8'h4C, val); $display("PERF wr_beats %0d", val);
-    if (!status[2] && m > 0)
-      $writememh(outfile, mem.mem, addr_c / BUS, (addr_c + m * ldc) / BUS - 1);
     $finish;
   end
 endmodule

@@ -48,30 +48,44 @@ module systolic_array #(
   skew_lines #(.LANES(P), .W(9), .ASCENDING(1'b1)) u_skew_in (
     .clk(clk), .din(lane_in), .dout(lane_skewed));
 
-  // ---- PE grid; flattened interconnect ----
-  // a_h/s_h: (P rows) x (P+1 columns), ps_v: (P+1 rows) x (P columns)
-  logic [P*(P+1)*8-1:0]  a_h;
-  logic [P*(P+1)-1:0]    s_h;
-  logic [(P+1)*P*PW-1:0] ps_v;
+  // ---- PE grid ----
+  // Each PE drives wires declared in its own generate scope; neighbours read
+  // them by hierarchical name (keeps event-driven simulators fast).
+  logic [P*PW-1:0] col_out, col_aligned;
 
   generate
     for (i = 0; i < P; i = i + 1) begin : g_row
-      assign a_h[(i*(P+1))*8 +: 8] = lane_skewed[i*9 +: 8];
-      assign s_h[i*(P+1)]          = lane_skewed[i*9 + 8];
+      logic row_we;
+      assign row_we = w_we && (w_row_idx == i);
       for (j = 0; j < P; j = j + 1) begin : g_col
+        logic [7:0]    a_i, a_o;
+        logic          s_i, s_o;
+        logic [PW-1:0] ps_i, ps_o;
+        if (j == 0) begin : g_left
+          assign a_i = lane_skewed[i*9 +: 8];
+          assign s_i = lane_skewed[i*9 + 8];
+        end else begin : g_inner_h
+          assign a_i = g_row[i].g_col[j-1].a_o;
+          assign s_i = g_row[i].g_col[j-1].s_o;
+        end
         if (i == 0) begin : g_top
-          assign ps_v[j*PW +: PW] = '0;
+          assign ps_i = '0;
+        end else begin : g_inner_v
+          assign ps_i = g_row[i-1].g_col[j].ps_o;
+        end
+        if (i == P - 1) begin : g_bottom
+          assign col_out[j*PW +: PW] = ps_o;
         end
         pe #(.PW(PW), .USE_DSP((i * P + j) < N_DSP)) u_pe (
           .clk   (clk),
-          .a_in  (a_h[(i*(P+1)+j)*8 +: 8]),
-          .s_in  (s_h[i*(P+1)+j]),
-          .a_out (a_h[(i*(P+1)+j+1)*8 +: 8]),
-          .s_out (s_h[i*(P+1)+j+1]),
-          .ps_in (ps_v[(i*P+j)*PW +: PW]),
-          .ps_out(ps_v[((i+1)*P+j)*PW +: PW]),
+          .a_in  (a_i),
+          .s_in  (s_i),
+          .a_out (a_o),
+          .s_out (s_o),
+          .ps_in (ps_i),
+          .ps_out(ps_o),
           .w_data(w_row_data[j*8 +: 8]),
-          .w_we  (w_we && (w_row_idx == i)),
+          .w_we  (row_we),
           .w_bank(w_bank)
         );
       end
@@ -79,8 +93,6 @@ module systolic_array #(
   endgenerate
 
   // ---- output de-skew: column j delayed by P-1-j ----
-  logic [P*PW-1:0] col_out, col_aligned;
-  assign col_out = ps_v[P*P*PW +: P*PW];
 
   skew_lines #(.LANES(P), .W(PW), .ASCENDING(1'b0)) u_skew_out (
     .clk(clk), .din(col_out), .dout(col_aligned));
