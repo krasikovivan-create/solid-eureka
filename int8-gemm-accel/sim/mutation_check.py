@@ -11,10 +11,10 @@ MUTS = [
  ("rtl/pe.sv", "assign s3 = pp6 - pp7;", "assign s3 = pp6 + pp7;", "LUT multiplier sign"),
  ("rtl/dma_rd.sv", "if (b >= cur_mask) masked", "if (b > cur_mask) masked", "K-tail mask off-by-one"),
  ("rtl/dma_wr.sv", "if (i >= last_bytes) wr_strb[i] = 1'b0;", "wr_strb[i] = 1'b1;", "write strobe ignores N tail"),
- ("rtl/acc_buffer.sv", "assign wdata[c*32 +: 32] = s1_first ?", "assign wdata[c*32 +: 32] = 1'b0 ?", "accumulator ignores 'first'"),
+ ("rtl/acc_buffer.sv", "assign wdata[c*32 +: 32] = s2_first ?", "assign wdata[c*32 +: 32] = 1'b0 ?", "accumulator ignores 'first'"),
  ("rtl/sequencer.sv", "(st_since >= (PL+1)'(P - 1))", "(st_since >= (PL+1)'(P - 2))", "WL starts 1 cycle earlier (P-2, predicted SAFE)"),
  ("rtl/sequencer.sv", "(st_since >= (PL+1)'(P - 1))", "(st_since >= (PL+1)'(P - 3))", "WL starts 2 cycles earlier (P-3, predicted UNSAFE)"),
- ("rtl/systolic_array.sv", "localparam int LAT = 2 * P - 1;", "localparam int LAT = 2 * P;", "token delay off by one"),
+ ("rtl/systolic_array.sv", "localparam int LAT = 2 * P;", "localparam int LAT = 2 * P + 1;", "token delay off by one"),
  ("rtl/controller.sv", "&& !ld_active && !mem_wr_busy", "&& !ld_active", "done before memory accepted last write"),
 ]
 sel = "test_pe or main_random or small_fuzz or main_extremes or main_memory or job_sequence"

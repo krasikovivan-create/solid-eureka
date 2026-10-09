@@ -140,10 +140,33 @@ module gemm_accel_top #(
     .stall_acc(seq_stall_acc), .stall_pipe(seq_stall_pipe)
   );
 
+  // Pipeline register between the (cascaded) block RAMs and the array; the
+  // control that travels with the data is delayed by the same cycle, so all
+  // timing relations of the sequencer are unchanged.
+  logic [BUS*8-1:0] a_rdata_q, b_rdata_q;
+  logic             in_valid_q, in_bank_q, w_we_q, w_bank_q;
+  logic [TW-1:0]    in_tok_q;
+  logic [PL-1:0]    w_row_q;
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      in_valid_q <= 1'b0;
+      w_we_q     <= 1'b0;
+    end else begin
+      in_valid_q <= arr_in_valid;
+      w_we_q     <= arr_w_we;
+    end
+    a_rdata_q <= a_rdata;
+    b_rdata_q <= b_rdata;
+    in_bank_q <= arr_in_bank;
+    in_tok_q  <= arr_in_tok;
+    w_row_q   <= arr_w_row;
+    w_bank_q  <= arr_w_bank;
+  end
+
   systolic_array #(.P(P), .TW(TW), .N_DSP(N_DSP)) u_array (
     .clk, .rst_n,
-    .a_row(a_rdata), .in_valid(arr_in_valid), .in_bank(arr_in_bank), .in_tok(arr_in_tok),
-    .w_row_data(b_rdata), .w_we(arr_w_we), .w_row_idx(arr_w_row), .w_bank(arr_w_bank),
+    .a_row(a_rdata_q), .in_valid(in_valid_q), .in_bank(in_bank_q), .in_tok(in_tok_q),
+    .w_row_data(b_rdata_q), .w_we(w_we_q), .w_row_idx(w_row_q), .w_bank(w_bank_q),
     .out_row(arr_out_row), .out_valid(arr_out_valid), .out_tok(arr_out_tok)
   );
 

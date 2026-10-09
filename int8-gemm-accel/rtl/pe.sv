@@ -1,6 +1,8 @@
 // Processing element of the weight-stationary systolic array.
 //
-// Every cycle:  ps_out <= ps_in + a_in * w[s_in];  a_out <= a_in;  s_out <= s_in.
+// Two pipeline stages on the vertical path (uniform for every PE, so the
+// systolic alignment is preserved; the array latency is 2P):
+//   prod_q <= a_in * w[s_in];   ps_out <= ps_in + prod_q;   a_out <= a_in;  s_out <= s_in.
 // Two weight registers (banks) let the next weight block be loaded while the
 // current one is in use; the bank is selected by s_in, which travels with the data.
 // USE_DSP=1 writes the product as a*w (mapped to a DSP multiplier by synthesis),
@@ -24,7 +26,7 @@ module pe #(
   input  logic          w_bank
 );
   logic [7:0]  w0, w1, w;
-  logic [15:0] prod;
+  logic [15:0] prod, prod_q;
 
   assign w = s_in ? w1 : w0;
 
@@ -60,6 +62,7 @@ module pe #(
     if (w_we &&  w_bank) w1 <= w_data;
     a_out  <= a_in;
     s_out  <= s_in;
-    ps_out <= ps_in + {{(PW-16){prod[15]}}, prod};
+    prod_q <= prod;
+    ps_out <= ps_in + {{(PW-16){prod_q[15]}}, prod_q};
   end
 endmodule

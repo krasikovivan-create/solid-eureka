@@ -2,9 +2,10 @@
 //
 // PE(i,j) holds weight B[k0+i][j0+j]. A row word a_row = A[m][k0 +: P] enters
 // unskewed; byte i is delayed by i cycles so that it meets the partial sum of
-// row m at PE(i,0). Column j produces sum_i A[m][k0+i]*B[k0+i][j0+j] at its bottom
-// P+j cycles after the row entered; the de-skew aligns all columns, so the
-// result row leaves exactly LAT = 2P-1 cycles after the input row. The valid bit
+// row m at PE(i,0). Each PE registers the product and then the partial sum, so
+// column j produces sum_i A[m][k0+i]*B[k0+i][j0+j] at its bottom P+1+j cycles
+// after the row entered; the de-skew aligns all columns, so the result row
+// leaves exactly LAT = 2P cycles after the input row. The valid bit
 // and an opaque token (accumulator address etc.) travel through a matching
 // delay line.
 //
@@ -33,7 +34,7 @@ module systolic_array #(
   output logic                 out_valid,
   output logic [TW-1:0]        out_tok
 );
-  localparam int LAT = 2 * P - 1;
+  localparam int LAT = 2 * P;
 
   // ---- input skew: lane i carries {bank, a[i]} ----
   logic [P*9-1:0] lane_in, lane_skewed;

@@ -40,6 +40,8 @@ module tb_pe;
           s_in  = bank[0];
           ps_in = PW'(ai * 37 - wi * 1001);       // arbitrary incoming partial sum
           expected = ai * 37 - wi * 1001 + ai * wi;
+          // the PE has two register stages (product, then partial sum): hold inputs 2 cycles
+          @(posedge clk);
           @(posedge clk);
           #1;
           checks = checks + 1;
