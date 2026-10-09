@@ -1,0 +1,283 @@
+
+
+Info: Logic utilisation before packing:
+Info:     Total LUT4s:     63426/83640    75%
+Info:         logic LUTs:  52984/83640    63%
+Info:         carry LUTs:  10400/83640    12%
+Info:           RAM LUTs:     28/10455     0%
+Info:          RAMW LUTs:     14/20910     0%
+
+Info:      Total DFFs:     25059/83640    29%
+
+Info: Packing IOs..
+Info: Packing constants..
+Info: Packing carries...
+Info: Packing LUTs...
+Info: Packing LUT5-7s...
+Info: Packing FFs...
+Info:     11905 FFs paired with LUTs.
+Info: Generating derived timing constraints...
+Info: Promoting globals...
+Info: Checksum: 0x5cae42b3
+
+Info: Annotating ports with timing budgets for target frequency 100.00 MHz
+Info: Checksum: 0x17b90599
+
+Info: Device utilisation:
+Info: 	          TRELLIS_IO:     0/  365     0%
+Info: 	                DCCA:     0/   56     0%
+Info: 	              DP16KD:   174/  208    83%
+Info: 	          MULT18X18D:     0/  156     0%
+Info: 	              ALU54B:     0/   78     0%
+Info: 	             EHXPLLL:     0/    4     0%
+Info: 	             EXTREFB:     0/    2     0%
+Info: 	                DCUA:     0/    2     0%
+Info: 	           PCSCLKDIV:     0/    2     0%
+Info: 	             IOLOGIC:     0/  224     0%
+Info: 	            SIOLOGIC:     0/  141     0%
+Info: 	                 GSR:     0/    1     0%
+Info: 	               JTAGG:     0/    1     0%
+Info: 	                OSCG:     0/    1     0%
+Info: 	               SEDGA:     0/    1     0%
+Info: 	                 DTR:     0/    1     0%
+Info: 	             USRMCLK:     0/    1     0%
+Info: 	             CLKDIVF:     0/    4     0%
+Info: 	           ECLKSYNCB:     0/   10     0%
+Info: 	             DLLDELD:     0/    8     0%
+Info: 	              DDRDLL:     0/    4     0%
+Info: 	             DQSBUFM:     0/   14     0%
+Info: 	     TRELLIS_ECLKBUF:     0/    8     0%
+Info: 	        ECLKBRIDGECS:     0/    2     0%
+Info: 	                DCSC:     0/    2     0%
+Info: 	          TRELLIS_FF: 25059/83640    29%
+Info: 	        TRELLIS_COMB: 65680/83640    78%
+Info: 	        TRELLIS_RAMW:     7/10455     0%
+
+Info: Placed 0 cells based on constraints.
+Info: Creating initial analytic placement for 60931 cells, random placement wirelen = 7399143.
+Info:     at initial placer iter 0, wirelen = 6894
+Info:     at initial placer iter 1, wirelen = 9957
+Info:     at initial placer iter 2, wirelen = 9540
+Info:     at initial placer iter 3, wirelen = 9833
+Info: Running main analytical placer, max placement attempts per cell = 10000.
+Info:     at iteration #1, type ALL: wirelen solved = 9210, spread = 3995051, legal = 3999407; time = 5.53s
+Info:     at iteration #2, type ALL: wirelen solved = 77295, spread = 738499, legal = 761382; time = 5.28s
+Info:     at iteration #3, type ALL: wirelen solved = 234206, spread = 518765, legal = 550954; time = 5.28s
+Info:     at iteration #4, type ALL: wirelen solved = 245844, spread = 495424, legal = 528889; time = 5.99s
+Info:     at iteration #5, type ALL: wirelen solved = 253585, spread = 469600, legal = 504071; time = 5.72s
+Info:     at iteration #6, type ALL: wirelen solved = 259728, spread = 456529, legal = 491970; time = 6.10s
+Info:     at iteration #7, type ALL: wirelen solved = 264833, spread = 450428, legal = 485909; time = 4.48s
+Info:     at iteration #8, type ALL: wirelen solved = 271207, spread = 439821, legal = 478391; time = 4.35s
+Info:     at iteration #9, type ALL: wirelen solved = 276661, spread = 431936, legal = 471100; time = 4.71s
+Info:     at iteration #10, type ALL: wirelen solved = 278358, spread = 430199, legal = 469355; time = 4.62s
+Info:     at iteration #11, type ALL: wirelen solved = 283292, spread = 426892, legal = 467438; time = 4.62s
+Info:     at iteration #12, type ALL: wirelen solved = 286052, spread = 426020, legal = 466234; time = 4.25s
+Info:     at iteration #13, type ALL: wirelen solved = 289123, spread = 423374, legal = 463928; time = 4.11s
+Info:     at iteration #14, type ALL: wirelen solved = 292642, spread = 420000, legal = 459788; time = 4.73s
+Info:     at iteration #15, type ALL: wirelen solved = 292967, spread = 419355, legal = 457687; time = 4.88s
+Info:     at iteration #16, type ALL: wirelen solved = 297643, spread = 414581, legal = 453850; time = 4.28s
+Info:     at iteration #17, type ALL: wirelen solved = 300328, spread = 408276, legal = 447656; time = 4.09s
+Info:     at iteration #18, type ALL: wirelen solved = 302777, spread = 406934, legal = 448265; time = 3.70s
+Info:     at iteration #19, type ALL: wirelen solved = 305863, spread = 403976, legal = 443226; time = 3.65s
+Info:     at iteration #20, type ALL: wirelen solved = 309947, spread = 401864, legal = 440736; time = 4.08s
+Info:     at iteration #21, type ALL: wirelen solved = 312699, spread = 401163, legal = 437979; time = 4.50s
+Info:     at iteration #22, type ALL: wirelen solved = 316659, spread = 401214, legal = 439836; time = 3.97s
+Info:     at iteration #23, type ALL: wirelen solved = 319705, spread = 401531, legal = 437100; time = 4.29s
+Info:     at iteration #24, type ALL: wirelen solved = 320318, spread = 401903, legal = 438120; time = 3.78s
+Info:     at iteration #25, type ALL: wirelen solved = 322235, spread = 401470, legal = 438903; time = 3.79s
+Info:     at iteration #26, type ALL: wirelen solved = 324202, spread = 401745, legal = 439357; time = 3.96s
+Info:     at iteration #27, type ALL: wirelen solved = 326186, spread = 401959, legal = 437830; time = 3.97s
+Info:     at iteration #28, type ALL: wirelen solved = 328129, spread = 402210, legal = 440192; time = 4.35s
+Info: HeAP Placer Time: 175.59s
+Info:   of which solving equations: 91.79s
+Info:   of which spreading cells: 32.20s
+Info:   of which strict legalisation: 11.94s
+
+Info: Running simulated annealing placer for refinement.
+Info:   at iteration #1: temp = 0.000000, timing cost = 8179, wirelen = 437100
+Info:   at iteration #5: temp = 0.000000, timing cost = 5346, wirelen = 394877
+Info:   at iteration #10: temp = 0.000000, timing cost = 5488, wirelen = 385688
+Info:   at iteration #15: temp = 0.000000, timing cost = 5178, wirelen = 383565
+Info:   at iteration #20: temp = 0.000000, timing cost = 5387, wirelen = 382628
+Info:   at iteration #23: temp = 0.000000, timing cost = 5307, wirelen = 382269 
+Info: SA placement time 315.29s
+
+Info: Max frequency for clock 'clk': 39.79 MHz (FAIL at 100.00 MHz)
+
+Info: Slack histogram:
+Info:  legend: * represents 71 endpoint(s)
+Info:          + represents [1,71) endpoint(s)
+Info: [-15134, -13915) |+
+Info: [-13915, -12696) |+
+Info: [-12696, -11477) |*****+
+Info: [-11477, -10258) |************+
+Info: [-10258,  -9039) |**********+
+Info: [ -9039,  -7820) |************+
+Info: [ -7820,  -6601) |***************+
+Info: [ -6601,  -5382) |*************************+
+Info: [ -5382,  -4163) |******************************+
+Info: [ -4163,  -2944) |*****************************+
+Info: [ -2944,  -1725) |*******************************+
+Info: [ -1725,   -506) |********************************+
+Info: [  -506,    713) |********************************+
+Info: [   713,   1932) |*********************************+
+Info: [  1932,   3151) |****************************+
+Info: [  3151,   4370) |******************************+
+Info: [  4370,   5589) |*************************************+
+Info: [  5589,   6808) |******************************************************+
+Info: [  6808,   8027) |************************************************************ 
+Info: [  8027,   9246) |***********************************************************+
+Info: Checksum: 0xb377f00c
+Info: Routing globals...
+Info: Running router2...
+Info: Setting up routing resources...
+Info: Running main router loop...
+Info:     iter=1 wires=945840 overused=78530 overuse=89508 archfail=NA
+Info:     iter=2 wires=977300 overused=50537 overuse=53358 archfail=NA
+Info:     iter=3 wires=994540 overused=31038 overuse=31688 archfail=NA
+Info:     iter=4 wires=1007481 overused=18143 overuse=18320 archfail=NA
+Info:     iter=5 wires=1015297 overused=10834 overuse=10907 archfail=NA
+Info:     iter=6 wires=1020055 overused=6776 overuse=6820 archfail=NA
+Info:     iter=7 wires=1022858 overused=4278 overuse=4304 archfail=NA
+Info:     iter=8 wires=1024129 overused=3294 overuse=3303 archfail=NA
+Info:     iter=9 wires=1025638 overused=2259 overuse=2265 archfail=NA
+Info:     iter=10 wires=1026402 overused=1710 overuse=1716 archfail=NA
+Info:     iter=11 wires=1027271 overused=1328 overuse=1336 archfail=NA
+Info:     iter=12 wires=1027811 overused=1056 overuse=1060 archfail=NA
+Info:     iter=13 wires=1028105 overused=888 overuse=890 archfail=NA
+Info:     iter=14 wires=1028490 overused=778 overuse=780 archfail=NA
+Info:     iter=15 wires=1028658 overused=676 overuse=679 archfail=NA
+Info:     iter=16 wires=1028977 overused=612 overuse=613 archfail=NA
+Info:     iter=17 wires=1029259 overused=539 overuse=541 archfail=NA
+Info:     iter=18 wires=1029560 overused=473 overuse=473 archfail=NA
+Info:     iter=19 wires=1029707 overused=404 overuse=405 archfail=NA
+Info:     iter=20 wires=1029987 overused=361 overuse=361 archfail=NA
+Info:     iter=21 wires=1030054 overused=287 overuse=287 archfail=NA
+Info:     iter=22 wires=1030020 overused=234 overuse=236 archfail=NA
+Info:     iter=23 wires=1030126 overused=218 overuse=218 archfail=NA
+Info:     iter=24 wires=1030308 overused=180 overuse=180 archfail=NA
+Info:     iter=25 wires=1030335 overused=145 overuse=145 archfail=NA
+Info:     iter=26 wires=1030412 overused=135 overuse=135 archfail=NA
+Info:     iter=27 wires=1030504 overused=113 overuse=113 archfail=NA
+Info:     iter=28 wires=1030583 overused=105 overuse=105 archfail=NA
+Info:     iter=29 wires=1030638 overused=101 overuse=101 archfail=NA
+Info:     iter=30 wires=1030689 overused=85 overuse=85 archfail=NA
+Info:     iter=31 wires=1030741 overused=67 overuse=67 archfail=NA
+Info:     iter=32 wires=1030793 overused=66 overuse=66 archfail=NA
+Info:     iter=33 wires=1030836 overused=77 overuse=77 archfail=NA
+Info:     iter=34 wires=1030911 overused=72 overuse=72 archfail=NA
+Info:     iter=35 wires=1030861 overused=55 overuse=55 archfail=NA
+Info:     iter=36 wires=1030906 overused=53 overuse=53 archfail=NA
+Info:     iter=37 wires=1030878 overused=56 overuse=56 archfail=NA
+Info:     iter=38 wires=1030922 overused=47 overuse=47 archfail=NA
+Info:     iter=39 wires=1030974 overused=47 overuse=47 archfail=NA
+Info:     iter=40 wires=1030996 overused=43 overuse=43 archfail=NA
+Info:     iter=41 wires=1030991 overused=32 overuse=32 archfail=NA
+Info:     iter=42 wires=1030999 overused=31 overuse=31 archfail=NA
+Info:     iter=43 wires=1031038 overused=27 overuse=27 archfail=NA
+Info:     iter=44 wires=1031062 overused=20 overuse=20 archfail=NA
+Info:     iter=45 wires=1031081 overused=22 overuse=22 archfail=NA
+Info:     iter=46 wires=1031106 overused=19 overuse=19 archfail=NA
+Info:     iter=47 wires=1031095 overused=18 overuse=18 archfail=NA
+Info:     iter=48 wires=1031132 overused=20 overuse=20 archfail=NA
+Info:     iter=49 wires=1031171 overused=23 overuse=23 archfail=NA
+Info:     iter=50 wires=1031179 overused=22 overuse=22 archfail=NA
+Info:     iter=51 wires=1031190 overused=20 overuse=20 archfail=NA
+Info:     iter=52 wires=1031184 overused=17 overuse=17 archfail=NA
+Info:     iter=53 wires=1031184 overused=18 overuse=18 archfail=NA
+Info:     iter=54 wires=1031196 overused=10 overuse=10 archfail=NA
+Info:     iter=55 wires=1031210 overused=13 overuse=13 archfail=NA
+Info:     iter=56 wires=1031225 overused=13 overuse=13 archfail=NA
+Info:     iter=57 wires=1031252 overused=13 overuse=13 archfail=NA
+Info:     iter=58 wires=1031293 overused=7 overuse=7 archfail=NA
+Info:     iter=59 wires=1031311 overused=9 overuse=9 archfail=NA
+Info:     iter=60 wires=1031340 overused=14 overuse=14 archfail=NA
+Info:     iter=61 wires=1031328 overused=6 overuse=6 archfail=NA
+Info:     iter=62 wires=1031368 overused=6 overuse=6 archfail=NA
+Info:     iter=63 wires=1031351 overused=7 overuse=7 archfail=NA
+Info:     iter=64 wires=1031387 overused=8 overuse=8 archfail=NA
+Info:     iter=65 wires=1031401 overused=11 overuse=11 archfail=NA
+Info:     iter=66 wires=1031436 overused=10 overuse=10 archfail=NA
+Info:     iter=67 wires=1031431 overused=5 overuse=5 archfail=NA
+Info:     iter=68 wires=1031439 overused=2 overuse=2 archfail=NA
+Info:     iter=69 wires=1031434 overused=1 overuse=1 archfail=NA
+Info:     iter=70 wires=1031432 overused=0 overuse=0 archfail=0
+Info: Router2 time 222.35s
+Info: Running router1 to check that route is legal...
+
+Info: Routing..
+Info: Setting up routing queue.
+Info: Routing 0 arcs.
+Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
+Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
+Info:          0 |        0          0 |    0     0 |         0|      13.72      13.72|
+Info: Routing complete.
+Info: Router1 time 13.72s
+Info: Checksum: 0x973d8984
+
+Info: Critical path report for clock 'clk' (posedge -> posedge):
+Info: curr total
+Info:  0.5  0.5  Source u_dma_wr.h_beat_TRELLIS_FF_Q.Q
+Info:  3.7  4.2    Net u_dma_wr.h_beat[2] budget 1.309000 ns (104,35) -> (99,4)
+Info:                Sink u_mem_if.u_wr.s_data_LUT4_Z_2_D_PFUMX_Z_C0_LUT4_Z.D
+Info:                Defined in:
+Info:                  rtl/gemm_accel_top.sv:199.48-206.4
+Info:                  rtl/dma_wr.sv:127.21-127.34
+Info:                  /usr/bin/../share/yosys/techmap.v:270.23-270.24
+Info:  0.2  4.5  Source u_mem_if.u_wr.s_data_LUT4_Z_2_D_PFUMX_Z_C0_LUT4_Z.F
+Info:  0.4  4.9    Net u_mem_if.u_wr.s_data_LUT4_Z_2_D_PFUMX_Z_C0[4] budget 1.309000 ns (99,4) -> (99,4)
+Info:                Sink u_mem_if.u_wr.s_data_LUT4_Z_2_D_PFUMX_Z_BLUT_LUT4_Z.M
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.3  5.1  Source u_mem_if.u_wr.s_data_LUT4_Z_2_D_PFUMX_Z_BLUT_LUT4_Z.OFX
+Info:  3.2  8.3    Net u_dma_wr.tile_done_TRELLIS_FF_Q_LSR[0] budget 1.309000 ns (99,4) -> (108,36)
+Info:                Sink u_mem_if.u_wr.s_data_LUT4_Z_2_D_LUT4_C.C
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2  8.6  Source u_mem_if.u_wr.s_data_LUT4_Z_2_D_LUT4_C.F
+Info:  0.6  9.2    Net u_mem_if.u_wr.s_data_LUT4_Z_2_D_LUT4_C_Z[0] budget 1.322000 ns (108,36) -> (108,36)
+Info:                Sink u_acc.wb_re_LUT4_Z.A
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2  9.5  Source u_acc.wb_re_LUT4_Z.F
+Info:  2.2 11.7    Net wb_re budget 1.322000 ns (108,36) -> (112,21)
+Info:                Sink u_acc.g_slot[1].u_mem.re_LUT4_Z.C
+Info:                Defined in:
+Info:                  rtl/gemm_accel_top.sv:85.28-85.33
+Info:  0.2 11.9  Source u_acc.g_slot[1].u_mem.re_LUT4_Z.F
+Info:  6.7 18.6    Net u_acc.re[1] budget 1.379000 ns (112,21) -> (111,37)
+Info:                Sink u_acc.g_slot[1].u_mem.mem.0.1_DOA15_TRELLIS_FF_Q.CE
+Info:                Defined in:
+Info:                  rtl/gemm_accel_top.sv:190.32-197.4
+Info:                  rtl/acc_buffer.sv:35.24-35.26
+Info:  0.0 18.6  Setup u_acc.g_slot[1].u_mem.mem.0.1_DOA15_TRELLIS_FF_Q.CE
+Info: 1.7 ns logic, 16.9 ns routing
+
+ERROR: Max frequency for clock 'clk': 53.79 MHz (FAIL at 100.00 MHz)
+
+Info: Slack histogram:
+Info:  legend: * represents 74 endpoint(s)
+Info:          + represents [1,74) endpoint(s)
+Info: [ -8592,  -7703) |+
+Info: [ -7703,  -6814) |+
+Info: [ -6814,  -5925) |**+
+Info: [ -5925,  -5036) |******+
+Info: [ -5036,  -4147) |************+
+Info: [ -4147,  -3258) |******************+
+Info: [ -3258,  -2369) |********************+
+Info: [ -2369,  -1480) |********************+
+Info: [ -1480,   -591) |*************************+
+Info: [  -591,    298) |***********************+
+Info: [   298,   1187) |****************************+
+Info: [  1187,   2076) |*******************************+
+Info: [  2076,   2965) |****************************+
+Info: [  2965,   3854) |****************************+
+Info: [  3854,   4743) |******************************+
+Info: [  4743,   5632) |**************************************+
+Info: [  5632,   6521) |************************************************************ 
+Info: [  6521,   7410) |**********************************************+
+Info: [  7410,   8299) |******************************************+
+Info: [  8299,   9188) |***********************************************************+
+0 warnings, 1 error
+
+Info: Program finished normally.

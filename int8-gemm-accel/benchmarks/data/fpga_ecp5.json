@@ -1,0 +1,152 @@
+{
+ "device": "LFE5U-85F (CABGA381, speed 6), out-of-context",
+ "dir": "build/synth_ecp5_d64_v4",
+ "clock": "clk",
+ "fmax_mhz": 54.0,
+ "timing_verdict": "FAIL",
+ "target_mhz": 100.0,
+ "utilisation": {
+  "TRELLIS_IO": {
+   "used": 0,
+   "total": 365
+  },
+  "DCCA": {
+   "used": 0,
+   "total": 56
+  },
+  "DP16KD": {
+   "used": 174,
+   "total": 208
+  },
+  "MULT18X18D": {
+   "used": 64,
+   "total": 156
+  },
+  "ALU54B": {
+   "used": 0,
+   "total": 78
+  },
+  "EHXPLLL": {
+   "used": 0,
+   "total": 4
+  },
+  "EXTREFB": {
+   "used": 0,
+   "total": 2
+  },
+  "DCUA": {
+   "used": 0,
+   "total": 2
+  },
+  "PCSCLKDIV": {
+   "used": 0,
+   "total": 2
+  },
+  "IOLOGIC": {
+   "used": 0,
+   "total": 224
+  },
+  "SIOLOGIC": {
+   "used": 0,
+   "total": 141
+  },
+  "GSR": {
+   "used": 0,
+   "total": 1
+  },
+  "JTAGG": {
+   "used": 0,
+   "total": 1
+  },
+  "OSCG": {
+   "used": 0,
+   "total": 1
+  },
+  "SEDGA": {
+   "used": 0,
+   "total": 1
+  },
+  "DTR": {
+   "used": 0,
+   "total": 1
+  },
+  "USRMCLK": {
+   "used": 0,
+   "total": 1
+  },
+  "CLKDIVF": {
+   "used": 0,
+   "total": 4
+  },
+  "ECLKSYNCB": {
+   "used": 0,
+   "total": 10
+  },
+  "DLLDELD": {
+   "used": 0,
+   "total": 8
+  },
+  "DDRDLL": {
+   "used": 0,
+   "total": 4
+  },
+  "DQSBUFM": {
+   "used": 0,
+   "total": 14
+  },
+  "TRELLIS_ECLKBUF": {
+   "used": 0,
+   "total": 8
+  },
+  "ECLKBRIDGECS": {
+   "used": 0,
+   "total": 2
+  },
+  "DCSC": {
+   "used": 0,
+   "total": 2
+  },
+  "TRELLIS_FF": {
+   "used": 25059,
+   "total": 83640
+  },
+  "TRELLIS_COMB": {
+   "used": 53381,
+   "total": 83640
+  },
+  "TRELLIS_RAMW": {
+   "used": 7,
+   "total": 10455
+  },
+  "Total LUT4s": {
+   "used": 51383,
+   "total": 83640
+  },
+  "Total DFFs": {
+   "used": 25059,
+   "total": 83640
+  }
+ },
+ "critical_path_excerpt": [
+  "Info:  0.5  0.5  Source u_array.g_row[10].g_col[10].u_pe.s_out_TRELLIS_FF_Q.Q",
+  "Info:  8.7  9.3    Net u_array.g_row[10].g_col[10].s_o budget 0.706000 ns (56,57) -> (98,27)",
+  "Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_A_LUT4_C_Z_LUT4_Z_1_A_LUT4_C_Z_LUT4_Z_5_C_LUT4_C_Z_LUT4_Z_1_B_LUT4_C_Z_LUT4_Z_1.D",
+  "Info:  0.4 18.4  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4$CCU2_COMB1.F",
+  "Info:  0.1 18.5    Net u_array.g_row[14].g_col[7].u_pe.prod[15] budget 0.705000 ns (98,26) -> (98,26)",
+  "Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_q_TRELLIS_FF_Q.DI"
+ ],
+ "yosys_cells": {
+  "CCU2C": 4688,
+  "DP16KD": 174,
+  "L6MUX21": 1311,
+  "LUT4": 41965,
+  "MULT18X18D": 64,
+  "PFUMX": 3633,
+  "TRELLIS_DPR16X4": 7,
+  "TRELLIS_FF": 25059
+ },
+ "tools": [
+  "Yosys 0.33 (git sha1 2584903a060)",
+  "\"nextpnr-ecp5\" -- Next Generation Place and Route (Version 0.6-3build5)"
+ ]
+}

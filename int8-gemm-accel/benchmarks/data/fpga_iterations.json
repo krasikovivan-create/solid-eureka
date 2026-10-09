@@ -1,0 +1,62 @@
+[
+ {
+  "rtl": "v1",
+  "commit": "3be77ca",
+  "n_dsp": 156,
+  "router": "router1",
+  "fmax_post_place_mhz": 25.76,
+  "fmax_post_route_mhz": null,
+  "routed": false,
+  "note": "исходный RTL; трассировка router1 остановлена через ~45 мин (не сходилась)"
+ },
+ {
+  "rtl": "v2",
+  "commit": "d1469ae",
+  "n_dsp": 156,
+  "router": "router2",
+  "fmax_post_place_mhz": 30.41,
+  "fmax_post_route_mhz": null,
+  "routed": false,
+  "note": "регистр после чтения буферов, регистр произведения в PE, 3-стадийный ACC; router2 не сошёлся (перегрузка росла), остановлен"
+ },
+ {
+  "rtl": "v3",
+  "commit": "feef8eb",
+  "n_dsp": 64,
+  "router": "router2",
+  "fmax_post_place_mhz": 40.95,
+  "fmax_post_route_mhz": 41.72,
+  "routed": true,
+  "note": "+ регистр адреса чтения буферов; крит. путь: адрес A-буфера -> ~120 EBR (23,2 нс разводки)"
+ },
+ {
+  "rtl": "v3",
+  "commit": "feef8eb",
+  "n_dsp": 0,
+  "router": "router2",
+  "fmax_post_place_mhz": 36.0,
+  "fmax_post_route_mhz": 46.97,
+  "routed": true,
+  "note": "то же, без DSP; крит. путь: логика ответа dma_rd (18,6 нс разводки)"
+ },
+ {
+  "rtl": "v4",
+  "commit": "54f500e",
+  "n_dsp": 64,
+  "router": "router2",
+  "fmax_post_place_mhz": 44.75,
+  "fmax_post_route_mhz": 54.0,
+  "routed": true,
+  "note": "буферы по байтовым дорожкам с копиями адреса, dma_rd на счётчиках; крит. путь 18,5 нс (81% разводка): флаг банка весов PE(10,10) -> соседний PE через пол-кристалла (8,7 нс) + LUT-умножитель"
+ },
+ {
+  "rtl": "v4",
+  "commit": "54f500e",
+  "n_dsp": 0,
+  "router": "router2",
+  "fmax_post_place_mhz": 39.79,
+  "fmax_post_route_mhz": 53.79,
+  "routed": true,
+  "note": "то же, без DSP; крит. путь: write-DMA -> разрешение чтения ACC (16,9 нс разводки)"
+ }
+]

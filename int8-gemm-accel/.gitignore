@@ -1,0 +1,6 @@
+build/
+sim_out/
+__pycache__/
+.pytest_cache/
+*.vcd
+*.fst

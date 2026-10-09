@@ -1,0 +1,22 @@
+
+17. Printing statistics.
+
+=== gemm_accel_top ===
+
+   Number of wires:              34974
+   Number of wire bits:         199835
+   Number of public wires:       34974
+   Number of public wire bits:  199835
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:              76901
+     CCU2C                        4688
+     DP16KD                        174
+     L6MUX21                      1311
+     LUT4                        41965
+     MULT18X18D                     64
+     PFUMX                        3633
+     TRELLIS_DPR16X4                 7
+     TRELLIS_FF                  25059
+

@@ -1,0 +1,347 @@
+
+
+Info: Logic utilisation before packing:
+Info:     Total LUT4s:     51383/83640    61%
+Info:         logic LUTs:  41965/83640    50%
+Info:         carry LUTs:   9376/83640    11%
+Info:           RAM LUTs:     28/10455     0%
+Info:          RAMW LUTs:     14/20910     0%
+
+Info:      Total DFFs:     25059/83640    29%
+
+Info: Packing IOs..
+Info: Packing constants..
+Info: Packing carries...
+Info: Packing LUTs...
+Info: Packing LUT5-7s...
+Info: Packing FFs...
+Info:     10881 FFs paired with LUTs.
+Info: Generating derived timing constraints...
+Info: Promoting globals...
+Info: Checksum: 0x030a2ce0
+
+Info: Annotating ports with timing budgets for target frequency 100.00 MHz
+Info: Checksum: 0x4566a2d7
+
+Info: Device utilisation:
+Info: 	          TRELLIS_IO:     0/  365     0%
+Info: 	                DCCA:     0/   56     0%
+Info: 	              DP16KD:   174/  208    83%
+Info: 	          MULT18X18D:    64/  156    41%
+Info: 	              ALU54B:     0/   78     0%
+Info: 	             EHXPLLL:     0/    4     0%
+Info: 	             EXTREFB:     0/    2     0%
+Info: 	                DCUA:     0/    2     0%
+Info: 	           PCSCLKDIV:     0/    2     0%
+Info: 	             IOLOGIC:     0/  224     0%
+Info: 	            SIOLOGIC:     0/  141     0%
+Info: 	                 GSR:     0/    1     0%
+Info: 	               JTAGG:     0/    1     0%
+Info: 	                OSCG:     0/    1     0%
+Info: 	               SEDGA:     0/    1     0%
+Info: 	                 DTR:     0/    1     0%
+Info: 	             USRMCLK:     0/    1     0%
+Info: 	             CLKDIVF:     0/    4     0%
+Info: 	           ECLKSYNCB:     0/   10     0%
+Info: 	             DLLDELD:     0/    8     0%
+Info: 	              DDRDLL:     0/    4     0%
+Info: 	             DQSBUFM:     0/   14     0%
+Info: 	     TRELLIS_ECLKBUF:     0/    8     0%
+Info: 	        ECLKBRIDGECS:     0/    2     0%
+Info: 	                DCSC:     0/    2     0%
+Info: 	          TRELLIS_FF: 25059/83640    29%
+Info: 	        TRELLIS_COMB: 53381/83640    63%
+Info: 	        TRELLIS_RAMW:     7/10455     0%
+
+Info: Placed 0 cells based on constraints.
+Info: Creating initial analytic placement for 51945 cells, random placement wirelen = 6261354.
+Info:     at initial placer iter 0, wirelen = 6725
+Info:     at initial placer iter 1, wirelen = 8067
+Info:     at initial placer iter 2, wirelen = 9130
+Info:     at initial placer iter 3, wirelen = 7833
+Info: Running main analytical placer, max placement attempts per cell = 237045241.
+Info:     at iteration #1, type ALL: wirelen solved = 9164, spread = 3143106, legal = 3156246; time = 4.13s
+Info:     at iteration #2, type ALL: wirelen solved = 79348, spread = 777697, legal = 796311; time = 4.54s
+Info:     at iteration #3, type ALL: wirelen solved = 217824, spread = 555895, legal = 588099; time = 6.26s
+Info:     at iteration #4, type ALL: wirelen solved = 224739, spread = 509781, legal = 543536; time = 5.55s
+Info:     at iteration #5, type ALL: wirelen solved = 223093, spread = 496595, legal = 531588; time = 5.52s
+Info:     at iteration #6, type ALL: wirelen solved = 229341, spread = 483317, legal = 517854; time = 5.19s
+Info:     at iteration #7, type ALL: wirelen solved = 234906, spread = 478191, legal = 515123; time = 6.07s
+Info:     at iteration #8, type ALL: wirelen solved = 239681, spread = 472067, legal = 510565; time = 5.31s
+Info:     at iteration #9, type ALL: wirelen solved = 241817, spread = 466224, legal = 500768; time = 5.62s
+Info:     at iteration #10, type ALL: wirelen solved = 244317, spread = 463025, legal = 501696; time = 5.35s
+Info:     at iteration #11, type ALL: wirelen solved = 247864, spread = 460386, legal = 497962; time = 4.45s
+Info:     at iteration #12, type ALL: wirelen solved = 251449, spread = 457612, legal = 493348; time = 6.04s
+Info:     at iteration #13, type ALL: wirelen solved = 254015, spread = 456302, legal = 494743; time = 5.81s
+Info:     at iteration #14, type ALL: wirelen solved = 255322, spread = 452807, legal = 491534; time = 4.66s
+Info:     at iteration #15, type ALL: wirelen solved = 257253, spread = 451085, legal = 485658; time = 4.25s
+Info:     at iteration #16, type ALL: wirelen solved = 258927, spread = 452232, legal = 489065; time = 4.21s
+Info:     at iteration #17, type ALL: wirelen solved = 261913, spread = 454263, legal = 489615; time = 3.99s
+Info:     at iteration #18, type ALL: wirelen solved = 263628, spread = 452955, legal = 491289; time = 4.49s
+Info:     at iteration #19, type ALL: wirelen solved = 265046, spread = 448956, legal = 483220; time = 3.97s
+Info:     at iteration #20, type ALL: wirelen solved = 269186, spread = 446113, legal = 483291; time = 5.35s
+Info:     at iteration #21, type ALL: wirelen solved = 269510, spread = 444005, legal = 483542; time = 4.22s
+Info:     at iteration #22, type ALL: wirelen solved = 275608, spread = 436232, legal = 470631; time = 3.81s
+Info:     at iteration #23, type ALL: wirelen solved = 274846, spread = 432668, legal = 469718; time = 4.55s
+Info:     at iteration #24, type ALL: wirelen solved = 275544, spread = 431355, legal = 468518; time = 3.82s
+Info:     at iteration #25, type ALL: wirelen solved = 277586, spread = 434284, legal = 473976; time = 4.20s
+Info:     at iteration #26, type ALL: wirelen solved = 287547, spread = 428854, legal = 467676; time = 4.14s
+Info:     at iteration #27, type ALL: wirelen solved = 280097, spread = 434381, legal = 471774; time = 3.69s
+Info:     at iteration #28, type ALL: wirelen solved = 288074, spread = 430489, legal = 470730; time = 3.59s
+Info:     at iteration #29, type ALL: wirelen solved = 283557, spread = 430889, legal = 467100; time = 4.18s
+Info:     at iteration #30, type ALL: wirelen solved = 286009, spread = 431632, legal = 469538; time = 4.90s
+Info:     at iteration #31, type ALL: wirelen solved = 288418, spread = 430215, legal = 470119; time = 4.09s
+Info:     at iteration #32, type ALL: wirelen solved = 287143, spread = 433152, legal = 470459; time = 4.04s
+Info:     at iteration #33, type ALL: wirelen solved = 291118, spread = 429929, legal = 471654; time = 3.19s
+Info:     at iteration #34, type ALL: wirelen solved = 293855, spread = 432777, legal = 470606; time = 3.22s
+Info: HeAP Placer Time: 204.86s
+Info:   of which solving equations: 90.83s
+Info:   of which spreading cells: 32.88s
+Info:   of which strict legalisation: 39.93s
+
+Info: Running simulated annealing placer for refinement.
+Info:   at iteration #1: temp = 0.000000, timing cost = 9385, wirelen = 467100
+Info:   at iteration #5: temp = 0.000000, timing cost = 9702, wirelen = 418657
+Info:   at iteration #10: temp = 0.000000, timing cost = 8795, wirelen = 400429
+Info:   at iteration #15: temp = 0.000000, timing cost = 8032, wirelen = 391596
+Info:   at iteration #20: temp = 0.000000, timing cost = 7801, wirelen = 388109
+Info:   at iteration #25: temp = 0.000000, timing cost = 7696, wirelen = 386680
+Info:   at iteration #30: temp = 0.000000, timing cost = 7637, wirelen = 385893
+Info:   at iteration #35: temp = 0.000000, timing cost = 7568, wirelen = 385312
+Info:   at iteration #39: temp = 0.000000, timing cost = 7484, wirelen = 384983 
+Info: SA placement time 441.16s
+
+Info: Max frequency for clock 'clk': 44.75 MHz (FAIL at 100.00 MHz)
+
+Info: Slack histogram:
+Info:  legend: * represents 71 endpoint(s)
+Info:          + represents [1,71) endpoint(s)
+Info: [-12345, -11265) |+
+Info: [-11265, -10185) |+
+Info: [-10185,  -9105) |*+
+Info: [ -9105,  -8025) |***+
+Info: [ -8025,  -6945) |****************+
+Info: [ -6945,  -5865) |**************************+
+Info: [ -5865,  -4785) |*****************************+
+Info: [ -4785,  -3705) |***************************+
+Info: [ -3705,  -2625) |**************************+
+Info: [ -2625,  -1545) |************************+
+Info: [ -1545,   -465) |*****************************+
+Info: [  -465,    615) |**********************************+
+Info: [   615,   1695) |********************************+
+Info: [  1695,   2775) |*******************************+
+Info: [  2775,   3855) |**********************************+
+Info: [  3855,   4935) |************************************+
+Info: [  4935,   6015) |****************************************+
+Info: [  6015,   7095) |******************************************+
+Info: [  7095,   8175) |**********************************************+
+Info: [  8175,   9255) |************************************************************ 
+Info: Checksum: 0x175e2ca2
+Info: Routing globals...
+Info: Running router2...
+Info: Setting up routing resources...
+Info: Running main router loop...
+Info:     iter=1 wires=840744 overused=74019 overuse=84775 archfail=NA
+Info:     iter=2 wires=869181 overused=46920 overuse=49986 archfail=NA
+Info:     iter=3 wires=885413 overused=30626 overuse=31571 archfail=NA
+Info:     iter=4 wires=896262 overused=19781 overuse=20093 archfail=NA
+Info:     iter=5 wires=904356 overused=12754 overuse=12886 archfail=NA
+Info:     iter=6 wires=908380 overused=9663 overuse=9750 archfail=NA
+Info:     iter=7 wires=912115 overused=7210 overuse=7262 archfail=NA
+Info:     iter=8 wires=914577 overused=5284 overuse=5310 archfail=NA
+Info:     iter=9 wires=916285 overused=3931 overuse=3946 archfail=NA
+Info:     iter=10 wires=916772 overused=3138 overuse=3151 archfail=NA
+Info:     iter=11 wires=918584 overused=2679 overuse=2684 archfail=NA
+Info:     iter=12 wires=919435 overused=2237 overuse=2247 archfail=NA
+Info:     iter=13 wires=920229 overused=1881 overuse=1885 archfail=NA
+Info:     iter=14 wires=921069 overused=1419 overuse=1422 archfail=NA
+Info:     iter=15 wires=921488 overused=1120 overuse=1120 archfail=NA
+Info:     iter=16 wires=922033 overused=938 overuse=939 archfail=NA
+Info:     iter=17 wires=922467 overused=770 overuse=772 archfail=NA
+Info:     iter=18 wires=922808 overused=691 overuse=691 archfail=NA
+Info:     iter=19 wires=923072 overused=572 overuse=572 archfail=NA
+Info:     iter=20 wires=923162 overused=462 overuse=462 archfail=NA
+Info:     iter=21 wires=923383 overused=407 overuse=407 archfail=NA
+Info:     iter=22 wires=923475 overused=349 overuse=349 archfail=NA
+Info:     iter=23 wires=923510 overused=279 overuse=279 archfail=NA
+Info:     iter=24 wires=923743 overused=266 overuse=266 archfail=NA
+Info:     iter=25 wires=923799 overused=218 overuse=219 archfail=NA
+Info:     iter=26 wires=923969 overused=205 overuse=205 archfail=NA
+Info:     iter=27 wires=924134 overused=160 overuse=160 archfail=NA
+Info:     iter=28 wires=924235 overused=136 overuse=136 archfail=NA
+Info:     iter=29 wires=924308 overused=129 overuse=129 archfail=NA
+Info:     iter=30 wires=924383 overused=138 overuse=138 archfail=NA
+Info:     iter=31 wires=924402 overused=135 overuse=135 archfail=NA
+Info:     iter=32 wires=924595 overused=113 overuse=113 archfail=NA
+Info:     iter=33 wires=924639 overused=112 overuse=112 archfail=NA
+Info:     iter=34 wires=924702 overused=106 overuse=106 archfail=NA
+Info:     iter=35 wires=924721 overused=89 overuse=89 archfail=NA
+Info:     iter=36 wires=924713 overused=87 overuse=87 archfail=NA
+Info:     iter=37 wires=924761 overused=80 overuse=80 archfail=NA
+Info:     iter=38 wires=924761 overused=67 overuse=67 archfail=NA
+Info:     iter=39 wires=924842 overused=69 overuse=69 archfail=NA
+Info:     iter=40 wires=924925 overused=63 overuse=63 archfail=NA
+Info:     iter=41 wires=925023 overused=59 overuse=59 archfail=NA
+Info:     iter=42 wires=925035 overused=61 overuse=61 archfail=NA
+Info:     iter=43 wires=925053 overused=53 overuse=53 archfail=NA
+Info:     iter=44 wires=925133 overused=57 overuse=57 archfail=NA
+Info:     iter=45 wires=925172 overused=57 overuse=57 archfail=NA
+Info:     iter=46 wires=925156 overused=42 overuse=42 archfail=NA
+Info:     iter=47 wires=925192 overused=30 overuse=30 archfail=NA
+Info:     iter=48 wires=925191 overused=25 overuse=25 archfail=NA
+Info:     iter=49 wires=925206 overused=24 overuse=24 archfail=NA
+Info:     iter=50 wires=925238 overused=29 overuse=29 archfail=NA
+Info:     iter=51 wires=925256 overused=21 overuse=21 archfail=NA
+Info:     iter=52 wires=925237 overused=28 overuse=28 archfail=NA
+Info:     iter=53 wires=925277 overused=24 overuse=24 archfail=NA
+Info:     iter=54 wires=925274 overused=24 overuse=24 archfail=NA
+Info:     iter=55 wires=925345 overused=37 overuse=37 archfail=NA
+Info:     iter=56 wires=925287 overused=25 overuse=25 archfail=NA
+Info:     iter=57 wires=925349 overused=20 overuse=20 archfail=NA
+Info:     iter=58 wires=925332 overused=17 overuse=17 archfail=NA
+Info:     iter=59 wires=925357 overused=16 overuse=16 archfail=NA
+Info:     iter=60 wires=925361 overused=13 overuse=13 archfail=NA
+Info:     iter=61 wires=925390 overused=14 overuse=14 archfail=NA
+Info:     iter=62 wires=925454 overused=7 overuse=7 archfail=NA
+Info:     iter=63 wires=925469 overused=5 overuse=5 archfail=NA
+Info:     iter=64 wires=925467 overused=6 overuse=6 archfail=NA
+Info:     iter=65 wires=925496 overused=5 overuse=5 archfail=NA
+Info:     iter=66 wires=925502 overused=5 overuse=5 archfail=NA
+Info:     iter=67 wires=925514 overused=6 overuse=6 archfail=NA
+Info:     iter=68 wires=925508 overused=3 overuse=3 archfail=NA
+Info:     iter=69 wires=925528 overused=3 overuse=3 archfail=NA
+Info:     iter=70 wires=925513 overused=2 overuse=2 archfail=NA
+Info:     iter=71 wires=925534 overused=2 overuse=2 archfail=NA
+Info:     iter=72 wires=925543 overused=0 overuse=0 archfail=0
+Info: Router2 time 271.70s
+Info: Running router1 to check that route is legal...
+
+Info: Routing..
+Info: Setting up routing queue.
+Info: Routing 0 arcs.
+Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
+Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
+Info:          0 |        0          0 |    0     0 |         0|       9.20       9.20|
+Info: Routing complete.
+Info: Router1 time 9.20s
+Info: Checksum: 0xc296f820
+
+Info: Critical path report for clock 'clk' (posedge -> posedge):
+Info: curr total
+Info:  0.5  0.5  Source u_array.g_row[10].g_col[10].u_pe.s_out_TRELLIS_FF_Q.Q
+Info:  8.7  9.3    Net u_array.g_row[10].g_col[10].s_o budget 0.706000 ns (56,57) -> (98,27)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_A_LUT4_C_Z_LUT4_Z_1_A_LUT4_C_Z_LUT4_Z_5_C_LUT4_C_Z_LUT4_Z_1_B_LUT4_C_Z_LUT4_Z_1.D
+Info:                Defined in:
+Info:                  rtl/gemm_accel_top.sv:183.51-188.4
+Info:                  rtl/pe.sv:17.25-17.29
+Info:                  rtl/systolic_array.sv:80.54-91.10
+Info:  0.2  9.5  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_A_LUT4_C_Z_LUT4_Z_1_A_LUT4_C_Z_LUT4_Z_5_C_LUT4_C_Z_LUT4_Z_1_B_LUT4_C_Z_LUT4_Z_1.F
+Info:  2.0 11.5    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_2_B_LUT4_Z_A_LUT4_Z_A[0] budget 0.826000 ns (98,27) -> (98,29)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_3_B_LUT4_Z_A_LUT4_Z_C_LUT4_D.B
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2 11.7  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_3_B_LUT4_Z_A_LUT4_Z_C_LUT4_D.F
+Info:  1.1 12.8    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_3_B_LUT4_Z_A_LUT4_Z_C_LUT4_D_Z[0] budget 0.825000 ns (98,29) -> (97,28)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_2_C_LUT4_Z.C
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2 13.1  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_2_C_LUT4_Z.F
+Info:  0.9 14.0    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_2_C[1] budget 0.825000 ns (97,28) -> (96,28)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_2_C_LUT4_C.D
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2 14.2  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_2_C_LUT4_C.F
+Info:  1.1 15.3    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_D_Z_LUT4_Z_4_B_LUT4_Z_A_LUT4_C_Z[4] budget 0.825000 ns (96,28) -> (96,27)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_ALUT_LUT4_Z.D
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:108.23-108.24
+Info:  0.2 15.5  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_ALUT_LUT4_Z.F
+Info:  0.0 15.5    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_ALUT budget 0.687000 ns (96,27) -> (96,27)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_BLUT_LUT4_Z.F1
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:157.46-157.48
+Info:  0.2 15.7  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_BLUT_LUT4_Z.OFX
+Info:  0.0 15.7    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1 budget 0.000000 ns (96,27) -> (96,27)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_ALUT_LUT4_Z.FXB
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:157.62-157.64
+Info:  0.2 15.9  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D1_PFUMX_Z_ALUT_LUT4_Z.OFX
+Info:  0.0 15.9    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1 budget 0.000000 ns (96,27) -> (96,27)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D0_PFUMX_Z_ALUT_LUT4_Z.FXB
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/cells_map.v:157.70-157.72
+Info:  0.2 16.2  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z_L6MUX21_Z_D1_L6MUX21_Z_D0_PFUMX_Z_ALUT_LUT4_Z.OFX
+Info:  1.1 17.3    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_3_A0_LUT4_Z_C_LUT4_D_Z_LUT4_B_Z[7] budget 0.802000 ns (96,27) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_1$CCU2_COMB1.A
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/techmap.v:200.24-200.25
+Info:  0.4 17.7  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_1$CCU2_COMB1.FCO
+Info:  0.0 17.7    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4_COUT[7] budget 0.000000 ns (97,26) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 17.8  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0$CCU2_COMB0.FCO
+Info:  0.0 17.8    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0$CCU2_FCI_INT budget 0.000000 ns (97,26) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0$CCU2_COMB1.FCI
+Info:  0.0 17.8  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0$CCU2_COMB1.FCO
+Info:  0.0 17.8    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4_COUT[9] budget 0.000000 ns (97,26) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_6$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 17.8  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_6$CCU2_COMB0.FCO
+Info:  0.0 17.8    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_6$CCU2_FCI_INT budget 0.000000 ns (97,26) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_6$CCU2_COMB1.FCI
+Info:  0.0 17.8  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_6$CCU2_COMB1.FCO
+Info:  0.0 17.8    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4_COUT[11] budget 0.000000 ns (97,26) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_5$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 17.9  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_5$CCU2_COMB0.FCO
+Info:  0.0 17.9    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_5$CCU2_FCI_INT budget 0.000000 ns (97,26) -> (97,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_5$CCU2_COMB1.FCI
+Info:  0.0 17.9  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_5$CCU2_COMB1.FCO
+Info:  0.0 17.9    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4_COUT[13] budget 0.000000 ns (97,26) -> (98,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4$CCU2_COMB0.FCI
+Info:                Defined in:
+Info:                  /usr/bin/../share/yosys/ecp5/arith_map.v:63.22-63.23
+Info:  0.1 18.0  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4$CCU2_COMB0.FCO
+Info:  0.0 18.0    Net u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4$CCU2_FCI_INT budget 0.000000 ns (98,26) -> (98,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4$CCU2_COMB1.FCI
+Info:  0.4 18.4  Source u_array.g_row[14].g_col[7].u_pe.prod_CCU2C_S0_4$CCU2_COMB1.F
+Info:  0.1 18.5    Net u_array.g_row[14].g_col[7].u_pe.prod[15] budget 0.705000 ns (98,26) -> (98,26)
+Info:                Sink u_array.g_row[14].g_col[7].u_pe.prod_q_TRELLIS_FF_Q.DI
+Info:                Defined in:
+Info:                  rtl/gemm_accel_top.sv:183.51-188.4
+Info:                  rtl/pe.sv:29.16-29.20
+Info:                  rtl/systolic_array.sv:80.54-91.10
+Info:  0.0 18.5  Setup u_array.g_row[14].g_col[7].u_pe.prod_q_TRELLIS_FF_Q.DI
+Info: 3.5 ns logic, 15.0 ns routing
+
+ERROR: Max frequency for clock 'clk': 54.00 MHz (FAIL at 100.00 MHz)
+
+Info: Slack histogram:
+Info:  legend: * represents 91 endpoint(s)
+Info:          + represents [1,91) endpoint(s)
+Info: [ -8519,  -7640) |+
+Info: [ -7640,  -6761) |+
+Info: [ -6761,  -5882) |*+
+Info: [ -5882,  -5003) |****+
+Info: [ -5003,  -4124) |********+
+Info: [ -4124,  -3245) |************+
+Info: [ -3245,  -2366) |****************+
+Info: [ -2366,  -1487) |*******************+
+Info: [ -1487,   -608) |***********************+
+Info: [  -608,    271) |*********************+
+Info: [   271,   1150) |************************+
+Info: [  1150,   2029) |************************+
+Info: [  2029,   2908) |**************************+
+Info: [  2908,   3787) |************************+
+Info: [  3787,   4666) |**************************+
+Info: [  4666,   5545) |*********************************+
+Info: [  5545,   6424) |*************************************+
+Info: [  6424,   7303) |********************************+
+Info: [  7303,   8182) |***************************+
+Info: [  8182,   9061) |************************************************************ 
+0 warnings, 1 error
+
+Info: Program finished normally.
