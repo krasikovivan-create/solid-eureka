@@ -1,7 +1,8 @@
 """RTL против эталона: побитовое совпадение C, целостность паддинга C, инварианты счётчиков.
 
 Основная конфигурация MAIN совпадает с той, что синтезируется для ECP5-85F:
-16x16, MT=128, KMAX=1024, 156 PE с DSP-умножителем и 100 PE с LUT-умножителем.
+16x16, MT=128, KMAX=1024, 64 PE с DSP-умножителем и 192 PE с LUT-умножителем
+(вариант, оттрассированный на ECP5-85F; 0/156/256 проверяются отдельно).
 """
 import math
 
@@ -11,7 +12,7 @@ import pytest
 from model.gemm_ref import gemm_ref
 from sim.accel_sim import HwConfig, run_gemm, run_jobs
 
-MAIN = HwConfig(P=16, MT=128, KMAX=1024, N_DSP=156)
+MAIN = HwConfig(P=16, MT=128, KMAX=1024, N_DSP=64)
 SMALL = HwConfig(P=4, MT=8, KMAX=64, N_DSP=7)
 MID = HwConfig(P=8, MT=32, KMAX=256, N_DSP=40)
 
@@ -176,7 +177,7 @@ def test_main_large():
 
 
 # ---------------- те же 16x16 с другим разбиением умножителей DSP/LUT (варианты для ПЛИС) ----------------
-@pytest.mark.parametrize("n_dsp", [0, 64, 256])
+@pytest.mark.parametrize("n_dsp", [0, 156, 256])
 def test_main_dsp_split_variants(n_dsp):
     cfg = HwConfig(P=16, MT=128, KMAX=1024, N_DSP=n_dsp)
     for i, (m, n, k) in enumerate([(37, 45, 77), (130, 33, 300)]):

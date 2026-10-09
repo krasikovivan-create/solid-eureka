@@ -33,7 +33,7 @@
    "idle_frac": 0.4276131917272219,
    "mem_bytes": 24576,
    "model_est_cycles": 2176,
-   "sim_wall_s": 23.33
+   "sim_wall_s": 0.02
   },
   {
    "workload": "128^3",
@@ -91,7 +91,7 @@
    "idle_frac": 0.042333377171832276,
    "mem_bytes": 458752,
    "model_est_cycles": 68416,
-   "sim_wall_s": 0.35
+   "sim_wall_s": 0.29
   },
   {
    "workload": "512^3",
@@ -120,7 +120,7 @@
    "idle_frac": 0.009822678091518378,
    "mem_bytes": 2359296,
    "model_est_cycles": 529472,
-   "sim_wall_s": 2.17
+   "sim_wall_s": 2.16
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -149,7 +149,7 @@
    "idle_frac": 0.009267894008323951,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 4.28
+   "sim_wall_s": 4.54
   },
   {
    "workload": "малое K 1024x1024x64",
@@ -178,7 +178,7 @@
    "idle_frac": 0.12914756494585078,
    "mem_bytes": 4784128,
    "model_est_cycles": 300160,
-   "sim_wall_s": 2.02
+   "sim_wall_s": 2.01
   },
   {
    "workload": "GEMV 1x1024x1024",
@@ -207,7 +207,7 @@
    "idle_frac": 0.9397336864562642,
    "mem_bytes": 1053696,
    "model_est_cycles": 67012,
-   "sim_wall_s": 0.41
+   "sim_wall_s": 0.52
   }
  ],
  "memory_sweep": [
@@ -238,7 +238,7 @@
    "idle_frac": 0.042333377171832276,
    "mem_bytes": 458752,
    "model_est_cycles": 68416,
-   "sim_wall_s": 0.27
+   "sim_wall_s": 0.35
   },
   {
    "workload": "256^3",
@@ -267,7 +267,7 @@
    "idle_frac": 0.1279888230989289,
    "mem_bytes": 458752,
    "model_est_cycles": 68416,
-   "sim_wall_s": 0.26
+   "sim_wall_s": 0.34
   },
   {
    "workload": "256^3",
@@ -296,7 +296,7 @@
    "idle_frac": 0.4370775031995946,
    "mem_bytes": 458752,
    "model_est_cycles": 68416,
-   "sim_wall_s": 0.34
+   "sim_wall_s": 0.53
   },
   {
    "workload": "256^3",
@@ -325,7 +325,7 @@
    "idle_frac": 0.7143218325668577,
    "mem_bytes": 458752,
    "model_est_cycles": 68416,
-   "sim_wall_s": 0.75
+   "sim_wall_s": 0.8
   },
   {
    "workload": "256^3",
@@ -354,7 +354,7 @@
    "idle_frac": 0.04189935966784597,
    "mem_bytes": 458752,
    "model_est_cycles": 68385,
-   "sim_wall_s": 0.25
+   "sim_wall_s": 0.41
   },
   {
    "workload": "256^3",
@@ -383,7 +383,7 @@
    "idle_frac": 0.04367494053612342,
    "mem_bytes": 458752,
    "model_est_cycles": 68512,
-   "sim_wall_s": 0.31
+   "sim_wall_s": 0.33
   },
   {
    "workload": "256^3",
@@ -412,7 +412,7 @@
    "idle_frac": 0.052537227121584484,
    "mem_bytes": 458752,
    "model_est_cycles": 68896,
-   "sim_wall_s": 0.26
+   "sim_wall_s": 0.37
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -441,7 +441,7 @@
    "idle_frac": 0.009267894008323951,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 3.5
+   "sim_wall_s": 4.35
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -470,7 +470,7 @@
    "idle_frac": 0.02466302852502722,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 3.77
+   "sim_wall_s": 4.27
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -499,7 +499,7 @@
    "idle_frac": 0.06217461338189223,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 3.7
+   "sim_wall_s": 5.44
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -528,7 +528,7 @@
    "idle_frac": 0.3861152076079899,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 4.84
+   "sim_wall_s": 6.7
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -557,7 +557,7 @@
    "idle_frac": 0.009238874705438826,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058337,
-   "sim_wall_s": 3.09
+   "sim_wall_s": 4.23
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -586,7 +586,7 @@
    "idle_frac": 0.009357749454170672,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058464,
-   "sim_wall_s": 3.16
+   "sim_wall_s": 4.44
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -615,7 +615,7 @@
    "idle_frac": 0.010677492916737807,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058848,
-   "sim_wall_s": 3.93
+   "sim_wall_s": 3.57
   }
  ],
  "buffer_sweep": [
@@ -646,7 +646,7 @@
    "idle_frac": 0.07463864103082285,
    "mem_bytes": 18087936,
    "model_est_cycles": 1132672,
-   "sim_wall_s": 30.11
+   "sim_wall_s": 18.22
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -675,7 +675,7 @@
    "idle_frac": 0.7681722842583256,
    "mem_bytes": 18087936,
    "model_est_cycles": 1132672,
-   "sim_wall_s": 13.0
+   "sim_wall_s": 16.68
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -704,7 +704,7 @@
    "idle_frac": 0.005693261772459213,
    "mem_bytes": 9699328,
    "model_est_cycles": 1051840,
-   "sim_wall_s": 26.27
+   "sim_wall_s": 17.14
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -733,7 +733,7 @@
    "idle_frac": 0.5679458415998648,
    "mem_bytes": 9699328,
    "model_est_cycles": 1051840,
-   "sim_wall_s": 7.05
+   "sim_wall_s": 9.36
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -762,7 +762,7 @@
    "idle_frac": 0.005177257258548784,
    "mem_bytes": 5505024,
    "model_est_cycles": 1054016,
-   "sim_wall_s": 30.31
+   "sim_wall_s": 17.21
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -791,7 +791,7 @@
    "idle_frac": 0.2398334641870432,
    "mem_bytes": 5505024,
    "model_est_cycles": 1054016,
-   "sim_wall_s": 4.47
+   "sim_wall_s": 5.33
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -820,7 +820,7 @@
    "idle_frac": 0.009267894008323951,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 2.92
+   "sim_wall_s": 3.95
   },
   {
    "workload": "MLP 256x1024x1024",
@@ -849,7 +849,7 @@
    "idle_frac": 0.06217461338189223,
    "mem_bytes": 3407872,
    "model_est_cycles": 1058368,
-   "sim_wall_s": 3.23
+   "sim_wall_s": 4.01
   }
  ]
 }

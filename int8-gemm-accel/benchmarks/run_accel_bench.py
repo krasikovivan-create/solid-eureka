@@ -23,7 +23,7 @@ from model.gemm_ref import gemm_ref  # noqa: E402
 from model.perf_model import Config, estimate  # noqa: E402
 from sim.accel_sim import HwConfig, run_gemm  # noqa: E402
 
-MAIN = HwConfig(P=16, MT=128, KMAX=1024, N_DSP=156, WORDS=1 << 19)
+MAIN = HwConfig(P=16, MT=128, KMAX=1024, N_DSP=64, WORDS=1 << 19)
 
 WORKLOADS = [
     ("64^3", 64, 64, 64),
@@ -91,7 +91,7 @@ def main():
     # 3) размер on-chip буфера (MT) при урезанной полосе общей памяти
     buf = []
     for mt in [16, 32, 64, 128]:
-        cfg = HwConfig(P=16, MT=mt, KMAX=1024, N_DSP=156, WORDS=1 << 19)
+        cfg = HwConfig(P=16, MT=mt, KMAX=1024, N_DSP=64, WORDS=1 << 19)
         for bw in [(1, 1), (1, 4)]:
             buf.append(one(cfg, "MLP 256x1024x1024", 256, 1024, 1024, bw=bw))
     out["buffer_sweep"] = buf

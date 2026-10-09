@@ -5,6 +5,13 @@
 16 байт/такт. Написано на SystemVerilog, проверено побитово против NumPy, синтезировано
 открытыми инструментами (Yosys + nextpnr) под Lattice ECP5 LFE5U-85F.
 
+Коротко о результатах (подробно — в `benchmarks/results.md`):
+* загрузка массива 96–99% на задачах от 256³;
+* Fmax на ECP5-85F после трассировки — 54,0 МГц, то есть 27,4 GOPS на 512³;
+* против целочисленного NumPy ускоритель быстрее в 4–53 раза;
+* против NumPy через OpenBLAS float32 на 4-ядерном Xeon он **медленнее в 2–6 раз**:
+  ограничивает частота ПЛИС.
+
 * Архитектура, варианты и выбор конфигурации — [`docs/architecture.md`](docs/architecture.md)
 * Результаты, условия замеров, сравнение — [`benchmarks/results.md`](benchmarks/results.md)
 
@@ -17,7 +24,7 @@
 | `model/` | Эталон на NumPy (`gemm_ref.py`), аналитическая модель трафика (`perf_model.py`) |
 | `sim/` | Сборка и запуск симуляции из Python (`accel_sim.py`), мутационная проверка тестов |
 | `tests/` | pytest: эталон, PE, RTL против эталона |
-| `synth/` | Синтез и размещение для ECP5 (`run_ecp5.sh`), разбор отчёта nextpnr |
+| `synth/` | Синтез и размещение для ECP5 (`run_ecp5.sh`), разбор отчёта nextpnr, отчёты финальных прогонов (`reports/`) |
 | `benchmarks/` | Замеры ускорителя в симуляции, база на CPU, генератор таблиц, `results.md` |
 
 ## Как воспроизвести
@@ -31,8 +38,8 @@ python3 -m pytest -q                       # все тесты (≈20 с пос�
 python3 sim/mutation_check.py              # тесты ловят внесённые в RTL ошибки
 python3 benchmarks/run_accel_bench.py      # такты в симуляции -> benchmarks/data/accel_sim.json
 python3 benchmarks/cpu_baseline.py         # база NumPy на этом CPU -> benchmarks/data/cpu_baseline.json
-synth/run_ecp5.sh 156 1 100                # Yosys + nextpnr-ecp5 (десятки минут)
-python3 synth/parse_nextpnr.py build/synth_ecp5_d156 > benchmarks/data/fpga_ecp5.json
+synth/run_ecp5.sh 64 1 100 router2 _v4     # Yosys + nextpnr-ecp5, ~25 мин; отчёты в build/synth_ecp5_d64_v4
+python3 synth/parse_nextpnr.py build/synth_ecp5_d64_v4 > benchmarks/data/fpga_ecp5.json
 python3 benchmarks/make_report.py          # таблицы -> benchmarks/results_tables.md
 ```
 
@@ -43,7 +50,7 @@ import numpy as np
 from sim.accel_sim import HwConfig, run_gemm
 a = np.random.randint(-128, 128, (100, 70), dtype=np.int8)
 b = np.random.randint(-128, 128, (70, 50), dtype=np.int8)
-res = run_gemm(a, b, HwConfig(P=16, MT=128, KMAX=1024, N_DSP=156))
+res = run_gemm(a, b, HwConfig(P=16, MT=128, KMAX=1024, N_DSP=64))
 res.c, res.perf          # int32-результат и счётчики (такты, работа, простои)
 ```
 
